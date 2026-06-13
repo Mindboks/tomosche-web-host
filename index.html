@@ -2,132 +2,33 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Tomosche - 友助</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomosche</title>
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .card {
-            background: white;
-            border-radius: 24px;
-            padding: 40px 24px;
-            max-width: 400px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-        .icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-        }
-        h1 {
-            color: #06C755;
-            font-size: 28px;
-            margin-bottom: 8px;
-        }
-        .subtitle {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 32px;
-        }
-        button {
-            background: #06C755;
-            color: white;
-            border: none;
-            padding: 14px 32px;
-            border-radius: 999px;
-            font-size: 16px;
-            font-weight: bold;
-            width: 100%;
-            cursor: pointer;
-            margin-top: 8px;
-        }
-        .info {
-            margin-top: 24px;
-            padding: 16px;
-            background: #f0f0f0;
-            border-radius: 16px;
-            text-align: left;
-            font-size: 12px;
-            word-break: break-all;
-        }
-        .status {
-            margin-top: 16px;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 14px;
-        }
-        .status.success { background: #e8f5e9; color: #2e7d32; }
-        .status.error { background: #ffebee; color: #c62828; }
-        .status.info { background: #e3f2fd; color: #1565c0; }
-        .hidden { display: none; }
-    </style>
 </head>
 <body>
-    <div class="card">
-        <div class="icon">🌱</div>
-        <h1>Tomosche</h1>
-        <div class="subtitle">大切な人と、大切な時間を、もっとスムーズに。</div>
-        
-        <button id="loginBtn" class="hidden">LINEでログイン</button>
-        
-        <div id="userInfo" class="info hidden"></div>
-        <div id="status" class="status info">初期化中...</div>
-    </div>
-
     <script>
         const liffId = '2010384200-BS1cr2CR';
-        const statusDiv = document.getElementById('status');
-        const loginBtn = document.getElementById('loginBtn');
-        const userInfoDiv = document.getElementById('userInfo');
-
-        async function initLiff() {
-            statusDiv.className = 'status info';
-            statusDiv.innerText = '⚙️ LIFF初期化中...';
-            
+        
+        window.addEventListener('load', async () => {
             try {
                 await liff.init({ liffId: liffId });
-                statusDiv.innerText = '✅ LIFF初期化成功';
-                
-                if (!liff.isLoggedIn()) {
-                    statusDiv.innerText = '🔐 ログインしていません';
-                    loginBtn.classList.remove('hidden');
-                } else {
-                    const profile = await liff.getProfile();
-                    statusDiv.innerText = '✅ ログイン済み';
-                    userInfoDiv.innerHTML = `
-                        <strong>👤 ユーザー情報</strong><br>
-                        名前: ${profile.displayName}<br>
-                        ユーザーID: ${profile.userId}<br>
-                        ステータス: ログイン済み
-                    `;
-                    userInfoDiv.classList.remove('hidden');
+                window.isLoggedIn = liff.isLoggedIn();
+                if (window.isLoggedIn) {
+                    window.idToken = liff.getIDToken();
+                    window.profile = await liff.getProfile();
                 }
             } catch (err) {
-                statusDiv.className = 'status error';
-                statusDiv.innerText = `❌ LIFFエラー: ${err.message}`;
-                console.error(err);
+                console.error('LIFF error:', err);
+                window.isLoggedIn = false;
             }
-        }
-
-        loginBtn.onclick = () => {
-            liff.login();
-        };
-
-        initLiff();
+            
+            // Flutterアプリを起動
+            const script = document.createElement('script');
+            script.src = 'flutter_bootstrap.js';
+            script.async = false;
+            document.body.appendChild(script);
+        });
     </script>
 </body>
 </html>
