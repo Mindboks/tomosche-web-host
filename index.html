@@ -4,79 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tomosche</title>
-    <!-- ここにLIFF SDKを読み込む -->
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-family: sans-serif;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #06C755;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-    <!-- Flutterアプリがマウントされる場所 -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <div>読み込み中...</div>
+    </div>
+
     <script>
-        // LIFF SDKの初期化とFlutterアプリの起動を連携させる
+        const liffId = '2010384200-BS1cr2CR';
+        
         window.addEventListener('load', async () => {
-            // LIFF IDを設定
-            const liffId = '2010384200-BS1cr2CR';
             try {
-                await liff.init({ liffId });
+                await liff.init({ liffId: liffId });
                 console.log('LIFF initialized');
-                // LIFFのログイン状態をFlutterに伝えるためのグローバルフラグ
+                
                 window.isLoggedIn = liff.isLoggedIn();
                 if (window.isLoggedIn) {
                     window.idToken = liff.getIDToken();
                     window.profile = await liff.getProfile();
+                    console.log('Logged in as:', window.profile.displayName);
                 }
             } catch (err) {
-                console.error('LIFF initialization failed', err);
+                console.error('LIFF init error:', err);
                 window.isLoggedIn = false;
-            } finally {
-                // Flutterアプリを起動するためのスクリプトを動的に読み込む
-                const script = document.createElement('script');
-                script.src = 'flutter_bootstrap.js';
-                script.async = false;
-                document.body.appendChild(script);
             }
+            
+            // Flutterアプリを起動
+            const script = document.createElement('script');
+            script.src = 'flutter_bootstrap.js';
+            script.async = false;
+            document.body.appendChild(script);
+            
+            // ローディング表示はFlutterが起動したら消える
         });
-        import 'dart:js' as js;
-import 'dart:html' as html;
-
-// ... アプリケーションコード ...
-
-class LoginScreen extends StatefulWidget {
-  // ...
-}
-
-class _LoginScreenState extends State<LoginScreen> {
-  bool _isLoading = true;
-  bool _isLoggedIn = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkLiffStatus();
-  }
-
-  Future<void> _checkLiffStatus() async {
-    // JavaScriptのグローバル変数を読み取る
-    final isLoggedIn = js.context['isLoggedIn'] == true;
-    if (isLoggedIn) {
-      final idToken = js.context['idToken'];
-      final profile = js.context['profile'];
-      print('ID Token: $idToken');
-      print('Profile: ${profile['displayName']}');
-      setState(() => _isLoggedIn = true);
-      // ログイン後の画面に遷移
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const FriendListScreen()));
-    } else {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  void _login() async {
-    // JavaScriptのliff.login()を呼び出す
-    js.context.callMethod('liff', ['login']);
-    // ログイン後、ページをリロードするか、再度状態をチェックする
-  }
-
-  // ... buildメソッドなど ...
-}
     </script>
 </body>
 </html>
