@@ -1,0 +1,10 @@
+services:
+  - type: static_site
+    name: tomosche-web-host
+    repo: https://github.com/Mindboks/tomosche-web-host
+    branch: main
+    buildCommand: cd build/web && echo "Build completed"
+    staticPublishPath: build/web
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
