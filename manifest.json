@@ -1,6 +1,6 @@
 {
-    "name": "tomosche_clean",
-    "short_name": "tomosche_clean",
+    "name": "tomosche",
+    "short_name": "tomosche",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
