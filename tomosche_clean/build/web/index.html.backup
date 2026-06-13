@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomosche LIFF Test</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        button { background: #06C755; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        #status { margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Tomosche LIFF 接続テスト</h1>
+    <button id="loginBtn">LINEでログイン</button>
+    <div id="status"></div>
+
+    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+    <script>
+        const liffId = '__LIFF_ID__';
+        const statusDiv = document.getElementById('status');
+
+        async function initLiff() {
+            statusDiv.innerText = 'LIFF初期化中...';
+            try {
+                await liff.init({ liffId: liffId });
+                statusDiv.innerText = 'LIFF初期化成功！';
+                if (!liff.isLoggedIn()) {
+                    document.getElementById('loginBtn').style.display = 'block';
+                    statusDiv.innerText += ' ログインしていません。';
+                } else {
+                    statusDiv.innerText += ' 既にログイン済みです。';
+                    document.getElementById('loginBtn').style.display = 'none';
+                    // ログイン済みの場合の処理（例：プロフィール表示）
+                    const profile = await liff.getProfile();
+                    statusDiv.innerText += ` ようこそ、${profile.displayName}さん！`;
+                }
+            } catch (err) {
+                statusDiv.innerText = `LIFFエラー: ${err.message}`;
+                console.error(err);
+            }
+        }
+
+        document.getElementById('loginBtn').onclick = () => {
+            liff.login();
+        };
+
+        initLiff();
+        import 'dart:js' as js;
+        import 'dart:html' as html;
+
+        // ... アプリケーションコード ...
+
+        class LoginScreen extends StatefulWidget {
+        // ...
+        }
+
+        class _LoginScreenState extends State<LoginScreen> {
+        bool _isLoading = true;
+        bool _isLoggedIn = false;
+
+        @override
+        void initState() {
+            super.initState();
+            _checkLiffStatus();
+        }
+
+        Future<void> _checkLiffStatus() async {
+            // JavaScriptのグローバル変数を読み取る
+            final isLoggedIn = js.context['isLoggedIn'] == true;
+            if (isLoggedIn) {
+            final idToken = js.context['idToken'];
+            final profile = js.context['profile'];
+            print('ID Token: $idToken');
+            print('Profile: ${profile['displayName']}');
+            setState(() => _isLoggedIn = true);
+            // ログイン後の画面に遷移
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const FriendListScreen()));
+            } else {
+            setState(() => _isLoading = false);
+            }
+        }
+
+        void _login() async {
+            // JavaScriptのliff.login()を呼び出す
+            js.context.callMethod('liff', ['login']);
+            // ログイン後、ページをリロードするか、再度状態をチェックする
+        }
+
+        // ... buildメソッドなど ...
+        }
+                
+    </script>
+</body>
+</html>
