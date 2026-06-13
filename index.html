@@ -2,33 +2,265 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tomosche</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Tomosche - 友助</title>
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+        .add-btn {
+            background: #06C755;
+            color: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 22px;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #333;
+        }
+        .friend-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .friend-item:last-child {
+            border-bottom: none;
+        }
+        .friend-avatar {
+            width: 48px;
+            height: 48px;
+            background: #e8f5e9;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            color: #2e7d32;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .friend-info {
+            flex: 1;
+        }
+        .friend-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .friend-status {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .status-shared { color: #2e7d32; }
+        .status-pending { color: #ff9800; }
+        .qr-container {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .qr-header {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .qr-body {
+            padding: 24px;
+            text-align: center;
+        }
+        .hidden { display: none; }
+        .invite-url {
+            font-size: 10px;
+            color: #2196f3;
+            word-break: break-all;
+            margin-top: 12px;
+        }
+        .send-btn {
+            background: #06C755;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 12px;
+            cursor: pointer;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+        }
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
+    <div id="app">
+        <div class="loading" id="loading">読み込み中...</div>
+        
+        <div id="mainContent" style="display: none;">
+            <div class="header">
+                <span class="user-name" id="userName">--</span>
+                <button class="add-btn" id="addFriendBtn">+</button>
+            </div>
+            
+            <div id="qrPanel" class="qr-container hidden">
+                <div class="qr-header">
+                    <button class="back-btn" id="closeQrBtn">← 戻る</button>
+                    <span style="font-weight: bold;">友達を追加</span>
+                    <div style="width: 40px;"></div>
+                </div>
+                <div class="qr-body">
+                    <div id="qrcode"></div>
+                    <div class="invite-url" id="inviteUrl"></div>
+                    <button class="send-btn" id="sendLineBtn">LINEで送信</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">👥 友達一覧</div>
+                <div id="friendList">
+                    <div class="friend-item">
+                        <div class="friend-avatar">田</div>
+                        <div class="friend-info">
+                            <div class="friend-name">田中 一郎</div>
+                            <div class="friend-status status-shared">✓ カレンダー共有中</div>
+                        </div>
+                    </div>
+                    <div class="friend-item">
+                        <div class="friend-avatar">佐</div>
+                        <div class="friend-info">
+                            <div class="friend-name">佐藤 花子</div>
+                            <div class="friend-status status-pending">⏳ 招待承認待ち</div>
+                        </div>
+                    </div>
+                    <div class="friend-item">
+                        <div class="friend-avatar">鈴</div>
+                        <div class="friend-info">
+                            <div class="friend-name">鈴木 誠</div>
+                            <div class="friend-status status-shared">✓ カレンダー共有中</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const liffId = '2010384200-BS1cr2CR';
-        
-        window.addEventListener('load', async () => {
+        let userId = '';
+        let displayName = '';
+
+        async function initLiff() {
             try {
                 await liff.init({ liffId: liffId });
-                window.isLoggedIn = liff.isLoggedIn();
-                if (window.isLoggedIn) {
-                    window.idToken = liff.getIDToken();
-                    window.profile = await liff.getProfile();
+                
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
                 }
+                
+                const profile = await liff.getProfile();
+                userId = profile.userId;
+                displayName = profile.displayName;
+                
+                document.getElementById('userName').innerHTML = `こんにちは、${displayName}さん`;
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                
             } catch (err) {
                 console.error('LIFF error:', err);
-                window.isLoggedIn = false;
+                document.getElementById('loading').innerHTML = 'エラーが発生しました。<br>再度お試しください。';
             }
+        }
+        
+        function getInviteUrl() {
+            return `https://tomosche-web-host.onrender.com?invite_by=${userId}`;
+        }
+        
+        function showQRCode() {
+            const url = getInviteUrl();
+            document.getElementById('inviteUrl').innerText = url;
+            document.getElementById('qrPanel').classList.remove('hidden');
             
-            // Flutterアプリを起動
-            const script = document.createElement('script');
-            script.src = 'flutter_bootstrap.js';
-            script.async = false;
-            document.body.appendChild(script);
-        });
+            // QRコード生成
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById('qrcode'), {
+                text: url,
+                width: 200,
+                height: 200
+            });
+        }
+        
+        function hideQRCode() {
+            document.getElementById('qrPanel').classList.add('hidden');
+        }
+        
+        function sendLineMessage() {
+            const url = getInviteUrl();
+            liff.sendMessages([{
+                type: 'text',
+                text: `🌱 Tomosche（友助）に招待します！\n以下のリンクから登録してください。\n${url}`
+            }]).then(() => {
+                liff.closeWindow();
+            }).catch(err => {
+                console.error('Send error:', err);
+                alert('メッセージ送信に失敗しました');
+            });
+        }
+        
+        document.getElementById('addFriendBtn').onclick = showQRCode;
+        document.getElementById('closeQrBtn').onclick = hideQRCode;
+        document.getElementById('sendLineBtn').onclick = sendLineMessage;
+        
+        initLiff();
     </script>
 </body>
 </html>
