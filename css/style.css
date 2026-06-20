@@ -1,20 +1,23 @@
-/* ====== 共通スタイル ====== */
+/* ====== CSS変数（サイズ一元管理） ====== */
 :root {
-    /* タイトルサイズ（CSS変数で一元管理） */
-    --main-title-size: clamp(2.8rem, 10vw, 4.8rem);   /* 最小2.8rem、最大4.8rem */
-    --sub-title-size: clamp(1.4rem, 5vw, 2.4rem);     /* メインの約50% */
-    --catchphrase-size: clamp(0.9rem, 2.5vw, 1.2rem);
+    --main-title-size: clamp(2.4rem, 8vw, 4.0rem);
+    --sub-title-size: clamp(1.2rem, 4vw, 2.0rem);
+    --catchphrase-size: clamp(0.85rem, 2.5vw, 1.1rem);
+    --menu-font-size: clamp(0.9rem, 2vw, 1.1rem);
+    --menu-desc-size: clamp(0.7rem, 1.5vw, 0.9rem);
 }
 
+/* ====== ベース ====== */
 body {
     background-color: #f5f5f5;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     height: 100vh;
     margin: 0;
     padding: 0;
+    overflow: hidden;
 }
 
-/* ====== ヒーローエリア ====== */
+/* ====== ヒーローエリア（50%） ====== */
 .hero-section {
     background: linear-gradient(145deg, #06C755 0%, #049a44 100%);
     color: white;
@@ -31,72 +34,83 @@ body {
     overflow: hidden;
 }
 
-.hero-section::after {
-    content: '🌱';
-    position: absolute;
-    font-size: 120px;
-    opacity: 0.1;
-    bottom: -20px;
-    right: -20px;
-    transform: rotate(15deg);
+/* ----- タイトル + イラスト 横並び ----- */
+.hero-title-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(8px, 3vw, 24px);
+    flex-wrap: wrap;
 }
 
-/* ----- メインタイトル (友助) ----- */
 .hero-main-title {
     font-size: var(--main-title-size);
     font-weight: 700;
     letter-spacing: 4px;
-    margin-bottom: 4px;
+    margin: 0;
     line-height: 1.1;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    text-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-/* ----- サブタイトル (Tomosche) ----- */
+.hero-illustration {
+    width: clamp(80px, 20vw, 150px);
+    height: auto;
+}
+
+.hero-illustration svg {
+    width: 100%;
+    height: auto;
+}
+
+/* ----- サブタイトル ----- */
 .hero-sub-title {
     font-size: var(--sub-title-size);
     font-weight: 400;
     letter-spacing: 2px;
     opacity: 0.9;
-    margin-bottom: 8px;
-    border-bottom: none;
+    margin: 4px 0 6px 0;
 }
 
-/* ----- キャッチコピー ----- */
+/* ----- キャッチコピー（改行禁止） ----- */
 .hero-catchphrase {
     font-size: var(--catchphrase-size);
     opacity: 0.85;
-    margin-bottom: 20px;
-    max-width: 80%;
-    line-height: 1.5;
+    margin: 0 0 16px 0;
+    white-space: nowrap;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ----- ユーザー表示 ----- */
 .hero-user {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255,255,255,0.2);
     backdrop-filter: blur(4px);
-    padding: 8px 20px;
+    padding: 6px 16px;
     border-radius: 999px;
-    font-size: 14px;
+    font-size: clamp(0.75rem, 1.8vw, 1rem);
     font-weight: 500;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
-/* ====== メニューエリア ====== */
+/* ====== メニューエリア（50%） ====== */
 .menu-section {
     height: 50vh;
-    padding: 20px 16px 20px 16px;
+    padding: 16px 14px 12px 14px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     overflow-y: auto;
 }
 
-.menu-card {
+/* ----- メニューカード（共通） ----- */
+.menu-card,
+.logout-button {
     background: white;
     border-radius: 16px;
-    padding: 16px 20px;
+    padding: 14px 18px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     border: none;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -105,10 +119,15 @@ body {
     color: #333;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    font-size: inherit;
+    font-family: inherit;
 }
 
-.menu-card:active {
+.menu-card:active,
+.logout-button:active {
     transform: scale(0.97);
 }
 
@@ -117,38 +136,59 @@ body {
 }
 
 .menu-icon {
-    font-size: 28px;
-    width: 48px;
-    height: 48px;
+    font-size: clamp(22px, 5vw, 28px);
+    width: clamp(40px, 10vw, 48px);
+    height: clamp(40px, 10vw, 48px);
     display: flex;
     align-items: center;
     justify-content: center;
     background: #e8f5e9;
     border-radius: 12px;
     color: #06C755;
+    flex-shrink: 0;
 }
 
-.menu-content { flex: 1; }
-.menu-title { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
-.menu-desc { font-size: 12px; color: #888; margin: 0; }
-.menu-arrow { color: #ccc; font-size: 20px; }
+.menu-content { flex: 1; min-width: 0; }
+.menu-title {
+    font-size: var(--menu-font-size);
+    font-weight: 600;
+    margin-bottom: 1px;
+}
+.menu-desc {
+    font-size: var(--menu-desc-size);
+    color: #888;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.menu-arrow { color: #ccc; font-size: clamp(16px, 4vw, 20px); }
 
-/* プレースホルダー */
-.menu-card-placeholder {
-    background: white;
-    border-radius: 16px;
-    padding: 16px 20px;
-    border: 2px dashed #ddd;
-    color: #bbb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 14px;
-    min-height: 68px;
+/* ----- ログアウトボタン（赤色30%→100%ホバー） ----- */
+.logout-button {
+    background: rgba(255, 0, 0, 0.06);
+    border: 1px solid rgba(255, 0, 0, 0.12);
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
 }
 
-/* ローディング */
+.logout-button .menu-title {
+    color: #e53935;
+}
+
+.logout-button .menu-desc {
+    color: rgba(229, 57, 53, 0.6);
+}
+
+.logout-button:hover {
+    background: rgba(255, 0, 0, 0.30);
+    border-color: rgba(255, 0, 0, 0.4);
+}
+
+.logout-button:active {
+    transform: scale(0.97);
+}
+
+/* ====== ローディング ====== */
 .loading-overlay {
     position: fixed;
     inset: 0;
@@ -161,7 +201,6 @@ body {
     font-size: 16px;
     color: #666;
 }
-
 .spinner {
     width: 40px;
     height: 40px;
@@ -171,39 +210,47 @@ body {
     animation: spin 0.8s linear infinite;
     margin-bottom: 16px;
 }
-
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
 
-/* ログアウト */
-.logout-area {
-    text-align: center;
-    padding: 4px 0 8px 0;
-    font-size: 12px;
-    color: #ccc;
-}
-
-.logout-area a {
-    color: #ccc;
-    text-decoration: none;
-}
-
-/* ====== レスポンシブ ====== */
-@media (max-width: 576px) {
-    .hero-main-title {
-        --main-title-size: clamp(2.4rem, 10vw, 3.6rem);
-    }
-    .hero-sub-title {
-        --sub-title-size: clamp(1.2rem, 4vw, 1.8rem);
-    }
-    .hero-catchphrase {
-        font-size: clamp(0.8rem, 2.5vw, 1.0rem);
-    }
-    .menu-card { padding: 14px 16px; }
-}
-
+/* ====== スクロールバー非表示 ====== */
 .menu-section::-webkit-scrollbar {
     width: 0;
     background: transparent;
+}
+
+/* ====== レスポンシブ（スマホ最適化） ====== */
+@media (max-width: 576px) {
+    .hero-section {
+        border-radius: 0 0 24px 24px;
+    }
+    .menu-section {
+        padding: 12px 10px 10px 10px;
+        gap: 8px;
+    }
+    .menu-card,
+    .logout-button {
+        padding: 12px 14px;
+        border-radius: 12px;
+        gap: 10px;
+    }
+}
+
+/* ====== 超小型スマホ（画面幅320px以下） ====== */
+@media (max-width: 380px) {
+    .hero-title-wrapper {
+        gap: 4px;
+    }
+    .hero-catchphrase {
+        font-size: clamp(0.65rem, 2vw, 0.8rem);
+    }
+    .menu-card,
+    .logout-button {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+    .menu-desc {
+        font-size: 0.6rem;
+    }
 }
