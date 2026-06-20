@@ -21,7 +21,7 @@ body {
 .hero-section {
     background: linear-gradient(145deg, #06C755 0%, #049a44 100%);
     color: white;
-    height: 50vh;
+    height: calc(50vh - 80px);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -97,7 +97,7 @@ body {
 
 /* ====== メニューエリア（50%） ====== */
 .menu-section {
-    height: 50vh;
+    height: calc(50vh - 80px);
     padding: 16px 14px 12px 14px;
     display: flex;
     flex-direction: column;
