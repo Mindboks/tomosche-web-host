@@ -1,15 +1,20 @@
 /* ====== 共通スタイル ====== */
-/* ここにトップページ・全ページ共通のスタイルを記述 */
+:root {
+    /* タイトルサイズ（CSS変数で一元管理） */
+    --main-title-size: clamp(2.8rem, 10vw, 4.8rem);   /* 最小2.8rem、最大4.8rem */
+    --sub-title-size: clamp(1.4rem, 5vw, 2.4rem);     /* メインの約50% */
+    --catchphrase-size: clamp(0.9rem, 2.5vw, 1.2rem);
+}
 
 body {
     background-color: #f5f5f5;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
     height: 100vh;
     margin: 0;
     padding: 0;
 }
 
-/* ヒーローエリア (トップページ専用) */
+/* ====== ヒーローエリア ====== */
 .hero-section {
     background: linear-gradient(145deg, #06C755 0%, #049a44 100%);
     color: white;
@@ -36,11 +41,38 @@ body {
     transform: rotate(15deg);
 }
 
-.hero-icon { font-size: 64px; margin-bottom: 8px; }
-.hero-title { font-size: 32px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
-.hero-subtitle { font-size: 14px; opacity: 0.9; margin-bottom: 16px; }
+/* ----- メインタイトル (友助) ----- */
+.hero-main-title {
+    font-size: var(--main-title-size);
+    font-weight: 700;
+    letter-spacing: 4px;
+    margin-bottom: 4px;
+    line-height: 1.1;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ----- サブタイトル (Tomosche) ----- */
+.hero-sub-title {
+    font-size: var(--sub-title-size);
+    font-weight: 400;
+    letter-spacing: 2px;
+    opacity: 0.9;
+    margin-bottom: 8px;
+    border-bottom: none;
+}
+
+/* ----- キャッチコピー ----- */
+.hero-catchphrase {
+    font-size: var(--catchphrase-size);
+    opacity: 0.85;
+    margin-bottom: 20px;
+    max-width: 80%;
+    line-height: 1.5;
+}
+
+/* ----- ユーザー表示 ----- */
 .hero-user {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(4px);
     padding: 8px 20px;
     border-radius: 999px;
@@ -51,7 +83,7 @@ body {
     gap: 8px;
 }
 
-/* メニューカード */
+/* ====== メニューエリア ====== */
 .menu-section {
     height: 50vh;
     padding: 20px 16px 20px 16px;
@@ -60,6 +92,7 @@ body {
     gap: 12px;
     overflow-y: auto;
 }
+
 .menu-card {
     background: white;
     border-radius: 16px;
@@ -74,7 +107,15 @@ body {
     align-items: center;
     gap: 16px;
 }
-.menu-card:active { transform: scale(0.97); }
+
+.menu-card:active {
+    transform: scale(0.97);
+}
+
+.menu-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
 .menu-icon {
     font-size: 28px;
     width: 48px;
@@ -86,6 +127,7 @@ body {
     border-radius: 12px;
     color: #06C755;
 }
+
 .menu-content { flex: 1; }
 .menu-title { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
 .menu-desc { font-size: 12px; color: #888; margin: 0; }
@@ -119,6 +161,7 @@ body {
     font-size: 16px;
     color: #666;
 }
+
 .spinner {
     width: 40px;
     height: 40px;
@@ -128,6 +171,7 @@ body {
     animation: spin 0.8s linear infinite;
     margin-bottom: 16px;
 }
+
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
@@ -139,14 +183,26 @@ body {
     font-size: 12px;
     color: #ccc;
 }
-.logout-area a { color: #ccc; text-decoration: none; }
 
-/* レスポンシブ */
+.logout-area a {
+    color: #ccc;
+    text-decoration: none;
+}
+
+/* ====== レスポンシブ ====== */
 @media (max-width: 576px) {
-    .hero-title { font-size: 28px; }
-    .hero-icon { font-size: 48px; }
+    .hero-main-title {
+        --main-title-size: clamp(2.4rem, 10vw, 3.6rem);
+    }
+    .hero-sub-title {
+        --sub-title-size: clamp(1.2rem, 4vw, 1.8rem);
+    }
+    .hero-catchphrase {
+        font-size: clamp(0.8rem, 2.5vw, 1.0rem);
+    }
     .menu-card { padding: 14px 16px; }
 }
+
 .menu-section::-webkit-scrollbar {
     width: 0;
     background: transparent;
