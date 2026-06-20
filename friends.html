@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>友達一覧 - Tomosche</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+    <style>
+        /* friends.html 専用スタイル（後でfriends.cssに分離） */
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #06C755;
+        }
+        .friend-list {
+            padding: 16px;
+        }
+        .friend-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .friend-avatar {
+            width: 48px;
+            height: 48px;
+            background: #e8f5e9;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            color: #2e7d32;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .friend-name { font-weight: bold; }
+        .friend-status { font-size: 12px; color: #888; }
+        .status-shared { color: #2e7d32; }
+        .status-pending { color: #ff9800; }
+    </style>
+</head>
+<body>
+    <div class="container py-3">
+        <div class="d-flex align-items-center mb-3">
+            <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
+            <h4 class="mb-0 ms-3">友達一覧</h4>
+        </div>
+
+        <div class="friend-list">
+            <div class="friend-item">
+                <div class="friend-avatar">田</div>
+                <div>
+                    <div class="friend-name">田中 一郎</div>
+                    <div class="friend-status status-shared">✓ カレンダー共有中</div>
+                </div>
+            </div>
+            <div class="friend-item">
+                <div class="friend-avatar">佐</div>
+                <div>
+                    <div class="friend-name">佐藤 花子</div>
+                    <div class="friend-status status-pending">⏳ 招待承認待ち</div>
+                </div>
+            </div>
+            <div class="friend-item">
+                <div class="friend-avatar">鈴</div>
+                <div>
+                    <div class="friend-name">鈴木 誠</div>
+                    <div class="friend-status status-shared">✓ カレンダー共有中</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
