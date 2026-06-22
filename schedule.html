@@ -34,48 +34,87 @@
         .calendar-day:hover { background: #f5f5f5; }
         .calendar-day.other-month { color: #ccc; }
         .calendar-day.today { background: #e8f5e9; font-weight: 700; color: #06C755; }
-        .calendar-day.has-event::after {
+        .calendar-day.has-event-pending::after {
             content: '';
             position: absolute;
             bottom: 4px;
             width: 6px;
             height: 6px;
+            background: #ff9800;
+            border-radius: 50%;
+        }
+        .calendar-day.has-event-confirmed::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            width: 8px;
+            height: 8px;
             background: #06C755;
             border-radius: 50%;
+            box-shadow: 0 0 4px rgba(6,199,85,0.3);
         }
         .calendar-day.selected { background: #06C755; color: white; border-radius: 8px; }
 
-        /* イベントリスト */
         .event-list { margin-top: 16px; background: white; border-radius: 16px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         .event-list-title { font-size: 14px; font-weight: 600; color: #666; margin-bottom: 8px; }
         .event-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
         .event-item:last-child { border-bottom: none; }
-        .event-time { font-size: 12px; color: #06C755; font-weight: 600; min-width: 60px; }
+        .event-time { font-size: 12px; font-weight: 600; min-width: 60px; }
+        .event-time.pending { color: #ff9800; }
+        .event-time.confirmed { color: #06C755; }
         .event-title { font-size: 14px; color: #333; margin-left: 12px; flex: 1; }
         .event-person { font-size: 12px; color: #888; margin-left: 8px; background: #f0f0f0; padding: 2px 10px; border-radius: 999px; }
+        .event-status-badge { font-size: 10px; padding: 2px 8px; border-radius: 999px; margin-left: 8px; }
+        .event-status-badge.pending { background: #fff3e0; color: #e65100; }
+        .event-status-badge.confirmed { background: #e8f5e9; color: #2e7d32; }
         .event-empty { text-align: center; color: #bbb; font-size: 14px; padding: 16px 0; }
 
-        /* 時間選択モーダル */
-        .time-slot { padding: 10px 16px; border: 1px solid #eee; border-radius: 12px; margin: 4px 0; cursor: pointer; transition: all 0.15s; }
-        .time-slot:hover { background: #e8f5e9; border-color: #06C755; }
-        .time-slot.selected { background: #06C755; color: white; border-color: #06C755; }
-        .time-slot-label { font-size: 14px; font-weight: 500; }
-        .time-slot-desc { font-size: 12px; color: #888; }
-        .time-slot.selected .time-slot-desc { color: rgba(255,255,255,0.8); }
+        /* 予定追加モーダル */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center;
+        }
+        .modal-box {
+            background: white; border-radius: 24px; padding: 28px 24px;
+            max-width: 420px; width: 92%; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-box h3 { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 16px; }
+        .modal-box label { font-size: 13px; font-weight: 600; color: #555; margin-top: 12px; display: block; }
+        .modal-box input, .modal-box select, .modal-box textarea {
+            width: 100%; border: 1px solid #ddd; border-radius: 12px;
+            padding: 12px 14px; font-size: 14px; outline: none; margin-top: 4px;
+            transition: border 0.2s;
+        }
+        .modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus {
+            border-color: #06C755;
+        }
+        .friend-select-item {
+            padding: 10px 14px; border: 1px solid #eee; border-radius: 12px;
+            margin: 4px 0; cursor: pointer; transition: all 0.15s;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .friend-select-item:hover { background: #f5f5f5; }
+        .friend-select-item.selected { background: #e8f5e9; border-color: #06C755; }
+        .friend-select-item .avatar {
+            width: 36px; height: 36px; background: #e8f5e9; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: #2e7d32;
+        }
+        .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+        .modal-actions button { flex: 1; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
+        .btn-cancel { background: #f0f0f0; color: #666; }
+        .btn-cancel:hover { background: #e0e0e0; }
+        .btn-primary { background: #06C755; color: white; }
+        .btn-primary:hover { background: #049a44; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .add-event-btn {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #06C755;
-            color: white;
-            border: none;
-            font-size: 32px;
-            box-shadow: 0 4px 20px rgba(6, 199, 85, 0.4);
-            z-index: 100;
+            position: fixed; bottom: 24px; right: 24px;
+            width: 60px; height: 60px; border-radius: 50%;
+            background: #06C755; color: white; border: none; font-size: 32px;
+            box-shadow: 0 4px 20px rgba(6,199,85,0.4); z-index: 100;
             transition: all 0.2s;
         }
         .add-event-btn:active { transform: scale(0.9); }
@@ -104,67 +143,85 @@
 
     <button class="add-event-btn" id="addEventBtn"><i class="bi bi-plus-lg"></i></button>
 
-    <!-- 時間選択モーダル -->
-    <div id="timeModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 24px; padding: 28px 24px; max-width: 400px; width: 92%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="font-size: 18px; font-weight: 700; color: #333; margin: 0;" id="timeModalTitle">⏰ 時間を選択</h3>
-                <button onclick="closeTimeModal()" style="background: none; border: none; font-size: 28px; color: #ccc; cursor: pointer;">×</button>
+    <!-- ====== 予定追加モーダル ====== -->
+    <div class="modal-overlay" id="addEventModal">
+        <div class="modal-box">
+            <h3>📝 新しい予定</h3>
+            <p style="font-size: 13px; color: #888;" id="modalSelectedDate">2026年6月23日</p>
+
+            <label>👤 友達を選択</label>
+            <div id="friendSelectList">
+                <!-- JavaScriptで動的生成 -->
             </div>
-            <p style="font-size: 13px; color: #888; margin-bottom: 12px;" id="timeModalDate">2026年6月23日</p>
-            <div id="timeSlotList" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;"></div>
-            <div style="margin-top: 16px; display: flex; gap: 12px;">
-                <button onclick="closeTimeModal()" style="flex: 1; background: #f0f0f0; border: none; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: #666; cursor: pointer;">キャンセル</button>
-                <button onclick="confirmTimeSelect()" style="flex: 1; background: #06C755; border: none; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: white; cursor: pointer;" id="timeConfirmBtn">予定を追加</button>
+
+            <label>📌 予定名</label>
+            <input type="text" id="eventTitleInput" placeholder="例：ランチ、ミーティング..." />
+
+            <label>⏰ 時間</label>
+            <input type="time" id="eventTimeInput" step="900" />
+
+            <label>📝 メモ（任意）</label>
+            <textarea id="eventNoteInput" rows="2" placeholder="詳細があれば入力してください..."></textarea>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeAddEventModal()">キャンセル</button>
+                <button class="btn-primary" id="confirmAddEventBtn" onclick="confirmAddEvent()" disabled>送信する</button>
             </div>
-            <div id="timeStatus" style="margin-top: 12px; font-size: 13px; text-align: center; display: none;"></div>
+            <div id="addEventStatus" style="margin-top: 12px; font-size: 13px; text-align: center; display: none;"></div>
+        </div>
+    </div>
+
+    <!-- ====== 相手OK確認ポップアップ（仮） ====== -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-box" style="text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 12px;">📨</div>
+            <h3 id="confirmModalTitle">予定の確認</h3>
+            <p id="confirmModalDesc" style="font-size: 14px; color: #555; margin: 8px 0 16px 0;"></p>
+            <div style="display: flex; gap: 12px;">
+                <button onclick="closeConfirmModal()" class="btn-cancel" style="flex:1; padding:12px; border-radius:999px; border:none; font-weight:600;">キャンセル</button>
+                <button onclick="confirmOK()" class="btn-primary" style="flex:1; padding:12px; border-radius:999px; border:none; font-weight:600; color:white;">OK</button>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/app.js"></script>
     <script>
+        // ====== 状態 ======
         let currentDate = new Date();
         let currentYear = currentDate.getFullYear();
         let currentMonth = currentDate.getMonth();
         let selectedDate = null;
-        let selectedTime = null;
         let currentUserName = '';
+        let selectedFriend = null;
 
-        // ====== サンプル予定データ（名前付き） ======
+        // ====== サンプル友達データ ======
+        const sampleFriends = [
+            { id: 1, name: '田中 一郎', initial: '田' },
+            { id: 2, name: '佐藤 花子', initial: '佐' },
+            { id: 3, name: '鈴木 誠', initial: '鈴' },
+            { id: 4, name: '山田 太郎', initial: '山' },
+        ];
+
+        // ====== サンプル予定データ（ステータス付き） ======
         const sampleEvents = {
             '2026-06-23': [
-                { time: '09:00', title: '朝のミーティング', person: '田中 一郎' },
-                { time: '13:30', title: 'カレンダー共有設定', person: '佐藤 花子' }
+                { time: '09:00', title: '朝のミーティング', person: '田中 一郎', status: 'confirmed' },
+                { time: '13:30', title: 'カレンダー共有設定', person: '佐藤 花子', status: 'pending' }
             ],
             '2026-06-25': [
-                { time: '14:00', title: 'プロジェクト打ち合わせ', person: '鈴木 誠' }
+                { time: '14:00', title: 'プロジェクト打ち合わせ', person: '鈴木 誠', status: 'confirmed' }
             ],
             '2026-06-28': [
-                { time: '10:00', title: '友達とランチ', person: '山田 太郎' },
-                { time: '15:45', title: '資料作成', person: '自分' }
+                { time: '10:00', title: '友達とランチ', person: '山田 太郎', status: 'pending' },
+                { time: '15:45', title: '資料作成', person: '自分', status: 'confirmed' }
             ]
         };
-
-        // ====== 15分刻みの時間スロット生成 ======
-        function generateTimeSlots() {
-            const slots = [];
-            for (let h = 0; h < 24; h++) {
-                for (let m = 0; m < 60; m += 15) {
-                    const hour = String(h).padStart(2, '0');
-                    const min = String(m).padStart(2, '0');
-                    slots.push(`${hour}:${min}`);
-                }
-            }
-            return slots;
-        }
-        const TIME_SLOTS = generateTimeSlots();
 
         // ====== カレンダー描画 ======
         function renderCalendar(year, month) {
             const grid = document.getElementById('calendarGrid');
-            const title = document.getElementById('calendarTitle');
-            title.textContent = `${year}年 ${month + 1}月`;
+            document.getElementById('calendarTitle').textContent = `${year}年 ${month + 1}月`;
 
             const firstDay = new Date(year, month, 1).getDay();
             const lastDate = new Date(year, month + 1, 0).getDate();
@@ -179,15 +236,17 @@
 
             const today = new Date();
             for (let d = 1; d <= lastDate; d++) {
-                const dateObj = new Date(year, month, d);
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const isToday = (year === today.getFullYear() && month === today.getMonth() && d === today.getDate());
-                const hasEvent = sampleEvents[dateStr] && sampleEvents[dateStr].length > 0;
+                const events = sampleEvents[dateStr] || [];
+                const hasPending = events.some(e => e.status === 'pending');
+                const hasConfirmed = events.some(e => e.status === 'confirmed');
                 const isSelected = (selectedDate === dateStr);
 
                 let classes = 'calendar-day';
                 if (isToday) classes += ' today';
-                if (hasEvent) classes += ' has-event';
+                if (hasPending) classes += ' has-event-pending';
+                if (hasConfirmed) classes += ' has-event-confirmed';
                 if (isSelected) classes += ' selected';
 
                 html += `<div class="${classes}" data-date="${dateStr}" data-day="${d}">${d}</div>`;
@@ -211,7 +270,7 @@
             });
         }
 
-        // ====== 予定一覧描画（時系列ソート） ======
+        // ====== 予定一覧描画 ======
         function renderEvents(dateStr) {
             const container = document.getElementById('eventListContent');
             const events = (sampleEvents[dateStr] || []).slice().sort((a, b) => a.time.localeCompare(b.time));
@@ -223,81 +282,155 @@
 
             let html = '';
             events.forEach(e => {
+                const statusClass = e.status === 'confirmed' ? 'confirmed' : 'pending';
+                const statusLabel = e.status === 'confirmed' ? '✅ 確定' : '⏳ 承認待ち';
                 const personLabel = e.person ? `<span class="event-person">👤 ${e.person}</span>` : '';
                 html += `
                     <div class="event-item">
-                        <span class="event-time">${e.time}</span>
+                        <span class="event-time ${statusClass}">${e.time}</span>
                         <span class="event-title">${e.title}</span>
                         ${personLabel}
+                        <span class="event-status-badge ${statusClass}">${statusLabel}</span>
                     </div>
                 `;
             });
             container.innerHTML = html;
         }
 
-        // ====== 時間選択モーダル ======
-        let selectedTimeSlot = null;
+        // ====== 予定追加モーダル ======
+        function openAddEventModal() {
+            if (!selectedDate) {
+                alert('📅 まずカレンダーから日付を選択してください。');
+                return;
+            }
 
-        function openTimeModal(dateStr) {
-            selectedTimeSlot = null;
-            selectedDate = dateStr;
-            const dateObj = new Date(dateStr + 'T00:00:00');
-            document.getElementById('timeModalTitle').textContent = '⏰ 時間を選択';
-            document.getElementById('timeModalDate').textContent = `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`;
+            selectedFriend = null;
+            document.getElementById('modalSelectedDate').textContent = selectedDate;
+            document.getElementById('eventTitleInput').value = '';
+            document.getElementById('eventTimeInput').value = '';
+            document.getElementById('eventNoteInput').value = '';
+            document.getElementById('addEventStatus').style.display = 'none';
+            document.getElementById('confirmAddEventBtn').disabled = true;
 
-            const list = document.getElementById('timeSlotList');
+            // 友達リストを表示
+            const list = document.getElementById('friendSelectList');
             list.innerHTML = '';
-            TIME_SLOTS.forEach(time => {
+            sampleFriends.forEach(f => {
                 const div = document.createElement('div');
-                div.className = 'time-slot';
-                div.innerHTML = `<div class="time-slot-label">${time}</div><div class="time-slot-desc">クリックで選択</div>`;
-                div.dataset.time = time;
+                div.className = 'friend-select-item';
+                div.innerHTML = `
+                    <div class="avatar">${f.initial}</div>
+                    <div>${f.name}</div>
+                `;
+                div.dataset.friendId = f.id;
+                div.dataset.friendName = f.name;
                 div.addEventListener('click', function() {
-                    list.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+                    list.querySelectorAll('.friend-select-item').forEach(el => el.classList.remove('selected'));
                     this.classList.add('selected');
-                    selectedTimeSlot = time;
-                    document.getElementById('timeConfirmBtn').style.opacity = '1';
-                    document.getElementById('timeStatus').style.display = 'none';
+                    selectedFriend = {
+                        id: parseInt(this.dataset.friendId),
+                        name: this.dataset.friendName
+                    };
+                    document.getElementById('confirmAddEventBtn').disabled = false;
                 });
                 list.appendChild(div);
             });
 
-            document.getElementById('timeModal').style.display = 'flex';
-            document.getElementById('timeConfirmBtn').style.opacity = '0.5';
-            document.getElementById('timeStatus').style.display = 'none';
+            document.getElementById('addEventModal').style.display = 'flex';
         }
 
-        function closeTimeModal() {
-            document.getElementById('timeModal').style.display = 'none';
+        function closeAddEventModal() {
+            document.getElementById('addEventModal').style.display = 'none';
         }
 
-        function confirmTimeSelect() {
-            const status = document.getElementById('timeStatus');
-            if (!selectedTimeSlot) {
+        function confirmAddEvent() {
+            const title = document.getElementById('eventTitleInput').value.trim();
+            const time = document.getElementById('eventTimeInput').value;
+            const note = document.getElementById('eventNoteInput').value.trim();
+            const status = document.getElementById('addEventStatus');
+
+            if (!selectedFriend) {
+                status.style.display = 'block';
+                status.style.color = '#e53935';
+                status.textContent = '👤 友達を選択してください。';
+                return;
+            }
+            if (!title) {
+                status.style.display = 'block';
+                status.style.color = '#e53935';
+                status.textContent = '📌 予定名を入力してください。';
+                return;
+            }
+            if (!time) {
                 status.style.display = 'block';
                 status.style.color = '#e53935';
                 status.textContent = '⏰ 時間を選択してください。';
                 return;
             }
 
-            // 予定を追加（サンプル）
-            const dateStr = selectedDate;
-            if (!sampleEvents[dateStr]) sampleEvents[dateStr] = [];
-            sampleEvents[dateStr].push({
-                time: selectedTimeSlot,
-                title: '新しい予定',
-                person: currentUserName || '自分'
+            // 予定を追加（ステータス: pending）
+            if (!sampleEvents[selectedDate]) sampleEvents[selectedDate] = [];
+            sampleEvents[selectedDate].push({
+                time: time,
+                title: title,
+                person: selectedFriend.name,
+                note: note,
+                status: 'pending'
             });
 
             status.style.display = 'block';
             status.style.color = '#06C755';
-            status.textContent = '✅ 予定を追加しました！';
+            status.textContent = `✅ ${selectedFriend.name}さんに予定申請を送信しました！`;
+
+            // LINEで友達に通知（実際はMessaging APIを使用）
+            sendNotificationToFriend(selectedFriend.name, title, time, selectedDate);
 
             setTimeout(() => {
-                closeTimeModal();
+                closeAddEventModal();
                 renderCalendar(currentYear, currentMonth);
                 renderEvents(selectedDate);
-            }, 800);
+            }, 1200);
+        }
+
+        // ====== LINE通知（仮） ======
+        function sendNotificationToFriend(friendName, title, time, date) {
+            console.log(`📨 ${friendName}さんに通知: ${date} ${time} - ${title}`);
+            // 実際はLINE Messaging APIを使用して友達にメッセージを送信
+            // ここではコンソールに出力するだけ（後で実装）
+        }
+
+        // ====== 相手OK確認ポップアップ ======
+        function openConfirmModal(eventData) {
+            document.getElementById('confirmModalTitle').textContent = `📨 ${eventData.person}さんからの予定申請`;
+            document.getElementById('confirmModalDesc').textContent =
+                `${eventData.date} ${eventData.time} - ${eventData.title}\n承諾しますか？`;
+            document.getElementById('confirmModal').style.display = 'flex';
+            // データを一時保存
+            window._pendingEvent = eventData;
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
+        function confirmOK() {
+            const eventData = window._pendingEvent;
+            if (eventData) {
+                // ステータスを confirmed に変更
+                const events = sampleEvents[eventData.date] || [];
+                const target = events.find(e =>
+                    e.time === eventData.time &&
+                    e.title === eventData.title &&
+                    e.person === eventData.person
+                );
+                if (target) {
+                    target.status = 'confirmed';
+                    renderCalendar(currentYear, currentMonth);
+                    renderEvents(selectedDate);
+                }
+            }
+            closeConfirmModal();
+            alert('✅ 予定を承諾しました！カレンダーに反映されました。');
         }
 
         // ====== イベントリスナー ======
@@ -313,17 +446,18 @@
             renderCalendar(currentYear, currentMonth);
         });
 
-        document.getElementById('addEventBtn').addEventListener('click', () => {
-            if (!selectedDate) {
-                alert('📅 まずカレンダーから日付を選択してください。');
-                return;
-            }
-            openTimeModal(selectedDate);
+        document.getElementById('addEventBtn').addEventListener('click', openAddEventModal);
+
+        document.getElementById('addEventModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAddEventModal();
         });
 
-        document.getElementById('timeModal').addEventListener('click', function(e) {
-            if (e.target === this) closeTimeModal();
+        document.getElementById('confirmModal').addEventListener('click', function(e) {
+            if (e.target === this) closeConfirmModal();
         });
+
+        // ====== デモ：予定をクリックしたら承諾ポップアップ（開発用） ======
+        // 実際は友達からの通知を受け取った時に開く
 
         // ====== 起動 ======
         document.addEventListener('DOMContentLoaded', async () => {
@@ -335,6 +469,18 @@
             selectedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
             renderCalendar(currentYear, currentMonth);
             renderEvents(selectedDate);
+
+            // デモ用：3秒後に承諾ポップアップを表示（テスト用）
+            // 実際は友達からの通知で開く
+            setTimeout(() => {
+                // 開発中はコメントアウトしておく
+                // openConfirmModal({
+                //     date: '2026-06-23',
+                //     time: '13:30',
+                //     title: 'カレンダー共有設定',
+                //     person: '佐藤 花子'
+                // });
+            }, 5000);
         });
     </script>
 </body>
