@@ -227,12 +227,15 @@
         <span>|</span>
         <a href="terms.html" id="termsLink">利用規約</a>
     </div>
-    <script src="js/config.js"></script>
-    <script>
-        // バージョン表示を一元化
-        document.querySelectorAll('.version-text').forEach(el => {
-            el.textContent = APP_CONFIG.appName + ' ' + APP_CONFIG.version;
-        });
-    </script>
+<div style="text-align: center; padding: 4px 0 16px 0; font-size: 10px; color: #ccc;">
+    <span id="versionDisplay"></span>
+</div>
+<script src="js/config.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const el = document.getElementById("versionDisplay");
+        if (el) el.textContent = getFullVersion();
+    });
+</script>
 </body>
 </html>
