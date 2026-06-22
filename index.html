@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>友助 - Tomosche</title>
-    
+    <title id="pageTitle">友助 - Tomosche</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
@@ -14,15 +13,14 @@
 
     <div id="loadingOverlay" class="loading-overlay">
         <div class="spinner"></div>
-        <div>読み込み中...</div>
+        <div id="loadingText">読み込み中...</div>
     </div>
 
     <div id="mainContent" style="display: none;">
-
-        <!-- ====== ヒーローエリア ====== -->
+        <!-- ヒーローエリア -->
         <div class="hero-section">
             <div class="hero-title-wrapper">
-                <h1 class="hero-main-title">友助</h1>
+                <h1 class="hero-main-title" id="appName">友助</h1>
                 <div class="hero-illustration">
                     <svg viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: scale(1.5); transform-origin: center;">
                         <circle cx="20" cy="20" r="10" stroke="white" stroke-width="2" fill="none"/>
@@ -44,22 +42,22 @@
                         <path d="M96 24 Q100 28 104 24" stroke="white" stroke-width="1.5" fill="none"/>
                     </svg>
                 </div>
-                <h2 class="hero-sub-title">Tomosche</h2>
+                <h2 class="hero-sub-title" id="subTitle">Tomosche</h2>
             </div>
-            <p class="hero-catchphrase">大切な人と、大切な時間を、もっとスムーズに。</p>
+            <p class="hero-catchphrase" id="tagline">大切な人と、大切な時間を、もっとスムーズに。</p>
             <div class="hero-user">
                 <i class="bi bi-person-circle"></i>
                 <span id="userName">読み込み中...</span>
             </div>
         </div>
 
-        <!-- ====== メニューエリア ====== -->
+        <!-- メニュー -->
         <div class="menu-section">
             <a href="friends.html" class="menu-card">
                 <div class="menu-icon"><i class="bi bi-people"></i></div>
                 <div class="menu-content">
-                    <div class="menu-title">友達一覧</div>
-                    <p class="menu-desc">登録済みの友達を確認・管理</p>
+                    <div class="menu-title" id="menuFriends">友達一覧</div>
+                    <p class="menu-desc" id="menuFriendsDesc">登録済みの友達を確認・管理</p>
                 </div>
                 <div class="menu-arrow"><i class="bi bi-chevron-right"></i></div>
             </a>
@@ -67,8 +65,8 @@
             <a href="add_friends.html" class="menu-card">
                 <div class="menu-icon"><i class="bi bi-person-plus"></i></div>
                 <div class="menu-content">
-                    <div class="menu-title">友達追加</div>
-                    <p class="menu-desc">QRコードで友達を招待</p>
+                    <div class="menu-title" id="menuAdd">友達追加</div>
+                    <p class="menu-desc" id="menuAddDesc">QRコードで友達を招待</p>
                 </div>
                 <div class="menu-arrow"><i class="bi bi-chevron-right"></i></div>
             </a>
@@ -76,50 +74,48 @@
             <a href="schedule.html" class="menu-card">
                 <div class="menu-icon"><i class="bi bi-calendar-event"></i></div>
                 <div class="menu-content">
-                    <div class="menu-title">スケジュール</div>
-                    <p class="menu-desc">予定の追加・変更・確認</p>
+                    <div class="menu-title" id="menuSchedule">スケジュール</div>
+                    <p class="menu-desc" id="menuScheduleDesc">予定の追加・変更・確認</p>
                 </div>
                 <div class="menu-arrow"><i class="bi bi-chevron-right"></i></div>
             </a>
 
-            <!-- ====== フィードバックボタン ====== -->
             <button onclick="openFeedback()" class="menu-card feedback-btn" style="background: rgba(255, 193, 7, 0.06); border: 1px solid rgba(255, 193, 7, 0.15); width: 100%; text-align: left;">
                 <div class="menu-icon" style="background: rgba(255, 193, 7, 0.12); color: #f9a825;">
                     <i class="bi bi-chat-dots"></i>
                 </div>
                 <div class="menu-content">
-                    <div class="menu-title" style="color: #f9a825;">お問い合わせ・フィードバック</div>
-                    <p class="menu-desc">ご意見・ご要望をお聞かせください</p>
+                    <div class="menu-title" style="color: #f9a825;" id="menuFeedback">お問い合わせ・フィードバック</div>
+                    <p class="menu-desc" id="menuFeedbackDesc">ご意見・ご要望をお聞かせください</p>
                 </div>
                 <div class="menu-arrow"><i class="bi bi-chevron-right"></i></div>
             </button>
 
-            <!-- ====== ログアウトボタン ====== -->
             <button id="logoutBtn" class="logout-button">
                 <div class="menu-icon" style="background: rgba(255,0,0,0.1); color: #e53935;">
                     <i class="bi bi-box-arrow-right"></i>
                 </div>
                 <div class="menu-content">
-                    <div class="menu-title" style="color: #e53935;">ログアウト</div>
-                    <p class="menu-desc">アカウントからログアウトします</p>
+                    <div class="menu-title" style="color: #e53935;" id="logoutLabel">ログアウト</div>
+                    <p class="menu-desc" id="logoutDesc">アカウントからログアウトします</p>
                 </div>
                 <div class="menu-arrow"><i class="bi bi-chevron-right"></i></div>
             </button>
         </div>
     </div>
 
-    <!-- ====== フィードバックモーダル ====== -->
+    <!-- フィードバックモーダル -->
     <div id="feedbackModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
         <div style="background: white; border-radius: 24px; padding: 28px 24px; max-width: 420px; width: 92%; margin: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="font-size: 18px; font-weight: 700; color: #333; margin: 0;">📝 お問い合わせ・フィードバック</h3>
+                <h3 style="font-size: 18px; font-weight: 700; color: #333; margin: 0;" id="feedbackTitle">📝 お問い合わせ・フィードバック</h3>
                 <button onclick="closeFeedback()" style="background: none; border: none; font-size: 28px; color: #ccc; cursor: pointer;">×</button>
             </div>
-            <p style="font-size: 13px; color: #888; margin-bottom: 16px;">ご意見・ご要望・不具合報告など、何でもお聞かせください。</p>
+            <p style="font-size: 13px; color: #888; margin-bottom: 16px;" id="feedbackDesc">ご意見・ご要望・不具合報告など、何でもお聞かせください。</p>
             <textarea id="feedbackMessage" rows="5" style="width: 100%; border: 1px solid #ddd; border-radius: 12px; padding: 14px; font-size: 14px; resize: vertical; outline: none;" placeholder="メッセージを入力してください..."></textarea>
             <div style="display: flex; gap: 12px; margin-top: 16px;">
-                <button onclick="closeFeedback()" style="flex: 1; background: #f0f0f0; border: none; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: #666; cursor: pointer;">キャンセル</button>
-                <button onclick="submitFeedback()" style="flex: 1; background: #06C755; border: none; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: white; cursor: pointer;">送信する</button>
+                <button onclick="closeFeedback()" style="flex: 1; background: #f0f0f0; border: none; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: #666; cursor: pointer;" id="feedbackCancelBtn">キャンセル</button>
+                <button onclick="submitFeedback()" style="flex: 1; background: #06C755; border: none; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: white; cursor: pointer;" id="feedbackSendBtn">送信する</button>
             </div>
             <div id="feedbackStatus" style="margin-top: 12px; font-size: 13px; text-align: center; display: none;"></div>
         </div>
@@ -127,6 +123,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/i18n.js"></script>
     <script>
         function openFeedback() {
             document.getElementById('feedbackModal').style.display = 'flex';
@@ -145,7 +142,14 @@
             if (!message) {
                 status.style.display = 'block';
                 status.style.color = '#e53935';
-                status.textContent = 'メッセージを入力してください。';
+                status.textContent = t('feedback_required');
+                return;
+            }
+
+            if (message.length < 5) {
+                status.style.display = 'block';
+                status.style.color = '#e53935';
+                status.textContent = t('feedback_too_short');
                 return;
             }
 
@@ -163,11 +167,11 @@
                 });
 
                 status.style.color = '#06C755';
-                status.textContent = '✅ 送信しました！ありがとうございます。';
+                status.textContent = t('feedback_success');
                 setTimeout(closeFeedback, 1500);
             } catch (err) {
                 status.style.color = '#e53935';
-                status.textContent = '❌ 送信失敗しました。再試行してください。';
+                status.textContent = t('feedback_error');
             }
         }
 
@@ -175,7 +179,36 @@
             if (e.target === this) closeFeedback();
         });
 
+        // ====== 多言語適用 ======
+        function applyTranslations() {
+            const el = (id) => document.getElementById(id);
+            const setText = (id, key) => { const e = el(id); if (e) e.textContent = t(key); };
+            const setPlaceholder = (id, key) => { const e = el(id); if (e) e.placeholder = t(key); };
+
+            setText('loadingText', 'loading');
+            setText('appName', 'app_name');
+            setText('subTitle', 'app_name');
+            setText('tagline', 'tagline');
+            setText('menuFriends', 'menu_friends');
+            setText('menuFriendsDesc', 'menu_friends_desc');
+            setText('menuAdd', 'menu_add');
+            setText('menuAddDesc', 'menu_add_desc');
+            setText('menuSchedule', 'menu_schedule');
+            setText('menuScheduleDesc', 'menu_schedule_desc');
+            setText('menuFeedback', 'menu_feedback');
+            setText('menuFeedbackDesc', 'menu_feedback_desc');
+            setText('logoutLabel', 'logout');
+            setText('logoutDesc', 'logout_desc');
+            setText('feedbackTitle', 'feedback_title');
+            setText('feedbackDesc', 'feedback_desc');
+            setPlaceholder('feedbackMessage', 'feedback_placeholder');
+            setText('feedbackCancelBtn', 'feedback_cancel');
+            setText('feedbackSendBtn', 'feedback_send');
+            document.title = t('app_name') + ' - ' + t('tagline');
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
+            applyTranslations();
             const success = await initLiff();
             if (success) {
                 setUserName('userName');
@@ -190,9 +223,10 @@
     </script>
 
     <div class="footer-links">
-        <a href="privacy.html">プライバシーポリシー</a>
+        <a href="privacy.html" id="privacyLink">プライバシーポリシー</a>
         <span>|</span>
-        <a href="terms.html">利用規約</a>
+        <a href="terms.html" id="termsLink">利用規約</a>
     </div>
+    <div style="text-align: center; padding: 4px 0 16px 0; font-size: 10px; color: #ccc;" id="versionText">Tomosche v0.0.0</div>
 </body>
 </html>

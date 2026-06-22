@@ -3,375 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>友達一覧 - Tomosche</title>
+    <title id="pageTitle">友達一覧 - Tomosche</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     <style>
-        /* friends.html 専用スタイル */
-        .back-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #06C755;
-            padding: 0;
-            margin-right: 8px;
-        }
-        .page-title {
-            font-size: clamp(1.2rem, 4vw, 1.8rem);
-            font-weight: 600;
-            margin: 0;
-            color: #333;
-        }
-        .friend-list {
-            padding: 8px 0;
-        }
-        .friend-item {
-            display: flex;
-            align-items: center;
-            padding: 14px 0;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background 0.2s;
-        }
-        .friend-item:hover {
-            background: #fafafa;
-        }
-        .friend-avatar {
-            width: 48px;
-            height: 48px;
-            background: #e8f5e9;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 14px;
-            color: #2e7d32;
-            font-weight: bold;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-        .friend-info {
-            flex: 1;
-            min-width: 0;
-        }
-        .friend-name {
-            font-weight: 600;
-            font-size: clamp(0.95rem, 2.5vw, 1.1rem);
-        }
-        .friend-status {
-            font-size: clamp(0.7rem, 1.8vw, 0.85rem);
-            margin-top: 2px;
-        }
+        .back-btn { background: none; border: none; font-size: 24px; color: #06C755; padding: 0; margin-right: 8px; }
+        .page-title { font-size: clamp(1.2rem, 4vw, 1.8rem); font-weight: 600; margin: 0; color: #333; }
+        .friend-list { padding: 8px 0; }
+        .friend-item { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid #f0f0f0; }
+        .friend-item:hover { background: #fafafa; }
+        .friend-avatar { width: 48px; height: 48px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 14px; color: #2e7d32; font-weight: bold; font-size: 18px; flex-shrink: 0; }
+        .friend-info { flex: 1; min-width: 0; }
+        .friend-name { font-weight: 600; font-size: clamp(0.95rem, 2.5vw, 1.1rem); }
+        .friend-status { font-size: clamp(0.7rem, 1.8vw, 0.85rem); margin-top: 2px; }
         .status-shared { color: #2e7d32; }
         .status-pending { color: #ff9800; }
-        .delete-btn {
-            background: none;
-            border: none;
-            color: #ccc;
-            font-size: clamp(18px, 4vw, 24px);
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 50%;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-            margin-left: 4px;
-        }
-        .delete-btn:hover {
-            color: #e53935;
-            background: rgba(229, 57, 53, 0.08);
-        }
-        .delete-btn:active {
-            transform: scale(0.85);
-        }
-
-        /* 削除確認モーダル（カスタム） */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            animation: fadeIn 0.2s ease;
-        }
-        .modal-box {
-            background: white;
-            border-radius: 24px;
-            padding: 32px 28px 28px 28px;
-            max-width: 360px;
-            width: 90%;
-            text-align: center;
-            animation: slideUp 0.25s ease;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-        }
-        .modal-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-            color: #e53935;
-        }
-        .modal-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 8px;
-        }
-        .modal-desc {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 24px;
-            line-height: 1.5;
-        }
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-        }
-        .modal-btn {
-            padding: 10px 28px;
-            border-radius: 999px;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-width: 100px;
-        }
-        .modal-btn-cancel {
-            background: #f0f0f0;
-            color: #666;
-        }
-        .modal-btn-cancel:hover {
-            background: #e0e0e0;
-        }
-        .modal-btn-delete {
-            background: #e53935;
-            color: white;
-        }
-        .modal-btn-delete:hover {
-            background: #c62828;
-            transform: scale(1.02);
-        }
-        .modal-btn-delete:active {
-            transform: scale(0.95);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes slideUp {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        /* 空の状態 */
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #999;
-        }
-        .empty-state i {
-            font-size: 48px;
-            color: #ddd;
-        }
-        .empty-state p {
-            margin-top: 12px;
-            font-size: 14px;
-        }
+        .delete-btn { background: none; border: none; color: #ccc; font-size: clamp(18px, 4vw, 24px); cursor: pointer; padding: 8px; border-radius: 50%; transition: all 0.2s ease; flex-shrink: 0; }
+        .delete-btn:hover { color: #e53935; background: rgba(229,57,53,0.08); }
+        .delete-btn:active { transform: scale(0.85); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .modal-box { background: white; border-radius: 24px; padding: 32px 28px 28px 28px; max-width: 360px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .modal-icon { font-size: 48px; margin-bottom: 12px; color: #e53935; }
+        .modal-title { font-size: 20px; font-weight: 700; color: #333; margin-bottom: 8px; }
+        .modal-desc { font-size: 14px; color: #666; margin-bottom: 24px; line-height: 1.5; }
+        .modal-actions { display: flex; gap: 12px; justify-content: center; }
+        .modal-btn { padding: 10px 28px; border-radius: 999px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; min-width: 100px; }
+        .modal-btn-cancel { background: #f0f0f0; color: #666; }
+        .modal-btn-cancel:hover { background: #e0e0e0; }
+        .modal-btn-delete { background: #e53935; color: white; }
+        .modal-btn-delete:hover { background: #c62828; transform: scale(1.02); }
+        .modal-btn-delete:active { transform: scale(0.95); }
+        .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+        .empty-state i { font-size: 48px; color: #ddd; }
+        .empty-state p { margin-top: 12px; font-size: 14px; }
+        .custom-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 12px; font-size: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 99999; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
     </style>
 </head>
 <body>
     <div class="container py-3">
-        <!-- ヘッダー -->
         <div class="d-flex align-items-center mb-3">
             <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
-            <h1 class="page-title">友達一覧</h1>
+            <h1 class="page-title" id="friendsTitle">友達一覧</h1>
         </div>
-
-        <!-- 友達リスト -->
-        <div id="friendListContainer" class="friend-list">
-            <!-- 動的に生成 -->
-        </div>
+        <div id="friendListContainer" class="friend-list"></div>
     </div>
-
-    <!-- 削除確認モーダル（動的生成） -->
     <div id="deleteModalContainer"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/i18n.js"></script>
     <script>
-        // ============================================================
-        // サンプルデータ（後でFirestoreから取得）
-        // ============================================================
-        const sampleFriends = [
-            { id: 1, name: '田中 一郎', initial: '田', status: 'shared', statusLabel: '✓ カレンダー共有中' },
-            { id: 2, name: '佐藤 花子', initial: '佐', status: 'pending', statusLabel: '⏳ 招待承認待ち' },
-            { id: 3, name: '鈴木 誠', initial: '鈴', status: 'shared', statusLabel: '✓ カレンダー共有中' },
+        // ====== サンプルデータ（多言語ソート対応） ======
+        const rawFriends = [
+            '青山 隆','赤井 美香','秋山 健太','浅野 裕子','安藤 誠',
+            '石井 秀樹','伊藤 真由美','井上 達也','岩崎 千尋','上田 公平',
+            '遠藤 翔太','大川 さやか','大野 浩二','岡田 奈々','小川 和也',
+            '加藤 彩乃','河野 哲也','木村 直人','工藤 明日香','久保 優子',
+            '小林 正明','佐々木 健','佐藤 花子','鈴木 誠','関 健一',
+            '高橋 美咲','田中 一郎','谷口 真由','千葉 翔','中村 みな',
+            '中山 聖也','西村 好美','野口 大輔','長谷川 陽子','浜田 健吾',
+            '林 香織','原田 博之','日高 宏','平野 奈緒','藤田 理沙',
+            '古川 正人','細川 裕太','前田 夏美','松本 勇気','三浦 優希',
+            '宮崎 綾','村上 真一','森 萌','山田 太郎','渡辺 美咲'
         ];
 
-        // ============================================================
-        // 削除確認モーダルを表示
-        // ============================================================
-        function showDeleteModal(friendId, friendName, onConfirm) {
-            const container = document.getElementById('deleteModalContainer');
-            
-            const modalHtml = `
-                <div class="modal-overlay" id="deleteModalOverlay">
-                    <div class="modal-box">
-                        <div class="modal-icon"><i class="bi bi-exclamation-triangle"></i></div>
-                        <div class="modal-title">友達を削除しますか？</div>
-                        <div class="modal-desc">
-                            「<strong>${friendName}</strong>」さんを友達一覧から削除します。<br>
-                            この操作は元に戻せません。
-                        </div>
-                        <div class="modal-actions">
-                            <button class="modal-btn modal-btn-cancel" id="modalCancelBtn">キャンセル</button>
-                            <button class="modal-btn modal-btn-delete" id="modalConfirmBtn">削除する</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            container.innerHTML = modalHtml;
+        let sampleFriends = rawFriends.map((name, index) => ({
+            id: index + 1,
+            name: name,
+            initial: name.charAt(0),
+            status: index % 3 === 0 ? 'shared' : 'pending'
+        }));
 
-            // イベントリスナー
-            const overlay = document.getElementById('deleteModalOverlay');
-            const cancelBtn = document.getElementById('modalCancelBtn');
-            const confirmBtn = document.getElementById('modalConfirmBtn');
-
-            function closeModal() {
-                container.innerHTML = '';
-            }
-
-            cancelBtn.addEventListener('click', closeModal);
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) closeModal();
-            });
-
-            confirmBtn.addEventListener('click', () => {
-                onConfirm();
-                closeModal();
-            });
+        function getStatusLabel(status) {
+            return status === 'shared' ? t('friends_status_shared') : t('friends_status_pending');
         }
 
-        // ============================================================
-        // 友達リストをレンダリング
-        // ============================================================
+        function getStatusClass(status) {
+            return status === 'shared' ? 'status-shared' : 'status-pending';
+        }
+
         function renderFriends(friends) {
             const container = document.getElementById('friendListContainer');
-            
-            if (!friends || friends.length === 0) {
+            const sorted = sortByName(friends);
+            if (!sorted || sorted.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="bi bi-people"></i>
-                        <p>まだ友達がいません<br>トップページから友達を追加しましょう</p>
+                        <p>${t('friends_empty')}<br>${t('friends_empty_desc')}</p>
                     </div>
                 `;
                 return;
             }
-
             let html = '';
-            friends.forEach(friend => {
-                const statusClass = friend.status === 'shared' ? 'status-shared' : 'status-pending';
+            sorted.forEach(friend => {
                 html += `
                     <div class="friend-item" data-id="${friend.id}">
                         <div class="friend-avatar">${friend.initial}</div>
                         <div class="friend-info">
                             <div class="friend-name">${friend.name}</div>
-                            <div class="friend-status ${statusClass}">${friend.statusLabel}</div>
+                            <div class="friend-status ${getStatusClass(friend.status)}">${getStatusLabel(friend.status)}</div>
                         </div>
-                        <button class="delete-btn" data-id="${friend.id}" data-name="${friend.name}" aria-label="削除">
-                            <i class="bi bi-trash3"></i>
-                        </button>
+                        <button class="delete-btn" data-id="${friend.id}" data-name="${friend.name}"><i class="bi bi-trash3"></i></button>
                     </div>
                 `;
             });
-
             container.innerHTML = html;
-
-            // 削除ボタンにイベントを設定
             container.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const id = parseInt(btn.dataset.id);
                     const name = btn.dataset.name;
-                    
-                    showDeleteModal(id, name, () => {
-                        // 実際の削除処理（現在はサンプルから削除）
-                        deleteFriend(id);
-                    });
+                    showDeleteModal(id, name);
                 });
             });
         }
 
-        // ============================================================
-        // 削除処理（サンプルデータから削除）
-        // ============================================================
-        function deleteFriend(friendId) {
-            // 実際はFirestoreから削除する
-            const index = sampleFriends.findIndex(f => f.id === friendId);
-            if (index !== -1) {
-                sampleFriends.splice(index, 1);
+        function showDeleteModal(friendId, friendName) {
+            const container = document.getElementById('deleteModalContainer');
+            container.innerHTML = `
+                <div class="modal-overlay" id="deleteModalOverlay">
+                    <div class="modal-box">
+                        <div class="modal-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                        <div class="modal-title">${t('friends_delete_confirm_title')}</div>
+                        <div class="modal-desc">${t('friends_delete_confirm_desc', friendName)}</div>
+                        <div class="modal-actions">
+                            <button class="modal-btn modal-btn-cancel" id="modalCancelBtn">${t('friends_delete_cancel')}</button>
+                            <button class="modal-btn modal-btn-delete" id="modalConfirmBtn">${t('friends_delete_confirm')}</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const overlay = document.getElementById('deleteModalOverlay');
+            document.getElementById('modalCancelBtn').addEventListener('click', () => container.innerHTML = '');
+            document.getElementById('modalConfirmBtn').addEventListener('click', () => {
+                const index = sampleFriends.findIndex(f => f.id === friendId);
+                if (index !== -1) sampleFriends.splice(index, 1);
+                container.innerHTML = '';
                 renderFriends(sampleFriends);
-                
-                // 簡易フィードバック（トースト表示）
-                showToast('友達を削除しました');
-            }
+                showToast(t('friends_delete_success'));
+            });
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) container.innerHTML = ''; });
         }
 
-        // ============================================================
-        // トースト表示（簡易フィードバック）
-        // ============================================================
         function showToast(message) {
             const existing = document.querySelector('.custom-toast');
             if (existing) existing.remove();
-
             const toast = document.createElement('div');
             toast.className = 'custom-toast';
-            toast.innerHTML = `
-                <div style="
-                    position: fixed;
-                    bottom: 30px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: #333;
-                    color: white;
-                    padding: 12px 24px;
-                    border-radius: 12px;
-                    font-size: 14px;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-                    z-index: 99999;
-                    animation: fadeIn 0.3s ease;
-                ">
-                    <i class="bi bi-check-circle" style="color: #06C755; margin-right: 8px;"></i>
-                    ${message}
-                </div>
-            `;
+            toast.innerHTML = `<i class="bi bi-check-circle" style="color: #06C755; margin-right: 8px;"></i>${message}`;
             document.body.appendChild(toast);
-
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transition = 'opacity 0.3s';
-                setTimeout(() => toast.remove(), 300);
-            }, 2000);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2000);
         }
 
-        // ============================================================
-        // 起動時にLIFF初期化＆レンダリング
-        // ============================================================
+        function applyTranslations() {
+            document.getElementById('friendsTitle').textContent = t('friends_title');
+            document.title = t('friends_title') + ' - Tomosche';
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
+            applyTranslations();
             const success = await initLiff();
-            if (success) {
-                setUserName('userName'); // 必要に応じて
-                renderFriends(sampleFriends);
-            } else {
-                // LIFF未ログインの場合はトップに戻す
-                window.location.href = '/';
-            }
+            if (!success) { window.location.href = '/'; return; }
+            renderFriends(sampleFriends);
         });
     </script>
+    <div style="text-align: center; padding: 4px 0 16px 0; font-size: 10px; color: #ccc;">Tomosche v0.0.0</div>
 </body>
 </html>
