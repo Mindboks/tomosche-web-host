@@ -17,11 +17,11 @@ body {
     overflow: hidden;
 }
 
-/* ====== ヒーローエリア（50%） ====== */
+/* ====== ヒーローエリア ====== */
 .hero-section {
     background: linear-gradient(145deg, #06C755 0%, #049a44 100%);
     color: white;
-    height: calc(50vh - 80px);
+    height: 50vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -34,15 +34,17 @@ body {
     overflow: hidden;
 }
 
-/* ----- タイトル + イラスト 横並び ----- */
+/* タイトル + イラスト + Tomosche（縦並び） */
 .hero-title-wrapper {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: clamp(8px, 3vw, 24px);
-    flex-wrap: wrap;
+    gap: 4px;  /* 要素間の間隔を狭く */
+    width: 100%;
 }
 
+/* 1. 友助（少し小さめ） */
 .hero-main-title {
     font-size: var(--main-title-size);
     font-weight: 700;
@@ -52,37 +54,41 @@ body {
     text-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+/* 2. 人型アイコン（1.5倍・前面に） */
 .hero-illustration {
-    width: clamp(80px, 20vw, 150px);
+    width: clamp(120px, 30vw, 200px);  /* 1.5倍に拡大 */
     height: auto;
+    margin: 4px 0;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1));
+    position: relative;
+    z-index: 2;  /* 前面に */
 }
-
 .hero-illustration svg {
     width: 100%;
     height: auto;
 }
 
-/* ----- サブタイトル ----- */
+/* 3. Tomosche（サブタイトル） */
 .hero-sub-title {
     font-size: var(--sub-title-size);
     font-weight: 400;
     letter-spacing: 2px;
     opacity: 0.9;
-    margin: 4px 0 6px 0;
+    margin: 2px 0 4px 0;
 }
 
-/* ----- キャッチコピー（改行禁止） ----- */
+/* 4. キャッチコピー */
 .hero-catchphrase {
     font-size: var(--catchphrase-size);
     opacity: 0.85;
-    margin: 0 0 16px 0;
+    margin: 4px 0 12px 0;
     white-space: nowrap;
     max-width: 90%;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* ----- ユーザー表示 ----- */
+/* 5. ユーザー名 */
 .hero-user {
     background: rgba(255,255,255,0.2);
     backdrop-filter: blur(4px);
