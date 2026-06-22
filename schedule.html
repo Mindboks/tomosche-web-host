@@ -332,6 +332,12 @@
             renderEvents(selectedDate);
         });
     </script>
-    <div style="text-align: center; padding: 4px 0 16px 0; font-size: 10px; color: #ccc;">Tomosche v0.0.0</div>
+    <script src="js/config.js"></script>
+    <script>
+        // バージョン表示を一元化
+        document.querySelectorAll('.version-text').forEach(el => {
+            el.textContent = APP_CONFIG.appName + ' ' + APP_CONFIG.version;
+        });
+    </script>
 </body>
 </html>
