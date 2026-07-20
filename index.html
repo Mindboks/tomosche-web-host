@@ -1,303 +1,85 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>友助 - Tomosche</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-    <style>
-        html, body {
-            background: #ffffff !important;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        .container {
-            max-width: 420px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 0;
-        }
-        .logo { font-size: 24px; font-weight: 700; color: #06C755; }
-        .logo span { font-size: 12px; color: #999; font-weight: 400; margin-left: 8px; }
-        .profile-icon { font-size: 30px; color: #06C755; cursor: pointer; }
-        .main-image { width: 100%; border-radius: 20px; margin: 8px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-        .date-badge {
-            background: rgba(255,255,255,0.92);
-            padding: 6px 18px;
-            border-radius: 999px;
-            font-size: 14px;
-            font-weight: 600;
-            display: inline-block;
-            margin: -30px auto 0;
-            position: relative;
-            z-index: 2;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        .search-box {
-            display: flex;
-            align-items: center;
-            background: white;
-            border-radius: 12px;
-            padding: 10px 16px;
-            gap: 10px;
-            border: 1px solid #e8ecf0;
-            margin: 12px 0 16px 0;
-        }
-        .search-box input {
-            border: none;
-            background: none;
-            outline: none;
-            flex: 1;
-            font-size: 14px;
-            color: #333;
-        }
-        .search-box input::placeholder { color: #bbb; }
-        .avatars { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-        .avatar {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-            border: 2px solid white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-        .avatar-name { font-size: 10px; color: #888; text-align: center; display: block; margin-top: 4px; }
-        .avatar-item { display: flex; flex-direction: column; align-items: center; width: 52px; }
-        .add-avatar { border: 2px dashed #ccc; color: #999; background: #f0f4f8; font-size: 20px; }
-        .today-card {
-            background: white;
-            border-radius: 16px;
-            padding: 16px;
-            border: 1px solid #f0f4f8;
-            margin-top: 8px;
-        }
-        .today-header { display: flex; justify-content: space-between; font-weight: 600; font-size: 14px; }
-        .today-item { display: flex; padding: 8px 0; border-bottom: 1px solid #f0f4f8; gap: 10px; font-size: 13px; }
-        .today-item:last-child { border-bottom: none; }
-        .today-time { color: #06C755; font-weight: 600; min-width: 44px; }
-        .today-person { color: #888; background: #f0f4f8; padding: 2px 10px; border-radius: 999px; font-size: 11px; }
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 0 14px 0;
-            border-top: 1px solid #f0f4f8;
-            z-index: 100;
-        }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 10px;
-            color: #999;
-            text-decoration: none;
-            gap: 2px;
-        }
-        .nav-item i { font-size: 20px; }
-        .nav-item.active { color: #06C755; }
-        .version { text-align: center; font-size: 10px; color: #ccc; padding: 8px 0 20px 0; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <!-- ヘッダー -->
-    <div class="header">
-        <div class="logo">🌱 Tomosche <span>Social Scheduling</span></div>
-        <div class="profile-icon" id="profileIcon"><i class="bi bi-person-circle"></i></div>
-    </div>
-
-    <!-- メイン画像 -->
-    <img src="assets/images/toppageTmocha.png" alt="Tomosche" class="main-image" />
-    <div style="text-align: center; margin-top: -24px;">
-        <span class="date-badge" id="dateDisplay">Today・Jul 20</span>
-    </div>
-
-    <!-- 検索窓 -->
-    <div class="search-box">
-        <i class="bi bi-search" style="color:#999;"></i>
-        <input type="text" id="globalSearch" placeholder="Search events, friends, or dates..." />
-    </div>
-
-    <!-- 友達アイコン -->
-    <div class="avatars" id="friendsAvatars"></div>
-
-    <!-- 今日の予定 -->
-    <div class="today-card">
-        <div class="today-header">
-            <span><i class="bi bi-clock-history" style="color:#06C755;"></i> Upcoming</span>
-            <a href="schedule.html" style="color:#06C755; text-decoration:none; font-size:12px; font-weight:400;">See All →</a>
-        </div>
-        <div id="todayList"></div>
-    </div>
-
-    <!-- バージョン -->
-    <div class="version" id="versionDisplay">Tomosche v1.0.0</div>
-</div>
-
-<!-- 下部ナビゲーション -->
-<div class="bottom-nav">
-    <a href="/" class="nav-item active"><i class="bi bi-house-fill"></i><span>Home</span></a>
-    <a href="friends.html" class="nav-item"><i class="bi bi-people-fill"></i><span>Friends</span></a>
-    <a href="schedule.html" class="nav-item"><i class="bi bi-calendar-event-fill"></i><span>Calendar</span></a>
-    <a href="add_friends.html" class="nav-item"><i class="bi bi-person-plus-fill"></i><span>Add</span></a>
-    <div class="nav-item" id="moreMenuBtn"><i class="bi bi-grid-fill"></i><span>More</span></div>
-</div>
-
-<!-- Moreメニュー -->
-<div id="moreMenuPopup" style="display:none; position:fixed; bottom:80px; left:16px; right:16px; background:white; border-radius:20px; padding:20px; box-shadow:0 8px 40px rgba(0,0,0,0.12); z-index:999; border:1px solid #f0f4f8;">
-    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center;">
-        <a href="guide.html" style="text-decoration:none; color:#333; font-size:12px;">
-            <div style="background:#f0f4f8; border-radius:14px; padding:14px;"><i class="bi bi-book" style="font-size:24px; color:#6a1b9a;"></i></div>
-            <span style="margin-top:4px; display:block;">使い方</span>
-        </a>
-        <a href="privacy.html" style="text-decoration:none; color:#333; font-size:12px;">
-            <div style="background:#f0f4f8; border-radius:14px; padding:14px;"><i class="bi bi-shield-lock" style="font-size:24px; color:#1565c0;"></i></div>
-            <span style="margin-top:4px; display:block;">プライバシー</span>
-        </a>
-        <a href="terms.html" style="text-decoration:none; color:#333; font-size:12px;">
-            <div style="background:#f0f4f8; border-radius:14px; padding:14px;"><i class="bi bi-file-text" style="font-size:24px; color:#e65100;"></i></div>
-            <span style="margin-top:4px; display:block;">利用規約</span>
-        </a>
-        <a href="#" id="feedbackMoreBtn" style="text-decoration:none; color:#333; font-size:12px;">
-            <div style="background:#f0f4f8; border-radius:14px; padding:14px;"><i class="bi bi-chat-dots" style="font-size:24px; color:#f9a825;"></i></div>
-            <span style="margin-top:4px; display:block;">フィードバック</span>
-        </a>
-        <a href="#" id="logoutMoreBtn" style="text-decoration:none; color:#333; font-size:12px;">
-            <div style="background:#f0f4f8; border-radius:14px; padding:14px;"><i class="bi bi-box-arrow-right" style="font-size:24px; color:#e53935;"></i></div>
-            <span style="margin-top:4px; display:block;">ログアウト</span>
-        </a>
-    </div>
-    <div style="text-align:center; margin-top:12px;">
-        <button onclick="document.getElementById('moreMenuPopup').style.display='none'" style="background:none; border:none; color:#999; font-size:13px; padding:4px 16px; cursor:pointer;">閉じる</button>
-    </div>
-</div>
-
-<script src="js/app.js"></script>
+<script src="js/template.js"></script>
 <script>
     // ====== 今日の日付 ======
     const today = new Date();
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    document.getElementById('dateDisplay').textContent = `Today・${monthNames[today.getMonth()]} ${today.getDate()}`;
+    const dateStr = `Today・${monthNames[today.getMonth()]} ${today.getDate()}`;
 
-    // ====== 友達アイコン ======
-    const friends = [
+    // ====== サンプルデータ ======
+    const sampleFriends = [
         { name: '田中', initial: '田', color: '#e3f2fd' },
         { name: '佐藤', initial: '佐', color: '#e8f5e9' },
         { name: '鈴木', initial: '鈴', color: '#fff3e0' },
         { name: '山田', initial: '山', color: '#fce4ec' }
     ];
-    const container = document.getElementById('friendsAvatars');
-    friends.forEach(f => {
-        const div = document.createElement('div');
-        div.className = 'avatar-item';
-        div.innerHTML = `
-            <div class="avatar" style="background:${f.color};">${f.initial}</div>
-            <span class="avatar-name">${f.name}</span>
-        `;
-        container.appendChild(div);
-    });
-    // Addボタン
-    const addDiv = document.createElement('a');
-    addDiv.href = 'add_friends.html';
-    addDiv.className = 'avatar-item';
-    addDiv.style.textDecoration = 'none';
-    addDiv.innerHTML = `
-        <div class="avatar add-avatar"><i class="bi bi-plus"></i></div>
-        <span class="avatar-name">Add</span>
-    `;
-    container.appendChild(addDiv);
 
-    // ====== 今日の予定 ======
-    const events = [
+    const todayEvents = [
         { time: '10:00', title: '田中さんと打ち合わせ', person: '田中' },
         { time: '14:00', title: 'カレンダー共有設定', person: '佐藤' }
     ];
-    const list = document.getElementById('todayList');
-    events.forEach(e => {
-        const div = document.createElement('div');
-        div.className = 'today-item';
-        div.innerHTML = `
-            <span class="today-time">${e.time}</span>
-            <span style="flex:1;">${e.title}</span>
-            <span class="today-person">👤 ${e.person}</span>
-        `;
-        list.appendChild(div);
-    });
 
-    // ====== LIFF初期化 ======
-    document.addEventListener('DOMContentLoaded', async function() {
-        try {
-            await liff.init({ liffId: '2010384200-BS1cr2CR' });
-            if (!liff.isLoggedIn()) {
-                liff.login();
-                return;
+    // ====== コンテンツ生成 ======
+    const content = `
+    <!-- ヘッダー -->
+    <div class="header">
+        <div class="logo">🌱 Tomosche <span class="logo-sub">Social Scheduling</span></div>
+        <div class="profile-icon" id="profileIcon"><i class="bi bi-person-circle"></i></div>
+    </div>
+
+    <!-- 画像 + 日付 + 検索窓 -->
+    <div class="image-wrapper">
+        <img src="assets/images/toppageTmocha.png" alt="Tomosche" />
+        <div class="image-date" id="dateDisplay">${dateStr}</div>
+        <div class="image-search">
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="globalSearch" placeholder="Search events, friends, or dates..." />
+            </div>
+        </div>
+    </div>
+
+    <!-- 友達アイコン -->
+    <div class="avatars" id="friendsAvatars">
+        ${sampleFriends.map(f => `
+            <div class="avatar-item">
+                <div class="avatar-circle" style="background:${f.color};">${f.initial}</div>
+                <span class="avatar-name">${f.name}</span>
+            </div>
+        `).join('')}
+        <a href="add_friends.html" class="avatar-item">
+            <div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div>
+            <span class="avatar-name">Add</span>
+        </a>
+    </div>
+
+    <!-- 今日の予定 -->
+    <div class="today-card">
+        <div class="today-header">
+            <span><i class="bi bi-clock-history"></i> Upcoming</span>
+            <a href="schedule.html" class="today-more">See All →</a>
+        </div>
+        ${todayEvents.map(e => `
+            <div class="today-item">
+                <span class="today-time">${e.time}</span>
+                <span class="today-title">${e.title}</span>
+                <span class="today-person">👤 ${e.person}</span>
+            </div>
+        `).join('')}
+    </div>
+    `;
+
+    // ====== レンダリング ======
+    renderPage('友助 - トップ', content);
+
+    // ====== ページロード後 ======
+    document.addEventListener('DOMContentLoaded', function() {
+        // 検索
+        document.getElementById('globalSearch').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const query = this.value.trim();
+                if (query) alert(`🔍 「${query}」を検索します（機能は開発中です）`);
             }
-            const profile = await liff.getProfile();
-            console.log('Logged in:', profile.displayName);
-        } catch (e) {
-            console.error('LIFF error:', e);
-        }
-    });
-
-    // ====== Moreメニュー ======
-    document.getElementById('moreMenuBtn').addEventListener('click', function() {
-        const popup = document.getElementById('moreMenuPopup');
-        popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
-    });
-
-    document.getElementById('logoutMoreBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        if (confirm('ログアウトしますか？')) {
-            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                liff.logout();
-                window.location.reload();
-            } else {
-                window.location.href = '/';
-            }
-        }
-    });
-
-    document.getElementById('feedbackMoreBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('📝 フィードバック機能は準備中です。\ntomosche.line@gmail.com へご連絡ください。');
-    });
-
-    document.addEventListener('click', function(e) {
-        const popup = document.getElementById('moreMenuPopup');
-        if (popup.style.display === 'block') {
-            if (!e.target.closest('#moreMenuPopup') && !e.target.closest('#moreMenuBtn')) {
-                popup.style.display = 'none';
-            }
-        }
-    });
-
-    // 検索
-    document.getElementById('globalSearch').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            const query = this.value.trim();
-            if (query) alert(`🔍 「${query}」を検索します（機能は開発中です）`);
-        }
+        });
     });
 </script>
-</body>
-</html>
