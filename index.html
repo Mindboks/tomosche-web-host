@@ -1,8 +1,7 @@
 <script src="js/template.js"></script>
 <script>
-    const today = new Date();
-    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const dateStr = `Today・${monthNames[today.getMonth()]} ${today.getDate()}`;
+    // ====== 日付と時刻を表示（template.js 内で自動生成） ======
+    // template.js の image-date に "Today・Jul 20  14時30分現在" と表示されます
 
     const sampleFriends = [
         { name: '田中', initial: '田', color: '#e3f2fd' },
@@ -16,14 +15,18 @@
         { time: '14:00', title: 'カレンダー共有設定', person: '佐藤' }
     ];
 
+    // ====== コンテンツ生成 ======
     const content = `
+    <!-- ヘッダー -->
     <div class="header">
         <div class="logo">🌱 Tomosche <span class="logo-sub">Social Scheduling</span></div>
         <div class="profile-icon" id="profileIcon"><i class="bi bi-person-circle"></i></div>
     </div>
+
+    <!-- 画像 + 日付（時刻付き） + 検索窓 -->
     <div class="image-wrapper">
         <img src="assets/images/toppageTmocha.png" alt="Tomosche" />
-        <div class="image-date" id="dateDisplay">${dateStr}</div>
+        <div class="image-date" id="dateDisplay"></div>  <!-- template.js で自動生成 -->
         <div class="image-search">
             <div class="search-box">
                 <i class="bi bi-search"></i>
@@ -31,6 +34,8 @@
             </div>
         </div>
     </div>
+
+    <!-- 友達アイコン -->
     <div class="avatars">
         ${sampleFriends.map(f => `
             <div class="avatar-item">
@@ -43,6 +48,8 @@
             <span class="avatar-name">Add</span>
         </a>
     </div>
+
+    <!-- 今日の予定（折り返し禁止・フォントサイズ自動調整） -->
     <div class="today-card">
         <div class="today-header">
             <span><i class="bi bi-clock-history"></i> Upcoming</span>
@@ -58,7 +65,10 @@
     </div>
     `;
 
+    // ====== レンダリング ======
     renderPage('友助 - トップ', content);
+
+    // ====== 検索機能（仮） ======
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('globalSearch').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {

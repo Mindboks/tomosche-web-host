@@ -1,8 +1,31 @@
-// ============================================================
-// Tomosche 共通テンプレート
-// ============================================================
+// ================================================================
+// ■ Tomosche 共通テンプレート
+// ■ 更新日: 2026-07-20
+// ■ バージョン: 1.0.0（変更は js/config.js の APP_CONFIG.version で管理）
+// ================================================================
 
+/**
+ * 【バージョン情報の変更方法】
+ * 1. js/config.js を開く
+ * 2. APP_CONFIG.version の値を変更する（例: '1.0.1'）
+ * 3. 保存してデプロイするだけで全ページに反映されます
+ */
+
+// ================================================================
+// メインレンダリング関数
+// 各ページから呼び出して、共通レイアウト＋個別コンテンツを表示
+// ================================================================
 function renderPage(title, content) {
+    // 現在時刻を取得（日付表示用）
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const timeStr = `${h}時${m}分現在`;
+
+    // 月名（日付表示用）
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dateStr = `Today・${monthNames[now.getMonth()]} ${now.getDate()}  ${timeStr}`;
+
     const html = `
 <!DOCTYPE html>
 <html lang="ja">
@@ -10,10 +33,13 @@ function renderPage(title, content) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>${title} - Tomosche</title>
+    <!-- Bootstrap 5 (レスポンシブ制御用) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- LIFF SDK (LINE連携用) -->
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     <style>
+        /* ====== 全体のベース ====== */
         html, body {
             background: #ffffff !important;
             margin: 0 !important;
@@ -21,12 +47,16 @@ function renderPage(title, content) {
             min-height: 100vh;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
+
+        /* ====== メインコンテナ ====== */
         .app-container {
             max-width: 420px;
             margin: 0 auto;
             padding: 0 16px 80px 16px;
             background: #ffffff;
         }
+
+        /* ====== ヘッダー（ロゴ＋プロフィール） ====== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -36,6 +66,8 @@ function renderPage(title, content) {
         .logo { font-size: 22px; font-weight: 700; color: #06C755; }
         .logo-sub { font-size: 11px; color: #999; font-weight: 400; margin-left: 6px; }
         .profile-icon { font-size: 28px; color: #06C755; cursor: pointer; }
+
+        /* ====== メイン画像 + 日付 + 検索窓（重ね合わせ） ====== */
         .image-wrapper {
             position: relative;
             width: 100%;
@@ -45,6 +77,8 @@ function renderPage(title, content) {
             margin: 4px 0 0 0;
         }
         .image-wrapper img { width: 100%; height: auto; display: block; }
+
+        /* 日付（画像の上部に重ねる） */
         .image-date {
             position: absolute;
             top: 16px;
@@ -54,14 +88,16 @@ function renderPage(title, content) {
             backdrop-filter: blur(6px);
             padding: 6px 18px;
             border-radius: 999px;
-            font-size: 14px;
+            font-size: clamp(11px, 3vw, 14px);  /* 画面サイズに応じてフォントサイズ調整 */
             font-weight: 600;
             color: #333;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             border: 1px solid rgba(255,255,255,0.6);
-            white-space: nowrap;
+            white-space: nowrap;  /* 折り返し禁止 */
             z-index: 5;
         }
+
+        /* 検索窓（画像の下部に重ねる） */
         .image-search {
             position: absolute;
             bottom: 16px;
@@ -88,11 +124,18 @@ function renderPage(title, content) {
             background: none;
             outline: none;
             flex: 1;
-            font-size: 14px;
+            font-size: clamp(12px, 2.5vw, 14px);  /* レスポンシブ */
             color: #333;
         }
         .image-search .search-box input::placeholder { color: #bbb; }
-        .avatars { display: flex; gap: 12px; flex-wrap: wrap; padding: 12px 0 8px 0; }
+
+        /* ====== 友達アイコン（横並び） ====== */
+        .avatars {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 12px 0 8px 0;
+        }
         .avatar-item {
             display: flex;
             flex-direction: column;
@@ -109,14 +152,24 @@ function renderPage(title, content) {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: clamp(14px, 2.5vw, 16px);
             font-weight: 600;
             color: #333;
             border: 2px solid white;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
         .avatar-add { border: 2px dashed #ccc; color: #999; background: #f0f4f8; font-size: 20px; }
-        .avatar-name { font-size: 10px; color: #888; text-align: center; max-width: 56px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .avatar-name {
+            font-size: clamp(9px, 2vw, 10px);
+            color: #888;
+            text-align: center;
+            max-width: 56px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ====== 今日の予定カード ====== */
         .today-card {
             background: white;
             border-radius: 16px;
@@ -129,25 +182,51 @@ function renderPage(title, content) {
             justify-content: space-between;
             align-items: center;
             font-weight: 600;
-            font-size: 14px;
+            font-size: clamp(13px, 2.5vw, 14px);
             color: #333;
             margin-bottom: 8px;
         }
         .today-header i { color: #06C755; margin-right: 6px; }
-        .today-more { font-size: 12px; font-weight: 400; color: #06C755; text-decoration: none; }
+        .today-more {
+            font-size: clamp(11px, 2vw, 12px);
+            font-weight: 400;
+            color: #06C755;
+            text-decoration: none;
+            white-space: nowrap;
+        }
         .today-item {
             display: flex;
             align-items: center;
             padding: 8px 0;
             border-bottom: 1px solid #f0f4f8;
             gap: 10px;
-            font-size: 13px;
+            font-size: clamp(12px, 2.2vw, 13px);
+            white-space: nowrap;  /* 折り返し禁止 */
         }
         .today-item:last-child { border-bottom: none; }
-        .today-time { color: #06C755; font-weight: 600; min-width: 44px; }
-        .today-title { flex: 1; color: #333; }
-        .today-person { color: #888; background: #f0f4f8; padding: 2px 10px; border-radius: 999px; font-size: 11px; }
-        /* 下部ナビ - フル幅（Bootstrap連携） */
+        .today-time {
+            color: #06C755;
+            font-weight: 600;
+            min-width: 44px;
+            font-size: clamp(11px, 2vw, 12px);
+        }
+        .today-title {
+            flex: 1;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .today-person {
+            color: #888;
+            background: #f0f4f8;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: clamp(10px, 1.8vw, 11px);
+            white-space: nowrap;
+        }
+
+        /* ====== 下部ナビゲーション（フル幅） ====== */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -165,7 +244,7 @@ function renderPage(title, content) {
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-size: 10px;
+            font-size: clamp(9px, 1.8vw, 10px);
             color: #999;
             text-decoration: none;
             gap: 2px;
@@ -175,12 +254,14 @@ function renderPage(title, content) {
             cursor: pointer;
             flex: 1;
             max-width: 80px;
+            white-space: nowrap;
         }
-        .nav-item i { font-size: 20px; }
+        .nav-item i { font-size: clamp(18px, 4vw, 20px); }
         .nav-item.active { color: #06C755; }
         .nav-item.active i { transform: translateY(-2px); }
         .nav-item:active { transform: scale(0.92); }
-        /* 戻るボタン */
+
+        /* ====== 戻るボタン＆ページタイトル ====== */
         .back-btn {
             background: none;
             border: none;
@@ -195,8 +276,18 @@ function renderPage(title, content) {
             font-weight: 600;
             margin: 0;
             color: #333;
+            white-space: nowrap;
         }
-        .version { text-align: center; font-size: 10px; color: #ccc; padding: 8px 0 4px 0; }
+
+        /* ====== バージョン表示 ====== */
+        .version {
+            text-align: center;
+            font-size: 10px;
+            color: #ccc;
+            padding: 8px 0 4px 0;
+        }
+
+        /* ====== Moreポップアップ ====== */
         .more-popup {
             display: none;
             position: fixed;
@@ -220,21 +311,23 @@ function renderPage(title, content) {
         .more-close { text-align: center; margin-top: 12px; }
         .more-close button { background: none; border: none; color: #999; font-size: 13px; padding: 4px 16px; cursor: pointer; }
 
-        /* Bootstrap レスポンシブ補助 */
+        /* ====== レスポンシブ（スマホ最適化） ====== */
         @media (max-width: 576px) {
             .app-container { padding: 0 12px 80px 12px; }
             .logo { font-size: 18px; }
             .logo-sub { font-size: 10px; }
-            .image-date { font-size: 12px; padding: 4px 14px; top: 12px; }
+            .image-date { font-size: clamp(10px, 2.5vw, 12px); padding: 4px 14px; top: 12px; }
             .image-search .search-box { padding: 8px 12px; }
-            .image-search .search-box input { font-size: 12px; }
-            .avatar-circle { width: 44px; height: 44px; font-size: 14px; }
-            .avatar-name { font-size: 9px; }
-            .today-item { font-size: 12px; }
-            .today-time { min-width: 36px; font-size: 11px; }
-            .nav-item { padding: 4px 8px; font-size: 9px; }
-            .nav-item i { font-size: 18px; }
+            .image-search .search-box input { font-size: clamp(11px, 2.2vw, 12px); }
+            .avatar-circle { width: 44px; height: 44px; font-size: clamp(12px, 2.2vw, 14px); }
+            .avatar-name { font-size: clamp(8px, 1.8vw, 9px); }
+            .today-item { font-size: clamp(11px, 2vw, 12px); }
+            .today-time { min-width: 36px; font-size: clamp(10px, 1.8vw, 11px); }
+            .nav-item { padding: 4px 8px; font-size: clamp(8px, 1.6vw, 9px); }
+            .nav-item i { font-size: clamp(16px, 3.5vw, 18px); }
         }
+
+        /* ====== タブレット以上 ====== */
         @media (min-width: 768px) {
             .bottom-nav { max-width: 420px; left: 50%; transform: translateX(-50%); }
             .more-popup { max-width: 400px; }
@@ -245,9 +338,11 @@ function renderPage(title, content) {
     <div class="app-container">
         ${content}
     </div>
+
+    <!-- バージョン情報（js/config.js から自動取得） -->
     <div class="version" id="versionDisplay">Tomosche v1.0.0</div>
 
-    <!-- 下部ナビ（フル幅） -->
+    <!-- ====== 下部ナビゲーション（全ページ共通） ====== -->
     <div class="bottom-nav">
         <a href="/" class="nav-item active" data-nav="home"><i class="bi bi-house-fill"></i><span>Home</span></a>
         <a href="friends.html" class="nav-item" data-nav="friends"><i class="bi bi-people-fill"></i><span>Friends</span></a>
@@ -256,7 +351,7 @@ function renderPage(title, content) {
         <div class="nav-item" id="moreMenuBtn"><i class="bi bi-grid-fill"></i><span>More</span></div>
     </div>
 
-    <!-- Moreメニュー -->
+    <!-- ====== Moreメニュー（プライバシー・利用規約など） ====== -->
     <div class="more-popup" id="moreMenuPopup">
         <div class="more-grid">
             <a href="guide.html"><div class="icon-box"><i class="bi bi-book" style="color:#6a1b9a;"></i></div><span>使い方</span></a>
@@ -268,10 +363,17 @@ function renderPage(title, content) {
         <div class="more-close"><button onclick="document.getElementById('moreMenuPopup').style.display='none'">閉じる</button></div>
     </div>
 
+    <!-- ====== 共通JavaScript ====== -->
     <script src="js/app.js"></script>
     <script>
+        /**
+         * ================================================================
+         * 共通処理（Moreメニュー・ログアウト・フィードバック）
+         * 全ページで共有されます
+         * ================================================================
+         */
         document.addEventListener('DOMContentLoaded', function() {
-            // Moreメニュー
+            // ---- Moreメニューの開閉 ----
             const moreBtn = document.getElementById('moreMenuBtn');
             const popup = document.getElementById('moreMenuPopup');
             if (moreBtn && popup) {
@@ -279,6 +381,7 @@ function renderPage(title, content) {
                     e.stopPropagation();
                     popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
                 });
+                // ポップアップ外クリックで閉じる
                 document.addEventListener('click', function(e) {
                     if (popup.style.display === 'block') {
                         if (!e.target.closest('#moreMenuPopup') && !e.target.closest('#moreMenuBtn')) {
@@ -287,7 +390,8 @@ function renderPage(title, content) {
                     }
                 });
             }
-            // ログアウト
+
+            // ---- ログアウト処理 ----
             const logoutBtn = document.getElementById('logoutMoreBtn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', function(e) {
@@ -302,7 +406,8 @@ function renderPage(title, content) {
                     }
                 });
             }
-            // フィードバック
+
+            // ---- フィードバック（仮） ----
             const feedbackBtn = document.getElementById('feedbackMoreBtn');
             if (feedbackBtn) {
                 feedbackBtn.addEventListener('click', function(e) {
@@ -315,7 +420,8 @@ function renderPage(title, content) {
 </body>
 </html>
     `;
-    
+
+    // レンダリング実行
     document.open();
     document.write(html);
     document.close();
