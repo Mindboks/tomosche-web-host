@@ -4,12 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Tomosche - Shared Calendar</title>
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- LIFF SDK (LINE連携用) -->
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+    <!-- 多言語対応 -->
     <script src="js/i18n.js"></script>
+    <!-- 共通アプリJS -->
     <script src="js/app.js"></script>
     <style>
+        /* ====== スタイル（既存のものを統合） ====== */
         html, body {
             background: #ffffff !important;
             margin: 0 !important;
@@ -474,7 +479,7 @@
     </div>
     <div class="version" id="versionDisplay">Tomosche v1.0.0</div>
 
-    <!-- 下部ナビ（リンクは正しいパス） -->
+    <!-- 下部ナビ -->
     <div class="bottom-nav">
         <a href="/" class="nav-item active"><i class="bi bi-house-fill"></i><span>Home</span></a>
         <a href="friends.html" class="nav-item"><i class="bi bi-people-fill"></i><span>Friends</span></a>
@@ -551,7 +556,7 @@
 
     <script>
         // ================================================================
-        // ■ 日付表示
+        // 日付表示
         // ================================================================
         function updateDateDisplay() {
             const now = new Date();
@@ -559,13 +564,11 @@
             const hh = String(now.getHours()).padStart(2, '0');
             const mm = String(now.getMinutes()).padStart(2, '0');
             const dateEl = document.getElementById('dateDisplay');
-            if (dateEl) {
-                dateEl.textContent = `${months[now.getMonth()]} ${now.getDate()}, ${hh}:${mm}`;
-            }
+            if (dateEl) dateEl.textContent = `${months[now.getMonth()]} ${now.getDate()}, ${hh}:${mm}`;
         }
 
         // ================================================================
-        // ■ 言語切替
+        // 言語切替
         // ================================================================
         function switchLanguage(lang) {
             if (lang && SUPPORTED_LANGS.includes(lang)) {
@@ -575,7 +578,7 @@
         }
 
         // ================================================================
-        // ■ 友達アイコン
+        // 友達アイコン
         // ================================================================
         function renderFriends() {
             const friends = [
@@ -600,7 +603,7 @@
         }
 
         // ================================================================
-        // ■ 今日の予定
+        // 今日の予定
         // ================================================================
         function renderTodayEvents() {
             const events = [
@@ -618,54 +621,43 @@
         }
 
         // ================================================================
-        // ■ フィードバック機能
+        // フィードバック
         // ================================================================
         function openFeedback() {
             document.getElementById('feedbackModal').style.display = 'flex';
             document.getElementById('fbMessage').value = '';
             document.getElementById('fbStatus').style.display = 'none';
-            document.getElementById('fbStatus').textContent = '';
             document.getElementById('fbSendBtn').disabled = false;
         }
-
         function closeFeedback() {
             document.getElementById('feedbackModal').style.display = 'none';
         }
-
         function sendFeedback() {
-            const message = document.getElementById('fbMessage').value.trim();
+            const msg = document.getElementById('fbMessage').value.trim();
             const status = document.getElementById('fbStatus');
-            const sendBtn = document.getElementById('fbSendBtn');
-
-            if (!message) {
+            if (!msg) {
                 status.style.display = 'block';
                 status.style.color = '#e53935';
                 status.textContent = 'Please enter a message.';
                 return;
             }
-            if (message.length < 5) {
+            if (msg.length < 5) {
                 status.style.display = 'block';
                 status.style.color = '#e53935';
                 status.textContent = 'Please provide more details (at least 5 characters).';
                 return;
             }
-
-            sendBtn.disabled = true;
-            status.style.display = 'block';
-            status.style.color = '#666';
-            status.textContent = 'Sending...';
-
             const subject = encodeURIComponent('Tomosche Feedback');
-            const body = encodeURIComponent(message + '\n\n---\nSent from Tomosche app');
+            const body = encodeURIComponent(msg + '\n\n---\nSent from Tomosche app');
             window.location.href = `mailto:tomosche.line@gmail.com?subject=${subject}&body=${body}`;
-
+            status.style.display = 'block';
             status.style.color = '#06C755';
             status.textContent = '✅ Thank you! Your feedback has been sent.';
             setTimeout(closeFeedback, 2000);
         }
 
         // ================================================================
-        // ■ 予定追加モーダル
+        // 予定追加
         // ================================================================
         function openAddEventModal(dateStr) {
             document.getElementById('modalDate').textContent = dateStr || 'No events';
@@ -708,27 +700,22 @@
         }
 
         // ================================================================
-        // ■ 起動処理（リンクをブロックしないように修正）
+        // 起動処理
         // ================================================================
         document.addEventListener('DOMContentLoaded', function() {
             updateDateDisplay();
             renderFriends();
             renderTodayEvents();
 
-            // ---- Moreメニューのみ別途制御 ----
+            // Moreメニュー
             const moreBtn = document.getElementById('moreMenuBtn');
             const popup = document.getElementById('moreMenuPopup');
             if (moreBtn && popup) {
                 moreBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     e.preventDefault();
-                    if (popup.style.display === 'none' || popup.style.display === '') {
-                        popup.style.display = 'block';
-                    } else {
-                        popup.style.display = 'none';
-                    }
+                    popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
                 });
-                // ポップアップ外クリックで閉じる
                 document.addEventListener('click', function(e) {
                     if (popup.style.display === 'block') {
                         if (!e.target.closest('#moreMenuPopup') && !e.target.closest('#moreMenuBtn')) {
@@ -738,13 +725,13 @@
                 });
             }
 
-            // ---- フィードバック（More内） ----
+            // フィードバック
             document.getElementById('feedbackMoreBtn').addEventListener('click', function(e) {
                 e.preventDefault();
                 openFeedback();
             });
 
-            // ---- ログアウト ----
+            // ログアウト
             document.getElementById('logoutMoreBtn').addEventListener('click', function(e) {
                 e.preventDefault();
                 if (confirm('Logout?')) {
@@ -757,7 +744,7 @@
                 }
             });
 
-            // ---- 検索 ----
+            // 検索
             document.getElementById('globalSearch').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
                     const q = this.value.trim();
@@ -765,7 +752,7 @@
                 }
             });
 
-            // ---- モーダル ----
+            // モーダル
             document.getElementById('addEventModal').addEventListener('click', function(e) {
                 if (e.target === this) closeAddEventModal();
             });
@@ -773,14 +760,13 @@
                 if (e.target === this) closeFeedback();
             });
 
-            // ---- 予定追加フォーム ----
+            // 入力チェック
             ['eventTitle', 'eventStart', 'eventEnd'].forEach(id => {
                 document.getElementById(id).addEventListener('input', checkAddEventForm);
             });
             document.getElementById('friendSelect').addEventListener('change', checkAddEventForm);
 
-            // ---- LIFF ----
-            (async function() {
+            // LIFF初期化            (async function() {
                 try {
                     await liff.init({ liffId: '2010384200-BS1cr2CR' });
                     if (!liff.isLoggedIn()) {
