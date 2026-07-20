@@ -1,6 +1,24 @@
-/* ====== Tomosche 共通スタイル（トップページには影響しない） ====== */
+/* ============================================================
+   Tomosche 共通スタイル（白基調統一）
+   ============================================================ */
 
-/* 戻るボタン（friends.html / schedule.html / add_friends.html 用） */
+/* ---------- 基本 ---------- */
+html, body {
+    background: #ffffff !important;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    color: #333;
+}
+
+/* ---------- 共通コンテナ ---------- */
+.container {
+    background: #ffffff !important;
+    padding: 16px;
+}
+
+/* ---------- 戻るボタン ---------- */
 .back-btn {
     background: none;
     border: none;
@@ -14,6 +32,7 @@
     color: #049a44;
 }
 
+/* ---------- ページタイトル ---------- */
 .page-title {
     font-size: clamp(1.2rem, 4vw, 1.8rem);
     font-weight: 600;
@@ -21,11 +40,11 @@
     color: #333;
 }
 
-/* ローディング（全ページ共通） */
+/* ---------- ローディング ---------- */
 .loading-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(255,255,255,0.95);
+    background: rgba(255, 255, 255, 0.95);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -45,12 +64,102 @@
     to { transform: rotate(360deg); }
 }
 
-/* ダークモード */
+/* ---------- カード（白基調） ---------- */
+.card-white {
+    background: #ffffff !important;
+    border: 1px solid #f0f4f8;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* ---------- フッターリンク（トップページ以外で使用） ---------- */
+.footer-links {
+    text-align: center;
+    padding: 16px 0 8px 0;
+    font-size: 12px;
+    color: #bbb;
+    background: #ffffff;
+}
+.footer-links a {
+    color: #999;
+    text-decoration: none;
+    margin: 0 6px;
+}
+.footer-links a:hover {
+    color: #06C755;
+}
+.footer-sep {
+    color: #ddd;
+    margin: 0 4px;
+}
+
+/* ---------- ボタン（共通） ---------- */
+.btn-primary {
+    background: #06C755 !important;
+    color: white !important;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-primary:hover {
+    background: #049a44 !important;
+}
+.btn-secondary {
+    background: #f0f4f8 !important;
+    color: #666 !important;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-secondary:hover {
+    background: #e0e4e8 !important;
+}
+.btn-danger {
+    background: #e53935 !important;
+    color: white !important;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-danger:hover {
+    background: #c62828 !important;
+}
+
+/* ---------- 入力フォーム ---------- */
+input, select, textarea {
+    background: #ffffff !important;
+    border: 1px solid #e8ecf0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #333;
+    outline: none;
+    width: 100%;
+    transition: border 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+    border-color: #06C755;
+    box-shadow: 0 2px 12px rgba(6, 199, 85, 0.08);
+}
+
+/* ---------- ダークモード（一旦無効化：白基調を維持） ---------- */
 @media (prefers-color-scheme: dark) {
-    .page-title {
-        color: #eee;
+    html, body, .container, .card-white, .footer-links,
+    input, select, textarea {
+        background: #ffffff !important;
+        color: #333 !important;
     }
-    .loading-overlay {
-        background: rgba(13,13,26,0.95);
+    .page-title {
+        color: #333 !important;
+    }
+    .footer-links a {
+        color: #999 !important;
     }
 }

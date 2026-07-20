@@ -1,53 +1,48 @@
 <script src="js/template.js"></script>
 <script>
     const content = `
-    <div class="container py-3">
+    <div class="container" style="background:#ffffff; min-height:100vh;">
         <div class="d-flex align-items-center mb-3">
             <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
-            <h1 class="page-title" id="friendsTitle">友達一覧</h1>
+            <h1 class="page-title">友達一覧</h1>
         </div>
         <div id="friendListContainer" class="friend-list"></div>
+        <div id="deleteModalContainer"></div>
     </div>
-    <div id="deleteModalContainer"></div>
     `;
 
     renderPage('友達一覧', content, `
         <style>
-            .back-btn { background: none; border: none; font-size: 24px; color: #06C755; padding: 0; margin-right: 8px; }
-            .page-title { font-size: clamp(1.2rem, 4vw, 1.8rem); font-weight: 600; margin: 0; color: #333; }
             .friend-list { padding: 8px 0; }
-            .friend-item { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid #f0f0f0; }
-            .friend-item:hover { background: #fafafa; }
-            .friend-avatar { width: 48px; height: 48px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 14px; color: #2e7d32; font-weight: bold; font-size: 18px; flex-shrink: 0; }
+            .friend-item { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid #f0f4f8; }
+            .friend-item:hover { background: #f8f9fa; }
+            .friend-avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 14px; font-weight: bold; font-size: 18px; flex-shrink: 0; background: #e8f5e9; color: #2e7d32; }
             .friend-info { flex: 1; min-width: 0; }
-            .friend-name { font-weight: 600; font-size: clamp(0.95rem, 2.5vw, 1.1rem); }
+            .friend-name { font-weight: 600; font-size: clamp(0.95rem, 2.5vw, 1.1rem); color: #333; }
             .friend-status { font-size: clamp(0.7rem, 1.8vw, 0.85rem); margin-top: 2px; }
             .status-shared { color: #2e7d32; }
             .status-pending { color: #ff9800; }
-            .delete-btn { background: none; border: none; color: #ccc; font-size: clamp(18px, 4vw, 24px); cursor: pointer; padding: 8px; border-radius: 50%; transition: all 0.2s ease; flex-shrink: 0; }
+            .delete-btn { background: none; border: none; color: #ccc; font-size: clamp(18px, 4vw, 24px); cursor: pointer; padding: 8px; border-radius: 50%; transition: all 0.2s; flex-shrink: 0; }
             .delete-btn:hover { color: #e53935; background: rgba(229,57,53,0.08); }
-            .delete-btn:active { transform: scale(0.85); }
             .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-            .modal-box { background: white; border-radius: 24px; padding: 32px 28px 28px 28px; max-width: 360px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+            .modal-box { background: white; border-radius: 24px; padding: 32px 28px; max-width: 360px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
             .modal-icon { font-size: 48px; margin-bottom: 12px; color: #e53935; }
             .modal-title { font-size: 20px; font-weight: 700; color: #333; margin-bottom: 8px; }
             .modal-desc { font-size: 14px; color: #666; margin-bottom: 24px; line-height: 1.5; }
             .modal-actions { display: flex; gap: 12px; justify-content: center; }
-            .modal-btn { padding: 10px 28px; border-radius: 999px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; min-width: 100px; }
+            .modal-btn { padding: 10px 28px; border-radius: 999px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; min-width: 100px; }
             .modal-btn-cancel { background: #f0f0f0; color: #666; }
             .modal-btn-cancel:hover { background: #e0e0e0; }
             .modal-btn-delete { background: #e53935; color: white; }
-            .modal-btn-delete:hover { background: #c62828; transform: scale(1.02); }
-            .modal-btn-delete:active { transform: scale(0.95); }
+            .modal-btn-delete:hover { background: #c62828; }
             .empty-state { text-align: center; padding: 40px 20px; color: #999; }
             .empty-state i { font-size: 48px; color: #ddd; }
-            .empty-state p { margin-top: 12px; font-size: 14px; }
-            .custom-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 12px; font-size: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 99999; animation: fadeIn 0.3s ease; }
+            .custom-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 12px; font-size: 14px; z-index: 99999; animation: fadeIn 0.3s ease; }
             @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         </style>
     `);
 
-    // ====== 友達一覧のロジック ======
+    // ====== 友達データ ======
     const rawFriends = [
         '青山 隆','赤井 美香','秋山 健太','浅野 裕子','安藤 誠',
         '石井 秀樹','伊藤 真由美','井上 達也','岩崎 千尋','上田 公平',
@@ -79,7 +74,7 @@
     function renderFriends(friends) {
         const container = document.getElementById('friendListContainer');
         if (!friends || friends.length === 0) {
-            container.innerHTML = `<div class="empty-state"><i class="bi bi-people"></i><p>まだ友達がいません<br>トップページから友達を追加しましょう</p></div>`;
+            container.innerHTML = `<div class="empty-state"><i class="bi bi-people"></i><p>まだ友達がいません</p></div>`;
             return;
         }
         let html = '';
@@ -113,7 +108,7 @@
                 <div class="modal-box">
                     <div class="modal-icon"><i class="bi bi-exclamation-triangle"></i></div>
                     <div class="modal-title">友達を削除しますか？</div>
-                    <div class="modal-desc">「${friendName}」さんを友達一覧から削除します。<br>この操作は元に戻せません。</div>
+                    <div class="modal-desc">「${friendName}」さんを削除します。この操作は元に戻せません。</div>
                     <div class="modal-actions">
                         <button class="modal-btn modal-btn-cancel" id="modalCancelBtn">キャンセル</button>
                         <button class="modal-btn modal-btn-delete" id="modalConfirmBtn">削除する</button>

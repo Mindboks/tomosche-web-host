@@ -1,34 +1,29 @@
 <script src="js/template.js"></script>
 <script>
     const content = `
-    <div class="container py-3" style="padding-bottom: 100px;">
+    <div class="container" style="background:#ffffff; min-height:100vh; padding-bottom:100px;">
         <div class="d-flex align-items-center mb-2">
             <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
-            <h1 class="page-title" id="scheduleTitle">スケジュール</h1>
+            <h1 class="page-title">スケジュール</h1>
         </div>
-        <div class="calendar-header">
-            <button class="calendar-nav-btn" id="prevMonthBtn"><i class="bi bi-chevron-left"></i></button>
-            <span class="calendar-month-year" id="calendarTitle">2026年 7月</span>
-            <button class="calendar-nav-btn" id="nextMonthBtn"><i class="bi bi-chevron-right"></i></button>
+        <div class="calendar-header" style="display:flex; justify-content:space-between; align-items:center; padding:16px 0 12px 0;">
+            <button class="calendar-nav-btn" id="prevMonthBtn" style="background:none; border:none; font-size:24px; color:#06C755; padding:8px 16px; border-radius:12px; cursor:pointer;"><i class="bi bi-chevron-left"></i></button>
+            <span class="calendar-month-year" id="calendarTitle" style="font-size:clamp(1.1rem,3vw,1.6rem); font-weight:600; color:#333;">2026年 7月</span>
+            <button class="calendar-nav-btn" id="nextMonthBtn" style="background:none; border:none; font-size:24px; color:#06C755; padding:8px 16px; border-radius:12px; cursor:pointer;"><i class="bi bi-chevron-right"></i></button>
         </div>
-        <div class="calendar-grid" id="calendarGrid"></div>
-        <div class="event-list">
-            <div class="event-list-title" id="eventListTitle">📋 この日の予定</div>
-            <div id="eventListContent"><div class="event-empty" id="eventEmpty">日付を選択してください</div></div>
+        <div class="calendar-grid" id="calendarGrid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px; background:#f0f4f8; border-radius:16px; overflow:hidden;"></div>
+        <div class="event-list" style="margin-top:16px; background:white; border-radius:16px; padding:16px; border:1px solid #f0f4f8;">
+            <div class="event-list-title" style="font-size:14px; font-weight:600; color:#666; margin-bottom:8px;">📋 この日の予定</div>
+            <div id="eventListContent"><div class="event-empty" style="text-align:center; color:#bbb; font-size:14px; padding:16px 0;">日付を選択してください</div></div>
         </div>
+        <button class="add-event-btn" id="addEventBtn" style="position:fixed; bottom:100px; right:24px; width:60px; height:60px; border-radius:50%; background:#06C755; color:white; border:none; font-size:32px; box-shadow:0 4px 20px rgba(6,199,85,0.4); z-index:100; cursor:pointer;">
+            <i class="bi bi-plus-lg"></i>
+        </button>
     </div>
-    <button class="add-event-btn" id="addEventBtn"><i class="bi bi-plus-lg"></i></button>
     `;
 
     renderPage('スケジュール', content, `
         <style>
-            .back-btn { background: none; border: none; font-size: 24px; color: #06C755; padding: 0; margin-right: 8px; }
-            .page-title { font-size: clamp(1.2rem, 4vw, 1.8rem); font-weight: 600; margin: 0; color: #333; }
-            .calendar-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0 12px 0; }
-            .calendar-nav-btn { background: none; border: none; font-size: 24px; color: #06C755; padding: 8px 16px; border-radius: 12px; }
-            .calendar-nav-btn:hover { background: #e8f5e9; }
-            .calendar-month-year { font-size: clamp(1.1rem, 3vw, 1.6rem); font-weight: 600; color: #333; }
-            .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: #f0f0f0; border-radius: 16px; overflow: hidden; }
             .calendar-weekday { background: #e8f5e9; color: #2e7d32; font-weight: 600; font-size: clamp(0.7rem, 1.8vw, 0.85rem); text-align: center; padding: 8px 0; }
             .calendar-day { background: white; aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: clamp(0.85rem, 2vw, 1.1rem); font-weight: 500; color: #333; cursor: pointer; transition: background 0.15s; position: relative; }
             .calendar-day:hover { background: #f5f5f5; }
@@ -37,33 +32,34 @@
             .calendar-day.has-event-pending::after { content: ''; position: absolute; bottom: 4px; width: 6px; height: 6px; background: #ff9800; border-radius: 50%; }
             .calendar-day.has-event-confirmed::after { content: ''; position: absolute; bottom: 4px; width: 8px; height: 8px; background: #06C755; border-radius: 50%; box-shadow: 0 0 4px rgba(6,199,85,0.3); }
             .calendar-day.selected { background: #06C755; color: white; border-radius: 8px; }
-            .event-list { margin-top: 16px; background: white; border-radius: 16px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-            .event-list-title { font-size: 14px; font-weight: 600; color: #666; margin-bottom: 8px; }
             .event-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; flex-wrap: wrap; gap: 4px 8px; }
             .event-item:last-child { border-bottom: none; }
             .event-time { font-size: 12px; font-weight: 600; }
             .event-time.pending { color: #ff9800; }
             .event-time.confirmed { color: #06C755; }
             .event-title { font-size: 14px; color: #333; flex: 1; min-width: 80px; }
-            .event-person { font-size: 12px; color: #888; background: #f0f0f0; padding: 2px 10px; border-radius: 999px; }
+            .event-person { font-size: 12px; color: #888; background: #f0f4f8; padding: 2px 10px; border-radius: 999px; }
             .event-status-badge { font-size: 10px; padding: 2px 8px; border-radius: 999px; }
             .event-status-badge.pending { background: #fff3e0; color: #e65100; }
             .event-status-badge.confirmed { background: #e8f5e9; color: #2e7d32; }
-            .event-empty { text-align: center; color: #bbb; font-size: 14px; padding: 16px 0; }
-            .add-event-btn { position: fixed; bottom: 24px; right: 24px; width: 60px; height: 60px; border-radius: 50%; background: #06C755; color: white; border: none; font-size: 32px; box-shadow: 0 4px 20px rgba(6,199,85,0.4); z-index: 100; transition: all 0.2s; }
             .add-event-btn:active { transform: scale(0.9); }
         </style>
     `);
 
-    // ====== カレンダーロジック（簡易版） ======
+    // ====== カレンダーロジック ======
     let currentDate = new Date();
     let currentYear = currentDate.getFullYear();
     let currentMonth = currentDate.getMonth();
     let selectedDate = null;
 
     const sampleEvents = {
-        '2026-07-15': [{ time: '10:00', title: '田中さんと打ち合わせ', person: '田中 一郎', status: 'confirmed' }],
-        '2026-07-20': [{ time: '14:00', title: 'カレンダー共有設定', person: '佐藤 花子', status: 'pending' }]
+        '2026-07-20': [
+            { time: '10:00', title: '田中さんと打ち合わせ', person: '田中 一郎', status: 'confirmed' },
+            { time: '14:00', title: 'カレンダー共有設定', person: '佐藤 花子', status: 'pending' }
+        ],
+        '2026-07-22': [
+            { time: '09:00', title: '朝会', person: '鈴木 誠', status: 'confirmed' }
+        ]
     };
 
     function renderCalendar(year, month) {
@@ -148,7 +144,7 @@
             renderCalendar(currentYear, currentMonth);
         });
         document.getElementById('addEventBtn').addEventListener('click', function() {
-            alert('📝 予定追加機能は開発中です。\n日付を選択してからもう一度お試しください。');
+            alert('📝 予定追加機能は開発中です。');
         });
     });
 </script>

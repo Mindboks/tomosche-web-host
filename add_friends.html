@@ -2,32 +2,26 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
     const content = `
-    <div class="container py-3">
+    <div class="container" style="background:#ffffff; min-height:100vh;">
         <div class="d-flex align-items-center mb-2">
             <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
-            <h1 class="page-title" id="addTitle">友達追加</h1>
+            <h1 class="page-title">友達追加</h1>
         </div>
-        <div class="qr-container">
-            <h5 id="addSubtitle">QRコードで招待</h5>
-            <p id="addQrLabel">友達にこのQRコードを読み取ってもらってください</p>
-            <div id="qrcode"></div>
-            <button class="send-btn" id="sendLineBtn"><i class="bi bi-line me-2"></i><span id="sendLineLabel">LINEで送る</span></button>
-            <div class="add-note" id="addNote">友達がQRコードを読み取ると、自動的に友達一覧に追加されます</div>
+        <div style="background:white; border-radius:24px; padding:32px 20px; text-align:center; box-shadow:0 2px 12px rgba(0,0,0,0.06); margin-top:20px;">
+            <h5 style="font-weight:600; margin-bottom:8px;">QRコードで招待</h5>
+            <p style="font-size:14px; color:#888; margin-bottom:20px;">友達にこのQRコードを読み取ってもらってください</p>
+            <div id="qrcode" style="display:inline-block; background:white; padding:12px; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,0.06);"></div>
+            <button class="send-btn" id="sendLineBtn" style="background:#06C755; color:white; border:none; padding:14px; border-radius:999px; font-size:16px; font-weight:600; width:100%; margin-top:16px; cursor:pointer;">
+                <i class="bi bi-line me-2"></i>LINEで送る
+            </button>
+            <div style="font-size:12px; color:#aaa; margin-top:16px;">友達がQRコードを読み取ると、自動的に友達一覧に追加されます</div>
         </div>
     </div>
     `;
 
     renderPage('友達追加', content, `
         <style>
-            .back-btn { background: none; border: none; font-size: 24px; color: #06C755; padding: 0; margin-right: 8px; }
-            .page-title { font-size: clamp(1.2rem, 4vw, 1.8rem); font-weight: 600; margin: 0; color: #333; }
-            .qr-container { background: white; border-radius: 24px; padding: 32px 20px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-top: 20px; }
-            .qr-container h5 { font-weight: 600; margin-bottom: 8px; }
-            .qr-container p { font-size: 14px; color: #888; margin-bottom: 20px; }
-            #qrcode { display: inline-block; background: white; padding: 12px; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-            .send-btn { background: #06C755; color: white; border: none; padding: 14px; border-radius: 999px; font-size: 16px; font-weight: 600; width: 100%; margin-top: 16px; transition: background 0.2s; }
             .send-btn:hover { background: #049a44; }
-            .add-note { font-size: 12px; color: #aaa; margin-top: 16px; }
         </style>
     `);
 
