@@ -13,16 +13,13 @@
 
 // ================================================================
 // メインレンダリング関数
-// 各ページから呼び出して、共通レイアウト＋個別コンテンツを表示
 // ================================================================
 function renderPage(title, content) {
-    // 現在時刻を取得（日付表示用）
     const now = new Date();
     const h = String(now.getHours()).padStart(2, '0');
     const m = String(now.getMinutes()).padStart(2, '0');
     const timeStr = `${h}時${m}分現在`;
 
-    // 月名（日付表示用）
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const dateStr = `Today・${monthNames[now.getMonth()]} ${now.getDate()}  ${timeStr}`;
 
@@ -33,13 +30,10 @@ function renderPage(title, content) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>${title} - Tomosche</title>
-    <!-- Bootstrap 5 (レスポンシブ制御用) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- LIFF SDK (LINE連携用) -->
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     <style>
-        /* ====== 全体のベース ====== */
         html, body {
             background: #ffffff !important;
             margin: 0 !important;
@@ -47,16 +41,12 @@ function renderPage(title, content) {
             min-height: 100vh;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-
-        /* ====== メインコンテナ ====== */
         .app-container {
             max-width: 420px;
             margin: 0 auto;
             padding: 0 16px 80px 16px;
             background: #ffffff;
         }
-
-        /* ====== ヘッダー（ロゴ＋プロフィール） ====== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -66,8 +56,6 @@ function renderPage(title, content) {
         .logo { font-size: 22px; font-weight: 700; color: #06C755; }
         .logo-sub { font-size: 11px; color: #999; font-weight: 400; margin-left: 6px; }
         .profile-icon { font-size: 28px; color: #06C755; cursor: pointer; }
-
-        /* ====== メイン画像 + 日付 + 検索窓（重ね合わせ） ====== */
         .image-wrapper {
             position: relative;
             width: 100%;
@@ -77,8 +65,6 @@ function renderPage(title, content) {
             margin: 4px 0 0 0;
         }
         .image-wrapper img { width: 100%; height: auto; display: block; }
-
-        /* 日付（画像の上部に重ねる） */
         .image-date {
             position: absolute;
             top: 16px;
@@ -88,16 +74,14 @@ function renderPage(title, content) {
             backdrop-filter: blur(6px);
             padding: 6px 18px;
             border-radius: 999px;
-            font-size: clamp(11px, 3vw, 14px);  /* 画面サイズに応じてフォントサイズ調整 */
+            font-size: clamp(11px, 3vw, 14px);
             font-weight: 600;
             color: #333;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             border: 1px solid rgba(255,255,255,0.6);
-            white-space: nowrap;  /* 折り返し禁止 */
+            white-space: nowrap;
             z-index: 5;
         }
-
-        /* 検索窓（画像の下部に重ねる） */
         .image-search {
             position: absolute;
             bottom: 16px;
@@ -124,12 +108,10 @@ function renderPage(title, content) {
             background: none;
             outline: none;
             flex: 1;
-            font-size: clamp(12px, 2.5vw, 14px);  /* レスポンシブ */
+            font-size: clamp(12px, 2.5vw, 14px);
             color: #333;
         }
         .image-search .search-box input::placeholder { color: #bbb; }
-
-        /* ====== 友達アイコン（横並び） ====== */
         .avatars {
             display: flex;
             gap: 12px;
@@ -168,8 +150,6 @@ function renderPage(title, content) {
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-
-        /* ====== 今日の予定カード ====== */
         .today-card {
             background: white;
             border-radius: 16px;
@@ -201,7 +181,7 @@ function renderPage(title, content) {
             border-bottom: 1px solid #f0f4f8;
             gap: 10px;
             font-size: clamp(12px, 2.2vw, 13px);
-            white-space: nowrap;  /* 折り返し禁止 */
+            white-space: nowrap;
         }
         .today-item:last-child { border-bottom: none; }
         .today-time {
@@ -225,8 +205,6 @@ function renderPage(title, content) {
             font-size: clamp(10px, 1.8vw, 11px);
             white-space: nowrap;
         }
-
-        /* ====== 下部ナビゲーション（フル幅） ====== */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -260,8 +238,6 @@ function renderPage(title, content) {
         .nav-item.active { color: #06C755; }
         .nav-item.active i { transform: translateY(-2px); }
         .nav-item:active { transform: scale(0.92); }
-
-        /* ====== 戻るボタン＆ページタイトル ====== */
         .back-btn {
             background: none;
             border: none;
@@ -278,16 +254,12 @@ function renderPage(title, content) {
             color: #333;
             white-space: nowrap;
         }
-
-        /* ====== バージョン表示 ====== */
         .version {
             text-align: center;
             font-size: 10px;
             color: #ccc;
             padding: 8px 0 4px 0;
         }
-
-        /* ====== Moreポップアップ ====== */
         .more-popup {
             display: none;
             position: fixed;
@@ -310,8 +282,6 @@ function renderPage(title, content) {
         .more-grid span { display: block; margin-top: 4px; }
         .more-close { text-align: center; margin-top: 12px; }
         .more-close button { background: none; border: none; color: #999; font-size: 13px; padding: 4px 16px; cursor: pointer; }
-
-        /* ====== レスポンシブ（スマホ最適化） ====== */
         @media (max-width: 576px) {
             .app-container { padding: 0 12px 80px 12px; }
             .logo { font-size: 18px; }
@@ -326,8 +296,6 @@ function renderPage(title, content) {
             .nav-item { padding: 4px 8px; font-size: clamp(8px, 1.6vw, 9px); }
             .nav-item i { font-size: clamp(16px, 3.5vw, 18px); }
         }
-
-        /* ====== タブレット以上 ====== */
         @media (min-width: 768px) {
             .bottom-nav { max-width: 420px; left: 50%; transform: translateX(-50%); }
             .more-popup { max-width: 400px; }
@@ -338,11 +306,9 @@ function renderPage(title, content) {
     <div class="app-container">
         ${content}
     </div>
-
-    <!-- バージョン情報（js/config.js から自動取得） -->
     <div class="version" id="versionDisplay">Tomosche v1.0.0</div>
 
-    <!-- ====== 下部ナビゲーション（全ページ共通） ====== -->
+    <!-- ====== 下部ナビゲーション ====== -->
     <div class="bottom-nav">
         <a href="/" class="nav-item active" data-nav="home"><i class="bi bi-house-fill"></i><span>Home</span></a>
         <a href="friends.html" class="nav-item" data-nav="friends"><i class="bi bi-people-fill"></i><span>Friends</span></a>
@@ -351,29 +317,44 @@ function renderPage(title, content) {
         <div class="nav-item" id="moreMenuBtn"><i class="bi bi-grid-fill"></i><span>More</span></div>
     </div>
 
-    <!-- ====== Moreメニュー（プライバシー・利用規約など） ====== -->
+    <!-- ====== Moreメニュー（リンク先修正済み） ====== -->
     <div class="more-popup" id="moreMenuPopup">
         <div class="more-grid">
-            <a href="guide.html"><div class="icon-box"><i class="bi bi-book" style="color:#6a1b9a;"></i></div><span>使い方</span></a>
-            <a href="privacy.html"><div class="icon-box"><i class="bi bi-shield-lock" style="color:#1565c0;"></i></div><span>プライバシー</span></a>
-            <a href="terms.html"><div class="icon-box"><i class="bi bi-file-text" style="color:#e65100;"></i></div><span>利用規約</span></a>
-            <a href="#" id="feedbackMoreBtn"><div class="icon-box"><i class="bi bi-chat-dots" style="color:#f9a825;"></i></div><span>フィードバック</span></a>
-            <a href="#" id="logoutMoreBtn"><div class="icon-box"><i class="bi bi-box-arrow-right" style="color:#e53935;"></i></div><span>ログアウト</span></a>
+            <!-- 使い方ページ -->
+            <a href="guide.html">
+                <div class="icon-box"><i class="bi bi-book" style="color:#6a1b9a;"></i></div>
+                <span>使い方</span>
+            </a>
+            <!-- プライバシーポリシー -->
+            <a href="privacy.html">
+                <div class="icon-box"><i class="bi bi-shield-lock" style="color:#1565c0;"></i></div>
+                <span>プライバシー</span>
+            </a>
+            <!-- 利用規約 -->
+            <a href="terms.html">
+                <div class="icon-box"><i class="bi bi-file-text" style="color:#e65100;"></i></div>
+                <span>利用規約</span>
+            </a>
+            <!-- フィードバック（仮） -->
+            <a href="#" id="feedbackMoreBtn">
+                <div class="icon-box"><i class="bi bi-chat-dots" style="color:#f9a825;"></i></div>
+                <span>フィードバック</span>
+            </a>
+            <!-- ログアウト -->
+            <a href="#" id="logoutMoreBtn">
+                <div class="icon-box"><i class="bi bi-box-arrow-right" style="color:#e53935;"></i></div>
+                <span>ログアウト</span>
+            </a>
         </div>
-        <div class="more-close"><button onclick="document.getElementById('moreMenuPopup').style.display='none'">閉じる</button></div>
+        <div class="more-close">
+            <button onclick="document.getElementById('moreMenuPopup').style.display='none'">閉じる</button>
+        </div>
     </div>
 
-    <!-- ====== 共通JavaScript ====== -->
     <script src="js/app.js"></script>
     <script>
-        /**
-         * ================================================================
-         * 共通処理（Moreメニュー・ログアウト・フィードバック）
-         * 全ページで共有されます
-         * ================================================================
-         */
         document.addEventListener('DOMContentLoaded', function() {
-            // ---- Moreメニューの開閉 ----
+            // ---- Moreメニュー ----
             const moreBtn = document.getElementById('moreMenuBtn');
             const popup = document.getElementById('moreMenuPopup');
             if (moreBtn && popup) {
@@ -381,7 +362,6 @@ function renderPage(title, content) {
                     e.stopPropagation();
                     popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
                 });
-                // ポップアップ外クリックで閉じる
                 document.addEventListener('click', function(e) {
                     if (popup.style.display === 'block') {
                         if (!e.target.closest('#moreMenuPopup') && !e.target.closest('#moreMenuBtn')) {
@@ -391,7 +371,7 @@ function renderPage(title, content) {
                 });
             }
 
-            // ---- ログアウト処理 ----
+            // ---- ログアウト ----
             const logoutBtn = document.getElementById('logoutMoreBtn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', function(e) {
@@ -407,7 +387,7 @@ function renderPage(title, content) {
                 });
             }
 
-            // ---- フィードバック（仮） ----
+            // ---- フィードバック ----
             const feedbackBtn = document.getElementById('feedbackMoreBtn');
             if (feedbackBtn) {
                 feedbackBtn.addEventListener('click', function(e) {
@@ -421,7 +401,6 @@ function renderPage(title, content) {
 </html>
     `;
 
-    // レンダリング実行
     document.open();
     document.write(html);
     document.close();
