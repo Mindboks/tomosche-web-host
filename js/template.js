@@ -1,8 +1,7 @@
 // ============================================================
-// Tomosche 共通テンプレート（シンプル版）
+// Tomosche 共通テンプレート
 // ============================================================
 
-// ====== ページレンダリング関数 ======
 function renderPage(title, content) {
     const html = `
 <!DOCTYPE html>
@@ -15,7 +14,6 @@ function renderPage(title, content) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     <style>
-        /* 強制白背景 */
         html, body {
             background: #ffffff !important;
             margin: 0 !important;
@@ -23,14 +21,12 @@ function renderPage(title, content) {
             min-height: 100vh;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        /* コンテナ */
         .app-container {
             max-width: 420px;
             margin: 0 auto;
             padding: 0 16px 80px 16px;
             background: #ffffff;
         }
-        /* ヘッダー */
         .header {
             display: flex;
             justify-content: space-between;
@@ -40,7 +36,6 @@ function renderPage(title, content) {
         .logo { font-size: 22px; font-weight: 700; color: #06C755; }
         .logo-sub { font-size: 11px; color: #999; font-weight: 400; margin-left: 6px; }
         .profile-icon { font-size: 28px; color: #06C755; cursor: pointer; }
-        /* 画像コンテナ */
         .image-wrapper {
             position: relative;
             width: 100%;
@@ -49,12 +44,7 @@ function renderPage(title, content) {
             box-shadow: 0 2px 12px rgba(0,0,0,0.06);
             margin: 4px 0 0 0;
         }
-        .image-wrapper img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-        /* 日付（画像の上部に重ねる） */
+        .image-wrapper img { width: 100%; height: auto; display: block; }
         .image-date {
             position: absolute;
             top: 16px;
@@ -72,7 +62,6 @@ function renderPage(title, content) {
             white-space: nowrap;
             z-index: 5;
         }
-        /* 検索窓（画像の下部に重ねる） */
         .image-search {
             position: absolute;
             bottom: 16px;
@@ -93,10 +82,7 @@ function renderPage(title, content) {
             box-shadow: 0 2px 12px rgba(0,0,0,0.06);
             border: 1px solid rgba(255,255,255,0.6);
         }
-        .image-search .search-box i {
-            color: #999;
-            font-size: 16px;
-        }
+        .image-search .search-box i { color: #999; font-size: 16px; }
         .image-search .search-box input {
             border: none;
             background: none;
@@ -105,16 +91,8 @@ function renderPage(title, content) {
             font-size: 14px;
             color: #333;
         }
-        .image-search .search-box input::placeholder {
-            color: #bbb;
-        }
-        /* 友達アイコン */
-        .avatars {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            padding: 12px 0 8px 0;
-        }
+        .image-search .search-box input::placeholder { color: #bbb; }
+        .avatars { display: flex; gap: 12px; flex-wrap: wrap; padding: 12px 0 8px 0; }
         .avatar-item {
             display: flex;
             flex-direction: column;
@@ -137,22 +115,8 @@ function renderPage(title, content) {
             border: 2px solid white;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
-        .avatar-add {
-            border: 2px dashed #ccc;
-            color: #999;
-            background: #f0f4f8;
-            font-size: 20px;
-        }
-        .avatar-name {
-            font-size: 10px;
-            color: #888;
-            text-align: center;
-            max-width: 56px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        /* 今日の予定 */
+        .avatar-add { border: 2px dashed #ccc; color: #999; background: #f0f4f8; font-size: 20px; }
+        .avatar-name { font-size: 10px; color: #888; text-align: center; max-width: 56px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .today-card {
             background: white;
             border-radius: 16px;
@@ -183,20 +147,19 @@ function renderPage(title, content) {
         .today-time { color: #06C755; font-weight: 600; min-width: 44px; }
         .today-title { flex: 1; color: #333; }
         .today-person { color: #888; background: #f0f4f8; padding: 2px 10px; border-radius: 999px; font-size: 11px; }
-        /* 下部ナビ */
+        /* 下部ナビ - フル幅（Bootstrap連携） */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: white;
+            background: #ffffff;
             display: flex;
             justify-content: space-around;
             padding: 6px 0 14px 0;
             border-top: 1px solid #f0f4f8;
             z-index: 100;
-            max-width: 420px;
-            margin: 0 auto;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
         }
         .nav-item {
             display: flex;
@@ -208,11 +171,15 @@ function renderPage(title, content) {
             gap: 2px;
             background: none;
             border: none;
-            padding: 4px 10px;
+            padding: 4px 12px;
             cursor: pointer;
+            flex: 1;
+            max-width: 80px;
         }
         .nav-item i { font-size: 20px; }
         .nav-item.active { color: #06C755; }
+        .nav-item.active i { transform: translateY(-2px); }
+        .nav-item:active { transform: scale(0.92); }
         /* 戻るボタン */
         .back-btn {
             background: none;
@@ -229,58 +196,48 @@ function renderPage(title, content) {
             margin: 0;
             color: #333;
         }
-        /* バージョン */
-        .version {
-            text-align: center;
-            font-size: 10px;
-            color: #ccc;
-            padding: 8px 0 4px 0;
-        }
-        /* Moreポップアップ */
+        .version { text-align: center; font-size: 10px; color: #ccc; padding: 8px 0 4px 0; }
         .more-popup {
             display: none;
             position: fixed;
-            bottom: 80px;
-            left: 16px;
-            right: 16px;
+            bottom: 76px;
+            left: 50%;
+            transform: translateX(-50%);
             background: white;
             border-radius: 20px;
             padding: 20px;
             box-shadow: 0 8px 40px rgba(0,0,0,0.12);
             z-index: 999;
             border: 1px solid #f0f4f8;
-            max-width: 388px;
-            margin: 0 auto;
+            width: 92%;
+            max-width: 400px;
         }
-        .more-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 12px;
-            text-align: center;
-        }
-        .more-grid a {
-            text-decoration: none;
-            color: #333;
-            font-size: 12px;
-        }
-        .more-grid .icon-box {
-            background: #f0f4f8;
-            border-radius: 14px;
-            padding: 14px;
-        }
+        .more-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center; }
+        .more-grid a { text-decoration: none; color: #333; font-size: 12px; }
+        .more-grid .icon-box { background: #f0f4f8; border-radius: 14px; padding: 14px; }
         .more-grid .icon-box i { font-size: 24px; }
         .more-grid span { display: block; margin-top: 4px; }
-        .more-close {
-            text-align: center;
-            margin-top: 12px;
+        .more-close { text-align: center; margin-top: 12px; }
+        .more-close button { background: none; border: none; color: #999; font-size: 13px; padding: 4px 16px; cursor: pointer; }
+
+        /* Bootstrap レスポンシブ補助 */
+        @media (max-width: 576px) {
+            .app-container { padding: 0 12px 80px 12px; }
+            .logo { font-size: 18px; }
+            .logo-sub { font-size: 10px; }
+            .image-date { font-size: 12px; padding: 4px 14px; top: 12px; }
+            .image-search .search-box { padding: 8px 12px; }
+            .image-search .search-box input { font-size: 12px; }
+            .avatar-circle { width: 44px; height: 44px; font-size: 14px; }
+            .avatar-name { font-size: 9px; }
+            .today-item { font-size: 12px; }
+            .today-time { min-width: 36px; font-size: 11px; }
+            .nav-item { padding: 4px 8px; font-size: 9px; }
+            .nav-item i { font-size: 18px; }
         }
-        .more-close button {
-            background: none;
-            border: none;
-            color: #999;
-            font-size: 13px;
-            padding: 4px 16px;
-            cursor: pointer;
+        @media (min-width: 768px) {
+            .bottom-nav { max-width: 420px; left: 50%; transform: translateX(-50%); }
+            .more-popup { max-width: 400px; }
         }
     </style>
 </head>
@@ -290,8 +247,8 @@ function renderPage(title, content) {
     </div>
     <div class="version" id="versionDisplay">Tomosche v1.0.0</div>
 
-    <!-- 下部ナビ -->
-    <div class="bottom-nav" style="max-width:420px; left:50%; transform:translateX(-50%);">
+    <!-- 下部ナビ（フル幅） -->
+    <div class="bottom-nav">
         <a href="/" class="nav-item active" data-nav="home"><i class="bi bi-house-fill"></i><span>Home</span></a>
         <a href="friends.html" class="nav-item" data-nav="friends"><i class="bi bi-people-fill"></i><span>Friends</span></a>
         <a href="schedule.html" class="nav-item" data-nav="calendar"><i class="bi bi-calendar-event-fill"></i><span>Calendar</span></a>
@@ -313,7 +270,6 @@ function renderPage(title, content) {
 
     <script src="js/app.js"></script>
     <script>
-        // ====== 共通処理 ======
         document.addEventListener('DOMContentLoaded', function() {
             // Moreメニュー
             const moreBtn = document.getElementById('moreMenuBtn');
@@ -331,7 +287,6 @@ function renderPage(title, content) {
                     }
                 });
             }
-
             // ログアウト
             const logoutBtn = document.getElementById('logoutMoreBtn');
             if (logoutBtn) {
@@ -347,7 +302,6 @@ function renderPage(title, content) {
                     }
                 });
             }
-
             // フィードバック
             const feedbackBtn = document.getElementById('feedbackMoreBtn');
             if (feedbackBtn) {

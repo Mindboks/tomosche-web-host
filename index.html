@@ -1,12 +1,9 @@
 <script src="js/template.js"></script>
 <script>
-    // ====== 今日の日付 ======
     const today = new Date();
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const dateStr = `Today・${monthNames[today.getMonth()]} ${today.getDate()}`;
 
-    // ====== サンプルデータ ======
     const sampleFriends = [
         { name: '田中', initial: '田', color: '#e3f2fd' },
         { name: '佐藤', initial: '佐', color: '#e8f5e9' },
@@ -19,15 +16,11 @@
         { time: '14:00', title: 'カレンダー共有設定', person: '佐藤' }
     ];
 
-    // ====== コンテンツ生成 ======
     const content = `
-    <!-- ヘッダー -->
     <div class="header">
         <div class="logo">🌱 Tomosche <span class="logo-sub">Social Scheduling</span></div>
         <div class="profile-icon" id="profileIcon"><i class="bi bi-person-circle"></i></div>
     </div>
-
-    <!-- 画像 + 日付 + 検索窓 -->
     <div class="image-wrapper">
         <img src="assets/images/toppageTmocha.png" alt="Tomosche" />
         <div class="image-date" id="dateDisplay">${dateStr}</div>
@@ -38,9 +31,7 @@
             </div>
         </div>
     </div>
-
-    <!-- 友達アイコン -->
-    <div class="avatars" id="friendsAvatars">
+    <div class="avatars">
         ${sampleFriends.map(f => `
             <div class="avatar-item">
                 <div class="avatar-circle" style="background:${f.color};">${f.initial}</div>
@@ -52,8 +43,6 @@
             <span class="avatar-name">Add</span>
         </a>
     </div>
-
-    <!-- 今日の予定 -->
     <div class="today-card">
         <div class="today-header">
             <span><i class="bi bi-clock-history"></i> Upcoming</span>
@@ -69,16 +58,12 @@
     </div>
     `;
 
-    // ====== レンダリング ======
     renderPage('友助 - トップ', content);
-
-    // ====== ページロード後 ======
     document.addEventListener('DOMContentLoaded', function() {
-        // 検索
         document.getElementById('globalSearch').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                const query = this.value.trim();
-                if (query) alert(`🔍 「${query}」を検索します（機能は開発中です）`);
+                const q = this.value.trim();
+                if (q) alert(`🔍 「${q}」を検索（機能開発中）`);
             }
         });
     });

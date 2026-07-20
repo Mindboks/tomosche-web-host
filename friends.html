@@ -1,116 +1,37 @@
 <script src="js/template.js"></script>
 <script>
+    const rawFriends = ['青山 隆','赤井 美香','秋山 健太','浅野 裕子','安藤 誠','石井 秀樹','伊藤 真由美','井上 達也','岩崎 千尋','上田 公平','遠藤 翔太','大川 さやか','大野 浩二','岡田 奈々','小川 和也','加藤 彩乃','河野 哲也','木村 直人','工藤 明日香','久保 優子','小林 正明','佐々木 健','佐藤 花子','鈴木 誠','関 健一','高橋 美咲','田中 一郎','谷口 真由','千葉 翔','中村 みな','中山 聖也','西村 好美','野口 大輔','長谷川 陽子','浜田 健吾','林 香織','原田 博之','日高 宏','平野 奈緒','藤田 理沙','古川 正人','細川 裕太','前田 夏美','松本 勇気','三浦 優希','宮崎 綾','村上 真一','森 萌','山田 太郎','渡辺 美咲'];
+    let friends = rawFriends.map((n,i)=>({id:i+1,name:n,initial:n.charAt(0),status:i%3===0?'shared':'pending'}));
+
+    function renderList(f) {
+        const c = document.getElementById('list');
+        if (!f||!f.length) { c.innerHTML='<div style="text-align:center;padding:40px;color:#999;">まだ友達がいません</div>'; return; }
+        c.innerHTML = f.map(fr => `
+            <div style="display:flex;align-items:center;padding:14px 0;border-bottom:1px solid #f0f4f8;">
+                <div style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;background:#e8f5e9;color:#2e7d32;margin-right:14px;">${fr.initial}</div>
+                <div style="flex:1;"><div style="font-weight:600;color:#333;">${fr.name}</div><div style="font-size:12px;color:${fr.status==='shared'?'#2e7d32':'#ff9800'};">${fr.status==='shared'?'✓ カレンダー共有中':'⏳ 招待承認待ち'}</div></div>
+                <button onclick="del(${fr.id})" style="background:none;border:none;color:#ccc;font-size:20px;cursor:pointer;padding:8px;"><i class="bi bi-trash3"></i></button>
+            </div>
+        `).join('');
+    }
+
+    window.del = function(id) {
+        if (confirm('削除しますか？')) {
+            friends = friends.filter(f => f.id !== id);
+            renderList(friends);
+        }
+    };
+
     const content = `
-    <div style="padding:16px; padding-bottom:80px; background:#ffffff;">
+    <div style="padding:16px 0;">
         <div class="d-flex align-items-center mb-3">
             <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
             <h1 class="page-title">友達一覧</h1>
         </div>
-        <div id="friendListContainer"></div>
-        <div id="deleteModalContainer"></div>
+        <div id="list"></div>
     </div>
     `;
 
-    renderPage('友達一覧', content, 'friends');
-
-    // ====== 友達データ ======
-    const rawFriends = [
-        '青山 隆','赤井 美香','秋山 健太','浅野 裕子','安藤 誠',
-        '石井 秀樹','伊藤 真由美','井上 達也','岩崎 千尋','上田 公平',
-        '遠藤 翔太','大川 さやか','大野 浩二','岡田 奈々','小川 和也',
-        '加藤 彩乃','河野 哲也','木村 直人','工藤 明日香','久保 優子',
-        '小林 正明','佐々木 健','佐藤 花子','鈴木 誠','関 健一',
-        '高橋 美咲','田中 一郎','谷口 真由','千葉 翔','中村 みな',
-        '中山 聖也','西村 好美','野口 大輔','長谷川 陽子','浜田 健吾',
-        '林 香織','原田 博之','日高 宏','平野 奈緒','藤田 理沙',
-        '古川 正人','細川 裕太','前田 夏美','松本 勇気','三浦 優希',
-        '宮崎 綾','村上 真一','森 萌','山田 太郎','渡辺 美咲'
-    ];
-
-    let sampleFriends = rawFriends.map((name, index) => ({
-        id: index + 1,
-        name: name,
-        initial: name.charAt(0),
-        status: index % 3 === 0 ? 'shared' : 'pending'
-    }));
-
-    function getStatusLabel(status) {
-        return status === 'shared' ? '✓ カレンダー共有中' : '⏳ 招待承認待ち';
-    }
-
-    function getStatusClass(status) {
-        return status === 'shared' ? 'status-shared' : 'status-pending';
-    }
-
-    function renderFriends(friends) {
-        const container = document.getElementById('friendListContainer');
-        if (!friends || friends.length === 0) {
-            container.innerHTML = `<div style="text-align:center; padding:40px 20px; color:#999;"><i class="bi bi-people" style="font-size:48px; color:#ddd;"></i><p style="margin-top:12px;">まだ友達がいません</p></div>`;
-            return;
-        }
-        let html = '';
-        friends.forEach(friend => {
-            html += `
-                <div class="friend-item" data-id="${friend.id}" style="display:flex; align-items:center; padding:14px 0; border-bottom:1px solid #f0f4f8;">
-                    <div style="width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-right:14px; font-weight:bold; font-size:18px; flex-shrink:0; background:#e8f5e9; color:#2e7d32;">${friend.initial}</div>
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-weight:600; font-size:clamp(0.95rem,2.5vw,1.1rem); color:#333;">${friend.name}</div>
-                        <div style="font-size:clamp(0.7rem,1.8vw,0.85rem); margin-top:2px; color:${friend.status === 'shared' ? '#2e7d32' : '#ff9800'};">${getStatusLabel(friend.status)}</div>
-                    </div>
-                    <button class="delete-btn" data-id="${friend.id}" data-name="${friend.name}" style="background:none; border:none; color:#ccc; font-size:clamp(18px,4vw,24px); cursor:pointer; padding:8px; border-radius:50%; transition:all 0.2s; flex-shrink:0;"><i class="bi bi-trash3"></i></button>
-                </div>
-            `;
-        });
-        container.innerHTML = html;
-        container.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const id = parseInt(this.dataset.id);
-                const name = this.dataset.name;
-                showDeleteModal(id, name);
-            });
-        });
-    }
-
-    function showDeleteModal(friendId, friendName) {
-        const container = document.getElementById('deleteModalContainer');
-        container.innerHTML = `
-            <div style="position:fixed; inset:0; background:rgba(0,0,0,0.4); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:9999;">
-                <div style="background:white; border-radius:24px; padding:32px 28px; max-width:360px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
-                    <div style="font-size:48px; margin-bottom:12px; color:#e53935;"><i class="bi bi-exclamation-triangle"></i></div>
-                    <div style="font-size:20px; font-weight:700; color:#333; margin-bottom:8px;">友達を削除しますか？</div>
-                    <div style="font-size:14px; color:#666; margin-bottom:24px; line-height:1.5;">「${friendName}」さんを削除します。この操作は元に戻せません。</div>
-                    <div style="display:flex; gap:12px; justify-content:center;">
-                        <button class="modal-btn-cancel" style="padding:10px 28px; border-radius:999px; border:none; font-size:14px; font-weight:600; cursor:pointer; min-width:100px; background:#f0f0f0; color:#666;" onclick="this.closest('div[style]').remove()">キャンセル</button>
-                        <button class="modal-btn-delete" style="padding:10px 28px; border-radius:999px; border:none; font-size:14px; font-weight:600; cursor:pointer; min-width:100px; background:#e53935; color:white;" onclick="confirmDelete(${friendId})">削除する</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        window._pendingDeleteId = friendId;
-        window._pendingDeleteName = friendName;
-    }
-
-    window.confirmDelete = function(friendId) {
-        const index = sampleFriends.findIndex(f => f.id === friendId);
-        if (index !== -1) sampleFriends.splice(index, 1);
-        document.getElementById('deleteModalContainer').innerHTML = '';
-        renderFriends(sampleFriends);
-        showToast('友達を削除しました');
-    };
-
-    function showToast(message) {
-        const existing = document.querySelector('.custom-toast');
-        if (existing) existing.remove();
-        const toast = document.createElement('div');
-        toast.className = 'custom-toast';
-        toast.style.cssText = 'position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#333; color:white; padding:12px 24px; border-radius:12px; font-size:14px; z-index:99999;';
-        toast.innerHTML = `<i class="bi bi-check-circle" style="color:#06C755; margin-right:8px;"></i>${message}`;
-        document.body.appendChild(toast);
-        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2000);
-    }
-
-    afterPageLoad(function() {
-        renderFriends(sampleFriends);
-    });
+    renderPage('友達一覧', content);
+    document.addEventListener('DOMContentLoaded', ()=> renderList(friends));
 </script>
