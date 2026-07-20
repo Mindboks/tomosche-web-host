@@ -61,7 +61,7 @@
             <div style="font-size:14px;font-weight:600;color:#666;margin-bottom:8px;">📋 この日の予定</div>
             <div id="events"><div style="text-align:center;color:#bbb;padding:16px 0;">日付を選択してください</div></div>
         </div>
-        <button onclick="alert('📝 予定追加機能は開発中です')" style="position:fixed;bottom:100px;right:24px;width:56px;height:56px;border-radius:50%;background:#06C755;color:white;border:none;font-size:28px;box-shadow:0 4px 20px rgba(6,199,85,0.4);z-index:50;cursor:pointer;"><i class="bi bi-plus-lg"></i></button>
+        <button class="add-event-btn" onclick="openAddEventModal(selected || '日付未選択')"><i class="bi bi-plus-lg"></i></button>
     </div>
     `;
 
