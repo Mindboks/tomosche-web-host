@@ -1,11 +1,9 @@
 // ================================================================
-// Tomosche 共通テンプレート
-// 全ページの共通UIを生成する
+// Tomosche 共通テンプレート（Moreメニュー言語対応版）
 // ================================================================
 
 // ----- 共通UIコンポーネント -----
 const UI = {
-    // ヘッダー
     header: () => `
         <div class="header">
             <div class="logo">🌱 Tomosche <span class="logo-sub">Shared Calendar</span></div>
@@ -13,12 +11,10 @@ const UI = {
         </div>
     `,
 
-    // フッター
     footer: () => `
         <div class="version">Tomosche v1.0.0</div>
     `,
 
-    // 下部ナビゲーション
     bottomNav: (active) => {
         const items = [
             { id: 'home', href: '/', icon: 'house-fill', label: 'Home' },
@@ -40,29 +36,57 @@ const UI = {
         `;
     },
 
-    // Moreポップアップ
-    morePopup: () => `
+    // ================================================================
+    // Moreポップアップ（言語対応リンク）
+    // ================================================================
+    morePopup: () => {
+        // 現在の言語を取得（i18n.js の関数を使用）
+        const lang = typeof getCurrentLang === 'function' ? getCurrentLang() : 'en';
+        // サポート言語（フォールバックは 'en'）
+        const supported = ['ja', 'en', 'vi', 'th', 'ne', 'hi', 'ur', 'bn', 'si', 'my', 'ta'];
+        const currentLang = supported.includes(lang) ? lang : 'en';
+
+        return `
         <div class="more-popup" id="moreMenuPopup">
             <div class="more-grid">
-                <a href="/docs/guide.html"><div class="icon-box"><i class="bi bi-book"></i></div><span>Guide</span></a>
-                <a href="/docs/privacy.html"><div class="icon-box"><i class="bi bi-shield-lock"></i></div><span>Privacy</span></a>
-                <a href="/docs/terms.html"><div class="icon-box"><i class="bi bi-file-text"></i></div><span>Terms</span></a>
-                <a href="#" id="feedbackMoreBtn"><div class="icon-box"><i class="bi bi-chat-dots"></i></div><span>Feedback</span></a>
-                <a href="#" id="logoutMoreBtn"><div class="icon-box"><i class="bi bi-box-arrow-right"></i></div><span>Logout</span></a>
+                <!-- Guide: 言語対応URL -->
+                <a href="/docs/${currentLang}/guide.html">
+                    <div class="icon-box"><i class="bi bi-book"></i></div>
+                    <span>Guide</span>
+                </a>
+                <!-- Privacy: 言語対応URL -->
+                <a href="/docs/${currentLang}/privacy.html">
+                    <div class="icon-box"><i class="bi bi-shield-lock"></i></div>
+                    <span>Privacy</span>
+                </a>
+                <!-- Terms: 言語対応URL -->
+                <a href="/docs/${currentLang}/terms.html">
+                    <div class="icon-box"><i class="bi bi-file-text"></i></div>
+                    <span>Terms</span>
+                </a>
+                <a href="#" id="feedbackMoreBtn">
+                    <div class="icon-box"><i class="bi bi-chat-dots"></i></div>
+                    <span>Feedback</span>
+                </a>
+                <a href="#" id="logoutMoreBtn">
+                    <div class="icon-box"><i class="bi bi-box-arrow-right"></i></div>
+                    <span>Logout</span>
+                </a>
             </div>
             <div class="more-close"><button onclick="document.getElementById('moreMenuPopup').style.display='none'">Close</button></div>
             <div class="lang-section">
                 <div class="lang-label">Language</div>
                 <div class="lang-buttons">
-                    ${['ja','en','zh-CN','vi','th','ne','hi','ur','bn','si','my','ta'].map(lang =>
-                        `<button class="lang-btn" data-lang="${lang}" onclick="switchLanguage('${lang}')">${lang}</button>`
+                    ${['ja','en','vi','th','ne','hi','ur','bn','si','my','ta'].map(l =>
+                        `<button class="lang-btn ${l === currentLang ? 'active' : ''}" data-lang="${l}" onclick="switchLanguage('${l}')">${l}</button>`
                     ).join('')}
                 </div>
             </div>
         </div>
-    `,
+        `;
+    },
 
-    // フィードバックモーダル
+    // ----- フィードバックモーダル（変更なし） -----
     feedbackModal: () => `
         <div class="feedback-modal" id="feedbackModal">
             <div class="feedback-box">
@@ -78,7 +102,7 @@ const UI = {
         </div>
     `,
 
-    // 予定追加モーダル
+    // ----- 予定追加モーダル（変更なし） -----
     eventModal: () => `
         <div class="modal-overlay" id="addEventModal">
             <div class="modal-box">
@@ -106,7 +130,6 @@ const UI = {
 
 // ----- 共通JavaScript処理（モーダル制御など） -----
 const App = {
-    // フィードバック
     openFeedback() {
         document.getElementById('feedbackModal').style.display = 'flex';
         document.getElementById('fbMessage').value = '';
@@ -125,7 +148,6 @@ const App = {
         setTimeout(() => document.getElementById('feedbackModal').style.display = 'none', 1500);
     },
 
-    // 予定追加
     openEventModal(dateStr) {
         document.getElementById('modalDate').textContent = dateStr || 'Select a date';
         document.getElementById('addEventModal').style.display = 'flex';
@@ -168,15 +190,13 @@ const App = {
         setTimeout(() => document.getElementById('addEventModal').style.display = 'none', 1500);
     },
 
-    // 言語切替
     switchLanguage(lang) {
-        if (lang && ['ja','en','zh-CN','vi','th','ne','hi','ur','bn','si','my','ta'].includes(lang)) {
+        if (lang && ['ja','en','vi','th','ne','hi','ur','bn','si','my','ta'].includes(lang)) {
             localStorage.setItem('tomosche_lang', lang);
             location.reload();
         }
     },
 
-    // 初期化（各ページで呼び出す）
     init(callback) {
         document.addEventListener('DOMContentLoaded', function() {
             // Moreメニュー
@@ -230,10 +250,8 @@ const App = {
             });
             document.getElementById('friendSelect').addEventListener('change', App.checkEventForm);
 
-            // ページ固有の初期化
             if (callback) callback();
 
-            // LIFF初期化
             (async function() {
                 try {
                     await liff.init({ liffId: '2010384200-BS1cr2CR' });
@@ -280,7 +298,6 @@ function renderPage(title, content, activeNav = 'home') {
     ${UI.feedbackModal()}
     ${UI.eventModal()}
     <script>
-        // 関数をグローバルに公開
         window.openFeedback = App.openFeedback;
         window.closeFeedback = App.closeFeedback;
         window.sendFeedback = App.sendFeedback;
