@@ -1,26 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Tomosche - Shared Calendar</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-auth-compat.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/i18n.js"></script>
-    <script src="js/app.js"></script>
-</head>
-<body>
-    <div class="app-container">
-        <div class="header">
-            <div class="logo">🌱 Tomosche <span class="logo-sub">Shared Calendar</span></div>
-            <div class="profile-icon" id="profileIcon"><i class="bi bi-person-circle"></i></div>
-        </div>
+<script src="js/template.js"></script>
+<script>
+    // トップページのコンテンツだけを定義
+    const content = `
         <div class="image-wrapper">
             <img src="assets/images/toppageTmocha.png" alt="Tomosche" />
             <div class="image-date" id="dateDisplay">Loading...</div>
@@ -39,299 +20,57 @@
             </div>
             <div id="todayList"></div>
         </div>
-    </div>
-    <div class="version" id="versionDisplay">Tomosche v1.0.0</div>
+    `;
+    renderPage('Home', content, 'home');
+</script>
+<script>
+    // ページ固有のロジック
+    document.addEventListener('DOMContentLoaded', function() {
+        // 日付表示
+        const now = new Date();
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        document.getElementById('dateDisplay').textContent =
+            `${months[now.getMonth()]} ${now.getDate()}, ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-    <!-- 下部ナビ -->
-    <div class="bottom-nav">
-        <a href="/" class="nav-item active"><i class="bi bi-house-fill"></i><span>Home</span></a>
-        <a href="friends.html" class="nav-item"><i class="bi bi-people-fill"></i><span>Friends</span></a>
-        <a href="schedule.html" class="nav-item"><i class="bi bi-calendar-event-fill"></i><span>Calendar</span></a>
-        <a href="add_friends.html" class="nav-item"><i class="bi bi-person-plus-fill"></i><span>Add</span></a>
-        <div class="nav-item" id="moreMenuBtn"><i class="bi bi-grid-fill"></i><span>More</span></div>
-    </div>
+        // 友達アイコン
+        const friends = [
+            { name: 'Tanaka', initial: '田', color: '#e3f2fd' },
+            { name: 'Sato', initial: '佐', color: '#e8f5e9' },
+            { name: 'Suzuki', initial: '鈴', color: '#fff3e0' },
+            { name: 'Yamada', initial: '山', color: '#fce4ec' }
+        ];
+        const container = document.getElementById('avatars');
+        friends.forEach(f => {
+            const div = document.createElement('div');
+            div.className = 'avatar-item';
+            div.innerHTML = `<div class="avatar-circle" style="background:${f.color};">${f.initial}</div><span class="avatar-name">${f.name}</span>`;
+            container.appendChild(div);
+        });
+        const addDiv = document.createElement('a');
+        addDiv.href = 'add_friends.html';
+        addDiv.className = 'avatar-item';
+        addDiv.innerHTML = `<div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div><span class="avatar-name">Add</span>`;
+        container.appendChild(addDiv);
 
-    <!-- Moreポップアップ -->
-    <div class="more-popup" id="moreMenuPopup">
-        <div class="more-grid">
-            <a href="guide.html"><div class="icon-box"><i class="bi bi-book" style="color:#6a1b9a;"></i></div><span>Guide</span></a>
-            <a href="privacy.html"><div class="icon-box"><i class="bi bi-shield-lock" style="color:#1565c0;"></i></div><span>Privacy</span></a>
-            <a href="terms.html"><div class="icon-box"><i class="bi bi-file-text" style="color:#e65100;"></i></div><span>Terms</span></a>
-            <a href="#" id="feedbackMoreBtn"><div class="icon-box"><i class="bi bi-chat-dots" style="color:#f9a825;"></i></div><span>Feedback</span></a>
-            <a href="#" id="logoutMoreBtn"><div class="icon-box"><i class="bi bi-box-arrow-right" style="color:#e53935;"></i></div><span>Logout</span></a>
-        </div>
-        <div class="more-close"><button onclick="document.getElementById('moreMenuPopup').style.display='none'">Close</button></div>
-        <div class="lang-section">
-            <div class="lang-label">Language</div>
-            <div class="lang-buttons" id="langButtons">
-                <button class="lang-btn" data-lang="ja" onclick="switchLanguage('ja')">日本語</button>
-                <button class="lang-btn" data-lang="en" onclick="switchLanguage('en')">English</button>
-                <button class="lang-btn" data-lang="zh-CN" onclick="switchLanguage('zh-CN')">中文</button>
-                <button class="lang-btn" data-lang="vi" onclick="switchLanguage('vi')">Tiếng Việt</button>
-                <button class="lang-btn" data-lang="th" onclick="switchLanguage('th')">ภาษาไทย</button>
-                <button class="lang-btn" data-lang="ne" onclick="switchLanguage('ne')">नेपाली</button>
-                <button class="lang-btn" data-lang="hi" onclick="switchLanguage('hi')">हिन्दी</button>
-                <button class="lang-btn" data-lang="ur" onclick="switchLanguage('ur')">اردو</button>
-                <button class="lang-btn" data-lang="bn" onclick="switchLanguage('bn')">বাংলা</button>
-                <button class="lang-btn" data-lang="si" onclick="switchLanguage('si')">සිංහල</button>
-                <button class="lang-btn" data-lang="my" onclick="switchLanguage('my')">မြန်မာ</button>
-                <button class="lang-btn" data-lang="ta" onclick="switchLanguage('ta')">தமிழ்</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- フィードバックモーダル -->
-    <div class="feedback-modal" id="feedbackModal">
-        <div class="feedback-box">
-            <h3>📝 Send Feedback</h3>
-            <p>Your feedback helps us improve.</p>
-            <textarea id="fbMessage" placeholder="Write your message here..."></textarea>
-            <div class="fb-actions">
-                <button class="fb-cancel" onclick="closeFeedback()">Cancel</button>
-                <button class="fb-send" id="fbSendBtn" onclick="sendFeedback()">Send</button>
-            </div>
-            <div id="fbStatus"></div>
-        </div>
-    </div>
-
-    <!-- 予定追加モーダル -->
-    <div class="modal-overlay" id="addEventModal">
-        <div class="modal-box">
-            <h3>📝 New Event</h3>
-            <p style="font-size:13px;color:#888;" id="modalDate">Select a date</p>
-            <label>👤 Select a friend</label>
-            <select id="friendSelect"><option value="">-- Select a friend --</option></select>
-            <label>📌 Event name</label>
-            <input type="text" id="eventTitle" placeholder="e.g. Lunch, Meeting..." />
-            <div class="time-row">
-                <div><label>⏰ Start</label><input type="time" id="eventStart" step="900" /></div>
-                <div><label>⏰ End</label><input type="time" id="eventEnd" step="900" /></div>
-            </div>
-            <label>📝 Note (optional)</label>
-            <textarea id="eventNote" rows="2" placeholder="Add details..."></textarea>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeAddEventModal()">Cancel</button>
-                <button class="btn-primary" id="confirmAddEventBtn" onclick="confirmAddEvent()" disabled>Submit</button>
-            </div>
-            <div id="addEventStatus" style="margin-top:12px;font-size:13px;text-align:center;display:none;"></div>
-        </div>
-    </div>
-
-    <script>
-        // ================================================================
-        // 初期化
-        // ================================================================
-        document.addEventListener('DOMContentLoaded', function() {
-            initFirebase();
-            updateDateDisplay();
-            renderFriends();
-            renderTodayEvents();
-
-            // Moreメニュー
-            const moreBtn = document.getElementById('moreMenuBtn');
-            const popup = document.getElementById('moreMenuPopup');
-            if (moreBtn && popup) {
-                moreBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
-                });
-                document.addEventListener('click', function(e) {
-                    if (popup.style.display === 'block') {
-                        if (!e.target.closest('#moreMenuPopup') && !e.target.closest('#moreMenuBtn')) {
-                            popup.style.display = 'none';
-                        }
-                    }
-                });
-            }
-
-            // フィードバック
-            document.getElementById('feedbackMoreBtn').addEventListener('click', function(e) {
-                e.preventDefault();
-                openFeedback();
-            });
-
-            // ログアウト
-            document.getElementById('logoutMoreBtn').addEventListener('click', function(e) {
-                e.preventDefault();
-                if (confirm('Logout?')) {
-                    if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                        liff.logout();
-                        window.location.reload();
-                    } else {
-                        window.location.href = '/';
-                    }
-                }
-            });
-
-            // 検索
-            document.getElementById('globalSearch').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    const q = this.value.trim();
-                    if (q) alert('🔍 "' + q + '"');
-                }
-            });
-
-            // モーダル
-            document.getElementById('addEventModal').addEventListener('click', function(e) {
-                if (e.target === this) closeAddEventModal();
-            });
-            document.getElementById('feedbackModal').addEventListener('click', function(e) {
-                if (e.target === this) closeFeedback();
-            });
-
-            // 予定追加フォーム
-            ['eventTitle', 'eventStart', 'eventEnd'].forEach(id => {
-                document.getElementById(id).addEventListener('input', checkAddEventForm);
-            });
-            document.getElementById('friendSelect').addEventListener('change', checkAddEventForm);
-
-            // LIFF
-            (async function() {
-                try {
-                    await liff.init({ liffId: '2010384200-BS1cr2CR' });
-                    if (!liff.isLoggedIn()) {
-                        liff.login();
-                        return;
-                    }
-                    const profile = await liff.getProfile();
-                    console.log('✅ Logged in:', profile.displayName);
-                } catch (e) {
-                    console.error('❌ LIFF error:', e);
-                }
-            })();
+        // 今日の予定
+        const events = [
+            { time: '10:00', title: 'Meeting with Tanaka', person: 'Tanaka' },
+            { time: '14:00', title: 'Calendar sharing setup', person: 'Sato' }
+        ];
+        const list = document.getElementById('todayList');
+        events.forEach(e => {
+            const div = document.createElement('div');
+            div.className = 'today-item';
+            div.innerHTML = `<span class="today-time">${e.time}</span><span class="today-title">${e.title}</span><span class="today-person">👤 ${e.person}</span>`;
+            list.appendChild(div);
         });
 
-        // ================================================================
-        // 各機能
-        // ================================================================
-        function updateDateDisplay() {
-            const now = new Date();
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const hh = String(now.getHours()).padStart(2, '0');
-            const mm = String(now.getMinutes()).padStart(2, '0');
-            const dateEl = document.getElementById('dateDisplay');
-            if (dateEl) dateEl.textContent = `${months[now.getMonth()]} ${now.getDate()}, ${hh}:${mm}`;
-        }
-
-        function switchLanguage(lang) {
-            if (lang && SUPPORTED_LANGS.includes(lang)) {
-                localStorage.setItem('tomosche_lang', lang);
-                location.reload();
+        // 検索
+        document.getElementById('globalSearch').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const q = this.value.trim();
+                if (q) alert('🔍 "' + q + '"');
             }
-        }
-
-        function renderFriends() {
-            const friends = [
-                { name: 'Tanaka', initial: '田', color: '#e3f2fd' },
-                { name: 'Sato', initial: '佐', color: '#e8f5e9' },
-                { name: 'Suzuki', initial: '鈴', color: '#fff3e0' },
-                { name: 'Yamada', initial: '山', color: '#fce4ec' }
-            ];
-            const container = document.getElementById('avatars');
-            if (!container) return;
-            container.innerHTML = '';
-            friends.forEach(f => {
-                const div = document.createElement('div');
-                div.className = 'avatar-item';
-                div.innerHTML = `<div class="avatar-circle" style="background:${f.color};">${f.initial}</div><span class="avatar-name">${f.name}</span>`;
-                container.appendChild(div);
-            });
-            const addDiv = document.createElement('a');
-            addDiv.href = 'add_friends.html';
-            addDiv.className = 'avatar-item';
-            addDiv.innerHTML = `<div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div><span class="avatar-name">Add</span>`;
-            container.appendChild(addDiv);
-        }
-
-        function renderTodayEvents() {
-            const events = [
-                { time: '10:00', title: 'Meeting with Tanaka', person: 'Tanaka' },
-                { time: '14:00', title: 'Calendar sharing setup', person: 'Sato' }
-            ];
-            const container = document.getElementById('todayList');
-            if (!container) return;
-            container.innerHTML = '';
-            events.forEach(e => {
-                const div = document.createElement('div');
-                div.className = 'today-item';
-                div.innerHTML = `<span class="today-time">${e.time}</span><span class="today-title">${e.title}</span><span class="today-person">👤 ${e.person}</span>`;
-                container.appendChild(div);
-            });
-        }
-
-        function openFeedback() {
-            document.getElementById('feedbackModal').style.display = 'flex';
-            document.getElementById('fbMessage').value = '';
-            document.getElementById('fbStatus').style.display = 'none';
-            document.getElementById('fbSendBtn').disabled = false;
-        }
-        function closeFeedback() {
-            document.getElementById('feedbackModal').style.display = 'none';
-        }
-        function sendFeedback() {
-            const msg = document.getElementById('fbMessage').value.trim();
-            const status = document.getElementById('fbStatus');
-            if (!msg) {
-                status.style.display = 'block';
-                status.style.color = '#e53935';
-                status.textContent = 'Please enter a message.';
-                return;
-            }
-            if (msg.length < 5) {
-                status.style.display = 'block';
-                status.style.color = '#e53935';
-                status.textContent = 'Please provide more details.';
-                return;
-            }
-            const subject = encodeURIComponent('Tomosche Feedback');
-            const body = encodeURIComponent(msg + '\n\n---\nSent from Tomosche app');
-            window.location.href = `mailto:tomosche.line@gmail.com?subject=${subject}&body=${body}`;
-            status.style.display = 'block';
-            status.style.color = '#06C755';
-            status.textContent = '✅ Thank you! Your feedback has been sent.';
-            setTimeout(closeFeedback, 2000);
-        }
-
-        function openAddEventModal(dateStr) {
-            document.getElementById('modalDate').textContent = dateStr || 'No events';
-            document.getElementById('addEventModal').style.display = 'flex';
-            document.getElementById('confirmAddEventBtn').disabled = true;
-            document.getElementById('addEventStatus').style.display = 'none';
-        }
-        function closeAddEventModal() {
-            document.getElementById('addEventModal').style.display = 'none';
-        }
-        function checkAddEventForm() {
-            const title = document.getElementById('eventTitle').value.trim();
-            const start = document.getElementById('eventStart').value;
-            const end = document.getElementById('eventEnd').value;
-            const friend = document.getElementById('friendSelect').value;
-            document.getElementById('confirmAddEventBtn').disabled = !(title && start && end && friend);
-        }
-        function confirmAddEvent() {
-            const title = document.getElementById('eventTitle').value.trim();
-            const start = document.getElementById('eventStart').value;
-            const end = document.getElementById('eventEnd').value;
-            const friend = document.getElementById('friendSelect').value;
-            const status = document.getElementById('addEventStatus');
-            if (!title || !start || !end || !friend) {
-                status.style.display = 'block';
-                status.style.color = '#e53935';
-                status.textContent = 'Please fill in all fields.';
-                return;
-            }
-            if (start >= end) {
-                status.style.display = 'block';
-                status.style.color = '#e53935';
-                status.textContent = '⚠️ End time must be after start time.';
-                return;
-            }
-            status.style.display = 'block';
-            status.style.color = '#06C755';
-            status.textContent = '✅ Event added!';
-            setTimeout(closeAddEventModal, 1500);
-        }
-    </script>
-</body>
-</html>
+        });
+    });
+</script>
