@@ -207,26 +207,21 @@
             color: #999;
             text-decoration: none;
             gap: 2px;
-            background: none;
-            border: none;
             padding: 4px 12px;
-            cursor: pointer;
             flex: 1;
             max-width: 80px;
             white-space: nowrap;
+            cursor: pointer;
         }
-        .nav-item i { font-size: clamp(18px, 4vw, 20px); }
+        .nav-item i { font-size: 20px; }
         .nav-item.active { color: #06C755; }
         .nav-item.active i { transform: translateY(-2px); }
-        .nav-item:active { transform: scale(0.92); }
         .version {
             text-align: center;
             font-size: 10px;
             color: #ccc;
             padding: 8px 0 4px 0;
         }
-
-        /* ====== Moreポップアップ ====== */
         .more-popup {
             display: none;
             position: fixed;
@@ -252,6 +247,7 @@
             text-decoration: none;
             color: #333;
             font-size: 12px;
+            display: block;
         }
         .more-grid .icon-box {
             background: #f0f4f8;
@@ -307,8 +303,6 @@
             background: #06C755;
             color: white;
         }
-
-        /* ====== フィードバックモーダル ====== */
         .feedback-modal {
             display: none;
             position: fixed;
@@ -327,17 +321,8 @@
             width: 92%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.2);
         }
-        .feedback-box h3 {
-            font-size: 18px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 8px;
-        }
-        .feedback-box p {
-            font-size: 13px;
-            color: #888;
-            margin-bottom: 16px;
-        }
+        .feedback-box h3 { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 8px; }
+        .feedback-box p { font-size: 13px; color: #888; margin-bottom: 16px; }
         .feedback-box textarea {
             width: 100%;
             border: 1px solid #ddd;
@@ -349,15 +334,9 @@
             resize: vertical;
             transition: border 0.2s;
         }
-        .feedback-box textarea:focus {
-            border-color: #06C755;
-        }
-        .feedback-box .fb-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-        }
-        .feedback-box .fb-actions button {
+        .feedback-box textarea:focus { border-color: #06C755; }
+        .fb-actions { display: flex; gap: 12px; margin-top: 16px; }
+        .fb-actions button {
             flex: 1;
             padding: 12px;
             border-radius: 999px;
@@ -370,15 +349,12 @@
         .fb-cancel:hover { background: #e0e0e0; }
         .fb-send { background: #06C755; color: white; }
         .fb-send:hover { background: #049a44; }
-        .fb-send:disabled { opacity: 0.5; cursor: not-allowed; }
         #fbStatus {
             margin-top: 12px;
             font-size: 13px;
             text-align: center;
             display: none;
         }
-
-        /* ====== 予定追加モーダル ====== */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -450,7 +426,6 @@
             cursor: pointer;
         }
         .add-event-btn:active { transform: scale(0.9); }
-
         @media (max-width: 576px) {
             .app-container { padding: 0 12px 80px 12px; }
             .logo { font-size: 18px; }
@@ -474,13 +449,10 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- ====== ヘッダー ====== -->
         <div class="header">
             <div class="logo">🌱 Tomosche <span class="logo-sub">Shared Calendar</span></div>
             <div class="profile-icon" id="profileIcon"><i class="bi bi-person-circle"></i></div>
         </div>
-
-        <!-- ====== 画像＋日付＋検索 ====== -->
         <div class="image-wrapper">
             <img src="assets/images/toppageTmocha.png" alt="Tomosche" />
             <div class="image-date" id="dateDisplay">Loading...</div>
@@ -491,11 +463,7 @@
                 </div>
             </div>
         </div>
-
-        <!-- ====== 友達アイコン ====== -->
         <div class="avatars" id="avatars"></div>
-
-        <!-- ====== 今日の予定 ====== -->
         <div class="today-card">
             <div class="today-header">
                 <span><i class="bi bi-clock-history"></i> Today's Events</span>
@@ -504,10 +472,9 @@
             <div id="todayList"></div>
         </div>
     </div>
-
     <div class="version" id="versionDisplay">Tomosche v1.0.0</div>
 
-    <!-- ====== 下部ナビ ====== -->
+    <!-- 下部ナビ（リンクは正しいパス） -->
     <div class="bottom-nav">
         <a href="/" class="nav-item active"><i class="bi bi-house-fill"></i><span>Home</span></a>
         <a href="friends.html" class="nav-item"><i class="bi bi-people-fill"></i><span>Friends</span></a>
@@ -516,7 +483,7 @@
         <div class="nav-item" id="moreMenuBtn"><i class="bi bi-grid-fill"></i><span>More</span></div>
     </div>
 
-    <!-- ====== Moreポップアップ（リンク修正済み） ====== -->
+    <!-- Moreポップアップ -->
     <div class="more-popup" id="moreMenuPopup">
         <div class="more-grid">
             <a href="guide.html"><div class="icon-box"><i class="bi bi-book" style="color:#6a1b9a;"></i></div><span>Guide</span></a>
@@ -545,7 +512,7 @@
         </div>
     </div>
 
-    <!-- ====== フィードバックモーダル（メッセージ送信機能付き） ====== -->
+    <!-- フィードバックモーダル -->
     <div class="feedback-modal" id="feedbackModal">
         <div class="feedback-box">
             <h3>📝 Send Feedback</h3>
@@ -559,7 +526,7 @@
         </div>
     </div>
 
-    <!-- ====== 予定追加モーダル ====== -->
+    <!-- 予定追加モーダル -->
     <div class="modal-overlay" id="addEventModal">
         <div class="modal-box">
             <h3>📝 New Event</h3>
@@ -676,7 +643,6 @@
                 status.textContent = 'Please enter a message.';
                 return;
             }
-
             if (message.length < 5) {
                 status.style.display = 'block';
                 status.style.color = '#e53935';
@@ -689,17 +655,13 @@
             status.style.color = '#666';
             status.textContent = 'Sending...';
 
-            // メール送信（mailtoリンク）
             const subject = encodeURIComponent('Tomosche Feedback');
             const body = encodeURIComponent(message + '\n\n---\nSent from Tomosche app');
             window.location.href = `mailto:tomosche.line@gmail.com?subject=${subject}&body=${body}`;
 
             status.style.color = '#06C755';
             status.textContent = '✅ Thank you! Your feedback has been sent.';
-
-            setTimeout(() => {
-                closeFeedback();
-            }, 2000);
+            setTimeout(closeFeedback, 2000);
         }
 
         // ================================================================
@@ -746,35 +708,43 @@
         }
 
         // ================================================================
-        // ■ 起動処理
+        // ■ 起動処理（リンクをブロックしないように修正）
         // ================================================================
         document.addEventListener('DOMContentLoaded', function() {
             updateDateDisplay();
             renderFriends();
             renderTodayEvents();
 
-            // Moreメニュー
+            // ---- Moreメニューのみ別途制御 ----
             const moreBtn = document.getElementById('moreMenuBtn');
             const popup = document.getElementById('moreMenuPopup');
-            moreBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
-            });
-            document.addEventListener('click', function(e) {
-                if (popup.style.display === 'block') {
-                    if (!e.target.closest('#moreMenuPopup') && !e.target.closest('#moreMenuBtn')) {
+            if (moreBtn && popup) {
+                moreBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (popup.style.display === 'none' || popup.style.display === '') {
+                        popup.style.display = 'block';
+                    } else {
                         popup.style.display = 'none';
                     }
-                }
-            });
+                });
+                // ポップアップ外クリックで閉じる
+                document.addEventListener('click', function(e) {
+                    if (popup.style.display === 'block') {
+                        if (!e.target.closest('#moreMenuPopup') && !e.target.closest('#moreMenuBtn')) {
+                            popup.style.display = 'none';
+                        }
+                    }
+                });
+            }
 
-            // フィードバック（More内のリンク）
+            // ---- フィードバック（More内） ----
             document.getElementById('feedbackMoreBtn').addEventListener('click', function(e) {
                 e.preventDefault();
                 openFeedback();
             });
 
-            // ログアウト
+            // ---- ログアウト ----
             document.getElementById('logoutMoreBtn').addEventListener('click', function(e) {
                 e.preventDefault();
                 if (confirm('Logout?')) {
@@ -787,7 +757,7 @@
                 }
             });
 
-            // 検索
+            // ---- 検索 ----
             document.getElementById('globalSearch').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
                     const q = this.value.trim();
@@ -795,7 +765,7 @@
                 }
             });
 
-            // モーダル外クリックで閉じる
+            // ---- モーダル ----
             document.getElementById('addEventModal').addEventListener('click', function(e) {
                 if (e.target === this) closeAddEventModal();
             });
@@ -803,13 +773,13 @@
                 if (e.target === this) closeFeedback();
             });
 
-            // 予定追加フォーム入力チェック
+            // ---- 予定追加フォーム ----
             ['eventTitle', 'eventStart', 'eventEnd'].forEach(id => {
                 document.getElementById(id).addEventListener('input', checkAddEventForm);
             });
             document.getElementById('friendSelect').addEventListener('change', checkAddEventForm);
 
-            // LIFF初期化
+            // ---- LIFF ----
             (async function() {
                 try {
                     await liff.init({ liffId: '2010384200-BS1cr2CR' });
