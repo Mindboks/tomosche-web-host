@@ -6,15 +6,15 @@
                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const dateStr = `Today·${monthNames[today.getMonth()]} ${today.getDate()}`;
 
-    // ====== サンプル友達 ======
+    // ====== サンプル友達（横並び4人） ======
     const sampleFriends = [
-        { name: '田中 一郎', initial: '田', color: '#e3f2fd' },
-        { name: '佐藤 花子', initial: '佐', color: '#e8f5e9' },
-        { name: '鈴木 誠', initial: '鈴', color: '#fff3e0' },
-        { name: '山田 太郎', initial: '山', color: '#fce4ec' }
+        { name: '田中', initial: '田', color: '#e3f2fd' },
+        { name: '佐藤', initial: '佐', color: '#e8f5e9' },
+        { name: '鈴木', initial: '鈴', color: '#fff3e0' },
+        { name: '山田', initial: '山', color: '#fce4ec' }
     ];
 
-    // ====== 今日の予定（サンプル） ======
+    // ====== 今日の予定 ======
     const todayEvents = [
         { time: '10:00', title: '田中さんと打ち合わせ', person: '田中' },
         { time: '14:00', title: 'カレンダー共有設定', person: '佐藤' }
@@ -27,7 +27,6 @@
         <div class="header-left">
             <span class="logo-icon">🌱</span>
             <span class="logo-title">Tomosche</span>
-            <span class="logo-sub">友助</span>
         </div>
         <div class="header-right">
             <div class="profile-icon" id="profileIcon">
@@ -36,13 +35,11 @@
         </div>
     </div>
 
-    <!-- ====== メイン画像（日付：上／検索窓：下部に重ねる） ====== -->
+    <!-- ====== メイン画像（日付：上／検索窓：下部） ====== -->
     <div class="main-image-wrapper">
         <div class="main-image-container">
             <img src="assets/images/toppageTmocha.png" alt="Tomosche" class="main-image" />
-            <!-- 日付（上に重ねる） -->
             <div class="image-date">${dateStr}</div>
-            <!-- 検索窓（下部に重ねる） -->
             <div class="image-search">
                 <div class="search-box">
                     <i class="bi bi-search"></i>
@@ -52,19 +49,17 @@
         </div>
     </div>
 
-    <!-- ====== 友達アイコン（4人） ====== -->
+    <!-- ====== 友達アイコン（横4人） ====== -->
     <div class="friends-avatars">
-        <div class="avatars-row">
-            ${sampleFriends.map((f, i) => `
-                <div class="avatar-item">
-                    <div class="avatar-circle" style="background: ${f.color};">
-                        ${f.initial}
-                    </div>
-                    <span class="avatar-name">${f.name}</span>
+        ${sampleFriends.map((f, i) => `
+            <div class="avatar-item">
+                <div class="avatar-circle" style="background: ${f.color};">
+                    ${f.initial}
                 </div>
-            `).join('')}
-        </div>
-        <a href="friends.html" class="avatars-more">
+                <span class="avatar-name">${f.name}</span>
+            </div>
+        `).join('')}
+        <a href="friends.html" class="avatar-item">
             <div class="avatar-circle more-circle">
                 <i class="bi bi-plus"></i>
             </div>
@@ -89,7 +84,7 @@
         </div>
     </div>
 
-    <!-- ====== 下部ナビゲーション ====== -->
+    <!-- ====== 下部ナビゲーション（白背景） ====== -->
     <div class="bottom-nav">
         <a href="/" class="nav-item active">
             <i class="bi bi-house-fill"></i>
@@ -113,41 +108,42 @@
         </div>
     </div>
 
-    <!-- ====== Moreメニューポップアップ ====== -->
-    <div id="moreMenuPopup" style="display: none; position: fixed; bottom: 80px; left: 16px; right: 16px; background: white; border-radius: 20px; padding: 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.12); z-index: 999; border: 1px solid rgba(0,0,0,0.04);">
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center;">
-            <a href="guide.html" style="text-decoration: none; color: #333; font-size: 12px;">
-                <div style="background: #f0f4f8; border-radius: 14px; padding: 14px;">
-                    <i class="bi bi-book" style="font-size: 24px; color: #6a1b9a;"></i>
+    <!-- ====== Moreメニュー ====== -->
+    <div id="moreMenuPopup" style="display:none; position:fixed; bottom:80px; left:16px; right:16px; background:white; border-radius:20px; padding:20px; box-shadow:0 8px 40px rgba(0,0,0,0.12); z-index:999; border:1px solid rgba(0,0,0,0.04);">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center;">
+            <a href="guide.html" style="text-decoration:none; color:#333; font-size:12px;">
+                <div style="background:#f0f4f8; border-radius:14px; padding:14px;">
+                    <i class="bi bi-book" style="font-size:24px; color:#6a1b9a;"></i>
                 </div>
-                <span style="margin-top: 4px; display: block;">使い方</span>
+                <span style="margin-top:4px; display:block;">使い方</span>
             </a>
-            <a href="privacy.html" style="text-decoration: none; color: #333; font-size: 12px;">
-                <div style="background: #f0f4f8; border-radius: 14px; padding: 14px;">
-                    <i class="bi bi-shield-lock" style="font-size: 24px; color: #1565c0;"></i>
+            <a href="privacy.html" style="text-decoration:none; color:#333; font-size:12px;">
+                <div style="background:#f0f4f8; border-radius:14px; padding:14px;">
+                    <i class="bi bi-shield-lock" style="font-size:24px; color:#1565c0;"></i>
                 </div>
-                <span style="margin-top: 4px; display: block;">プライバシー</span>
+                <span style="margin-top:4px; display:block;">プライバシー</span>
             </a>
-            <a href="terms.html" style="text-decoration: none; color: #333; font-size: 12px;">
-                <div style="background: #f0f4f8; border-radius: 14px; padding: 14px;">
-                    <i class="bi bi-file-text" style="font-size: 24px; color: #e65100;"></i>
+            <a href="terms.html" style="text-decoration:none; color:#333; font-size:12px;">
+                <div style="background:#f0f4f8; border-radius:14px; padding:14px;">
+                    <i class="bi bi-file-text" style="font-size:24px; color:#e65100;"></i>
                 </div>
+                <span style="margin-top:4px; display:block;">利用規約</span>
             </a>
-            <a href="#" id="feedbackMoreBtn" style="text-decoration: none; color: #333; font-size: 12px;">
-                <div style="background: #f0f4f8; border-radius: 14px; padding: 14px;">
-                    <i class="bi bi-chat-dots" style="font-size: 24px; color: #f9a825;"></i>
+            <a href="#" id="feedbackMoreBtn" style="text-decoration:none; color:#333; font-size:12px;">
+                <div style="background:#f0f4f8; border-radius:14px; padding:14px;">
+                    <i class="bi bi-chat-dots" style="font-size:24px; color:#f9a825;"></i>
                 </div>
-                <span style="margin-top: 4px; display: block;">フィードバック</span>
+                <span style="margin-top:4px; display:block;">フィードバック</span>
             </a>
-            <a href="#" id="logoutMoreBtn" style="text-decoration: none; color: #333; font-size: 12px;">
-                <div style="background: #f0f4f8; border-radius: 14px; padding: 14px;">
-                    <i class="bi bi-box-arrow-right" style="font-size: 24px; color: #e53935;"></i>
+            <a href="#" id="logoutMoreBtn" style="text-decoration:none; color:#333; font-size:12px;">
+                <div style="background:#f0f4f8; border-radius:14px; padding:14px;">
+                    <i class="bi bi-box-arrow-right" style="font-size:24px; color:#e53935;"></i>
                 </div>
-                <span style="margin-top: 4px; display: block;">ログアウト</span>
+                <span style="margin-top:4px; display:block;">ログアウト</span>
             </a>
         </div>
-        <div style="text-align: center; margin-top: 12px;">
-            <button onclick="document.getElementById('moreMenuPopup').style.display='none'" style="background: none; border: none; color: #999; font-size: 13px; padding: 4px 16px;">閉じる</button>
+        <div style="text-align:center; margin-top:12px;">
+            <button onclick="document.getElementById('moreMenuPopup').style.display='none'" style="background:none; border:none; color:#999; font-size:13px; padding:4px 16px;">閉じる</button>
         </div>
     </div>
     `;
@@ -155,13 +151,12 @@
     // ====== レンダリング ======
     renderPage('友助 - トップ', content, `
         <style>
-            /* ====== 完全白背景 ====== */
-            body {
-                background: #ffffff;
+            /* ====== 完全白背景（強制） ====== */
+            html, body, #mainContent {
+                background: #ffffff !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                padding-bottom: 80px;
-                min-height: 100vh;
-                margin: 0;
             }
 
             /* ====== ヘッダー ====== */
@@ -170,7 +165,7 @@
                 justify-content: space-between;
                 align-items: center;
                 padding: 16px 20px 8px 20px;
-                background: transparent;
+                background: #ffffff;
             }
             .header-left {
                 display: flex;
@@ -183,29 +178,16 @@
                 font-weight: 700;
                 color: #06C755;
             }
-            .logo-sub {
-                font-size: 10px;
-                color: #999;
-                background: #f0f4f8;
-                padding: 2px 8px;
-                border-radius: 999px;
-                margin-left: 4px;
-            }
-            .header-right {
-                display: flex;
-                align-items: center;
-            }
-            .profile-icon {
+            .header-right .profile-icon {
                 font-size: 30px;
                 color: #06C755;
                 cursor: pointer;
             }
 
-            /* ====== メイン画像（日付：上／検索窓：下部に重ねる） ====== */
+            /* ====== メイン画像 ====== */
             .main-image-wrapper {
                 display: flex;
                 justify-content: center;
-                align-items: center;
                 padding: 4px 16px 8px 16px;
             }
             .main-image-container {
@@ -214,23 +196,21 @@
                 max-width: 420px;
                 border-radius: 20px;
                 overflow: hidden;
-                box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-                background: white;
+                background: #ffffff;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.06);
             }
             .main-image {
                 width: 100%;
                 height: auto;
                 display: block;
             }
-
-            /* 日付（画像の上部に重ねる） */
             .image-date {
                 position: absolute;
                 top: 16px;
                 left: 50%;
                 transform: translateX(-50%);
                 background: rgba(255,255,255,0.92);
-                backdrop-filter: blur(8px);
+                backdrop-filter: blur(6px);
                 padding: 6px 18px;
                 border-radius: 999px;
                 font-size: 14px;
@@ -238,11 +218,8 @@
                 color: #333;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.04);
                 border: 1px solid rgba(255,255,255,0.6);
-                letter-spacing: 0.3px;
                 white-space: nowrap;
             }
-
-            /* 検索窓（画像の下部に重ねる） */
             .image-search {
                 position: absolute;
                 bottom: 16px;
@@ -255,18 +232,12 @@
                 display: flex;
                 align-items: center;
                 background: rgba(255,255,255,0.95);
-                backdrop-filter: blur(8px);
+                backdrop-filter: blur(6px);
                 border-radius: 12px;
                 padding: 10px 16px;
                 gap: 10px;
                 box-shadow: 0 2px 12px rgba(0,0,0,0.06);
                 border: 1px solid rgba(255,255,255,0.6);
-                transition: all 0.2s;
-            }
-            .image-search .search-box:focus-within {
-                border-color: #06C755;
-                box-shadow: 0 2px 16px rgba(6,199,85,0.10);
-                background: white;
             }
             .image-search .search-box i {
                 color: #999;
@@ -282,23 +253,17 @@
             }
             .image-search .search-box input::placeholder {
                 color: #bbb;
-                font-weight: 400;
             }
 
-            /* ====== 友達アイコン ====== */
+            /* ====== 友達アイコン（横並び） ====== */
             .friends-avatars {
-                padding: 0 16px 16px 16px;
-                display: flex;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 12px;
-            }
-            .avatars-row {
                 display: flex;
                 gap: 12px;
+                padding: 8px 16px 16px 16px;
+                background: #ffffff;
                 flex-wrap: wrap;
             }
-            .avatar-item, .avatars-more {
+            .avatar-item {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -328,20 +293,15 @@
             .avatar-name {
                 font-size: 10px;
                 color: #888;
-                max-width: 52px;
-                text-overflow: ellipsis;
-                overflow: hidden;
-                white-space: nowrap;
                 text-align: center;
             }
 
             /* ====== 今日の予定 ====== */
             .today-section {
-                background: white;
+                background: #ffffff;
                 margin: 0 16px 16px 16px;
                 border-radius: 16px;
                 padding: 16px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
                 border: 1px solid #f0f4f8;
             }
             .today-header {
@@ -393,7 +353,7 @@
                 bottom: 0;
                 left: 0;
                 right: 0;
-                background: white;
+                background: #ffffff;
                 display: flex;
                 justify-content: space-around;
                 align-items: center;
@@ -414,7 +374,6 @@
                 background: none;
                 border: none;
                 padding: 4px 10px;
-                transition: color 0.2s;
             }
             .nav-item i {
                 font-size: 20px;
@@ -430,25 +389,24 @@
                 transform: scale(0.92);
             }
 
-            /* ====== ダークモード ====== */
+            /* ====== ダークモード対応 ====== */
             @media (prefers-color-scheme: dark) {
-                body { background: #0d0d1a; }
+                html, body, #mainContent { background: #0d0d1a !important; }
+                .header-section { background: #0d0d1a; }
                 .today-section { background: #1a1a2e; border-color: #2a2a3e; }
                 .today-header { color: #eee; }
                 .today-item { border-color: #2a2a3e; }
                 .today-title { color: #eee; }
                 .bottom-nav { background: #1a1a2e; border-color: #2a2a3e; }
-                .logo-sub { background: #2a2a3e; color: #888; }
-                #moreMenuPopup { background: #1a1a2e; border-color: #2a2a3e; }
-                #moreMenuPopup a { color: #eee !important; }
-                .avatar-name { color: #aaa; }
-                .today-person { background: #2a2a3e; color: #aaa; }
                 .image-date { background: rgba(26,26,46,0.85); color: #eee; border-color: #2a2a3e; }
                 .image-search .search-box { background: rgba(26,26,46,0.9); border-color: #2a2a3e; }
                 .image-search .search-box input { color: #eee; }
                 .image-search .search-box input::placeholder { color: #666; }
                 .image-search .search-box i { color: #666; }
-                .main-image { box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+                .today-person { background: #2a2a3e; color: #aaa; }
+                #moreMenuPopup { background: #1a1a2e; border-color: #2a2a3e; }
+                #moreMenuPopup a { color: #eee !important; }
+                .avatar-name { color: #aaa; }
                 .profile-icon { color: #06C755; }
             }
         </style>
@@ -460,37 +418,24 @@
             const popup = document.getElementById('moreMenuPopup');
             popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
         });
-
         document.getElementById('moreMenuBtn').addEventListener('click', function() {
             const popup = document.getElementById('moreMenuPopup');
             popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
         });
-
         document.getElementById('logoutMoreBtn').addEventListener('click', function(e) {
             e.preventDefault();
-            if (confirm('ログアウトしますか？')) {
-                logout();
-            }
+            if (confirm('ログアウトしますか？')) logout();
         });
-
         document.getElementById('feedbackMoreBtn').addEventListener('click', function(e) {
             e.preventDefault();
-            if (window.openFeedback) {
-                window.openFeedback();
-            } else {
-                alert('📝 フィードバック機能は準備中です。\ntomosche.line@gmail.com へご連絡ください。');
-            }
+            alert('📝 フィードバック機能は準備中です。\ntomosche.line@gmail.com へご連絡ください。');
         });
-
         document.getElementById('globalSearch').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 const query = this.value.trim();
-                if (query) {
-                    alert(`🔍 「${query}」を検索します（機能は開発中です）`);
-                }
+                if (query) alert(`🔍 「${query}」を検索します（機能は開発中です）`);
             }
         });
-
         document.addEventListener('click', function(e) {
             const popup = document.getElementById('moreMenuPopup');
             if (popup.style.display === 'block') {
