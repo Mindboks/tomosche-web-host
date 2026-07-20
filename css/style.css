@@ -1,15 +1,6 @@
-/* ====== Tomosche 共通スタイル（最小限） ====== */
+/* ====== Tomosche 共通スタイル（トップページには影響しない） ====== */
 
-/* 強制白背景 */
-html, body, #mainContent {
-    background: #ffffff !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    min-height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* 共通ボタン（戻るボタンなど） */
+/* 戻るボタン（friends.html / schedule.html / add_friends.html 用） */
 .back-btn {
     background: none;
     border: none;
@@ -30,7 +21,7 @@ html, body, #mainContent {
     color: #333;
 }
 
-/* ローディング */
+/* ローディング（全ページ共通） */
 .loading-overlay {
     position: fixed;
     inset: 0;
@@ -54,16 +45,8 @@ html, body, #mainContent {
     to { transform: rotate(360deg); }
 }
 
-/* フッター（トップページでは非表示） */
-.footer-links {
-    display: none;
-}
-
-/* ====== ダークモード ====== */
+/* ダークモード */
 @media (prefers-color-scheme: dark) {
-    html, body, #mainContent {
-        background: #0d0d1a !important;
-    }
     .page-title {
         color: #eee;
     }
