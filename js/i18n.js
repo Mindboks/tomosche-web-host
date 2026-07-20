@@ -1,6 +1,8 @@
 // ================================================================
 // ■ Tomosche 多言語辞書 (i18n)
-// ■ 対応言語: 12言語 (ja, en, zh-CN, vi, th, ne, hi, ur, bn, si, my, ta)
+// ■ 対応言語: 11言語 (ja, en, zh-CN, vi, th, ne, hi, ur, bn, si, my, ta)
+// ■ 更新日: 2026-07-20
+// ■ 審査対応: 英語をベースに全メッセージを統一
 // ================================================================
 
 const I18N = {
@@ -40,7 +42,6 @@ const I18N = {
         date_format: 'MM月DD日 HH:mm',
         loading: '読み込み中...',
         back: '戻る',
-        // 友達一覧
         friends_title: '友達一覧',
         delete_confirm: '削除しますか？',
         delete_done: '削除しました',
@@ -48,20 +49,16 @@ const I18N = {
         status_pending: '⏳ 承認待ち',
         no_friends: 'まだ友達はいません',
         empty_friends: 'まだ友達がいません',
-        // QRコード
         qr_title: 'QRコードで招待',
         qr_desc: '友達にこのQRコードを読み取ってもらってください',
         qr_send: 'LINEで送る',
         qr_note: '友達がQRコードを読み取ると、自動的に友達一覧に追加されます',
-        // 予定
         event_placeholder: '例：ランチ、ミーティング...',
         event_note_placeholder: '詳細があれば入力してください...',
         event_added: '✅ 予定を追加しました！',
         event_error: '全ての項目を入力してください。',
         event_time_error: '⚠️ 終了時間は開始時間より後に設定してください。',
-        // モーダル
         modal_close: '閉じる',
-        // 言語切替
         language: '言語',
         language_ja: '日本語',
         language_en: 'English',
@@ -76,7 +73,7 @@ const I18N = {
         language_my: 'မြန်မာ',
         language_ta: 'தமிழ்',
     },
-    // ---------- 英語 ----------
+    // ---------- 英語（審査ベース） ----------
     en: {
         app_name: 'Tomosche',
         tagline: 'Share your schedule with the people who matter most.',
@@ -105,7 +102,7 @@ const I18N = {
         note: 'Note (optional)',
         cancel: 'Cancel',
         submit: 'Submit',
-        confirm_logout: 'Logout?',
+        confirm_logout: 'Are you sure you want to logout?',
         feedback_message: '📝 Feedback feature is under development.',
         feedback_email: 'Please contact us at tomosche.line@gmail.com',
         version: 'Tomosche v1.0.0',
@@ -113,8 +110,8 @@ const I18N = {
         loading: 'Loading...',
         back: 'Back',
         friends_title: 'Friends',
-        delete_confirm: 'Delete?',
-        delete_done: 'Deleted',
+        delete_confirm: 'Delete this friend?',
+        delete_done: 'Friend removed',
         status_shared: '✓ Shared',
         status_pending: '⏳ Pending',
         no_friends: 'No friends yet',
@@ -124,7 +121,7 @@ const I18N = {
         qr_send: 'Send via LINE',
         qr_note: 'When your friend scans the QR code, they will be automatically added',
         event_placeholder: 'e.g. Lunch, Meeting...',
-        event_note_placeholder: 'Enter details...',
+        event_note_placeholder: 'Add details...',
         event_added: '✅ Event added!',
         event_error: 'Please fill in all fields.',
         event_time_error: '⚠️ End time must be after start time.',
@@ -172,7 +169,7 @@ const I18N = {
         note: '备注（可选）',
         cancel: '取消',
         submit: '提交',
-        confirm_logout: '登出？',
+        confirm_logout: '确定登出？',
         feedback_message: '📝 反馈功能正在开发中。',
         feedback_email: '请联系 tomosche.line@gmail.com',
         version: 'Tomosche v1.0.0',
@@ -180,7 +177,7 @@ const I18N = {
         loading: '加载中...',
         back: '返回',
         friends_title: '朋友列表',
-        delete_confirm: '删除？',
+        delete_confirm: '删除此好友？',
         delete_done: '已删除',
         status_shared: '✓ 共享中',
         status_pending: '⏳ 等待批准',
@@ -823,16 +820,17 @@ const SUPPORTED_LANGS = Object.keys(I18N);
 function getCurrentLang() {
     const stored = localStorage.getItem('tomosche_lang');
     if (stored && SUPPORTED_LANGS.includes(stored)) return stored;
-    const browserLang = navigator.language || 'ja';
+    const browserLang = navigator.language || 'en';
+    // 部分一致をチェック（例: 'zh-CN' → 'zh-CN' がなければ 'zh'）
     if (SUPPORTED_LANGS.includes(browserLang)) return browserLang;
     const shortLang = browserLang.split('-')[0];
     if (SUPPORTED_LANGS.includes(shortLang)) return shortLang;
-    return 'ja';
+    return 'en'; // デフォルトは英語
 }
 
 function t(key) {
     const lang = getCurrentLang();
-    const dict = I18N[lang] || I18N['ja'];
+    const dict = I18N[lang] || I18N['en'];
     const value = dict[key];
     if (value === undefined) {
         console.warn(`Translation missing: ${key} (${lang})`);
@@ -859,13 +857,11 @@ function applyTranslations() {
     const lang = getCurrentLang();
     document.documentElement.lang = lang;
     
-    // テキストノードを更新
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.dataset.i18n;
         el.textContent = t(key);
     });
     
-    // プレースホルダー
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.dataset.i18nPlaceholder;
         el.placeholder = t(key);
