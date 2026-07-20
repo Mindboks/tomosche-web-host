@@ -1,28 +1,7 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title id="pageTitle">友達追加 - Tomosche</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <style>
-        .back-btn { background: none; border: none; font-size: 24px; color: #06C755; padding: 0; margin-right: 8px; }
-        .page-title { font-size: clamp(1.2rem, 4vw, 1.8rem); font-weight: 600; margin: 0; color: #333; }
-        .qr-container { background: white; border-radius: 24px; padding: 32px 20px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-top: 20px; }
-        .qr-container h5 { font-weight: 600; margin-bottom: 8px; }
-        .qr-container p { font-size: 14px; color: #888; margin-bottom: 20px; }
-        #qrcode { display: inline-block; background: white; padding: 12px; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-        .send-btn { background: #06C755; color: white; border: none; padding: 14px; border-radius: 999px; font-size: 16px; font-weight: 600; width: 100%; margin-top: 16px; transition: background 0.2s; }
-        .send-btn:hover { background: #049a44; }
-        .send-btn:active { transform: scale(0.97); }
-        .add-note { font-size: 12px; color: #aaa; margin-top: 16px; }
-    </style>
-</head>
-<body>
+<script src="js/template.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+    const content = `
     <div class="container py-3">
         <div class="d-flex align-items-center mb-2">
             <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
@@ -36,52 +15,34 @@
             <div class="add-note" id="addNote">友達がQRコードを読み取ると、自動的に友達一覧に追加されます</div>
         </div>
     </div>
+    `;
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/i18n.js"></script>
-    <script>
+    renderPage('友達追加', content, `
+        <style>
+            .back-btn { background: none; border: none; font-size: 24px; color: #06C755; padding: 0; margin-right: 8px; }
+            .page-title { font-size: clamp(1.2rem, 4vw, 1.8rem); font-weight: 600; margin: 0; color: #333; }
+            .qr-container { background: white; border-radius: 24px; padding: 32px 20px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-top: 20px; }
+            .qr-container h5 { font-weight: 600; margin-bottom: 8px; }
+            .qr-container p { font-size: 14px; color: #888; margin-bottom: 20px; }
+            #qrcode { display: inline-block; background: white; padding: 12px; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+            .send-btn { background: #06C755; color: white; border: none; padding: 14px; border-radius: 999px; font-size: 16px; font-weight: 600; width: 100%; margin-top: 16px; transition: background 0.2s; }
+            .send-btn:hover { background: #049a44; }
+            .add-note { font-size: 12px; color: #aaa; margin-top: 16px; }
+        </style>
+    `);
+
+    afterPageLoad(function() {
         let currentUserId = '';
-
-        function applyTranslations() {
-            document.getElementById('addTitle').textContent = t('add_title');
-            document.getElementById('addSubtitle').textContent = t('add_subtitle');
-            document.getElementById('addQrLabel').textContent = t('add_qr_label');
-            document.getElementById('sendLineLabel').textContent = t('add_send_line');
-            document.getElementById('addNote').textContent = t('add_note');
-            document.title = t('add_title') + ' - Tomosche';
+        if (currentUser && currentUser.userId) currentUserId = currentUser.userId;
+        else {
+            liff.getProfile().then(profile => { currentUserId = profile.userId; });
         }
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            applyTranslations();
-            const success = await initLiff();
-            if (!success) { window.location.href = '/'; return; }
-            if (currentUser && currentUser.userId) currentUserId = currentUser.userId;
-            else {
-                try { const profile = await liff.getProfile(); currentUserId = profile.userId; }
-                catch(e) { console.error('Profile error:', e); }
-            }
-            const inviteUrl = `https://tomosche.com?invite_by=${currentUserId}`;
-            document.getElementById('qrcode').innerHTML = '';
-            new QRCode(document.getElementById('qrcode'), { text: inviteUrl, width: 200, height: 200 });
-            document.getElementById('sendLineBtn').addEventListener('click', () => {
-                liff.sendMessages([{
-                    type: 'text',
-                    text: `🌱 Tomosche に招待します！\n${inviteUrl}`
-                }]).then(() => liff.closeWindow()).catch(err => alert('送信に失敗しました'));
-            });
+        const inviteUrl = `https://tomosche.com/add_friends.html?invite_by=${currentUserId}`;
+        new QRCode(document.getElementById('qrcode'), { text: inviteUrl, width: 200, height: 200 });
+        document.getElementById('sendLineBtn').addEventListener('click', function() {
+            liff.sendMessages([{ type: 'text', text: `🌱 Tomosche（友助）に招待します！\n${inviteUrl}` }])
+                .then(() => liff.closeWindow())
+                .catch(() => alert('送信に失敗しました'));
         });
-    </script>
-
-<div style="text-align: center; padding: 4px 0 16px 0; font-size: 10px; color: #ccc;">
-    <span id="versionDisplay"></span>
-</div>
-<script src="js/config.js"></script>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const el = document.getElementById("versionDisplay");
-        if (el) el.textContent = getFullVersion();
     });
 </script>
-</body>
-</html>
