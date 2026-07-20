@@ -1,149 +1,447 @@
 <script src="js/template.js"></script>
 <script>
-    // ====== トップページのコンテンツ ======
-    const content = `
-    <div class="hero-section">
-        <div class="hero-title-wrapper">
-            <h1 class="hero-main-title" id="appName">友助</h1>
-            <div class="hero-illustration">
-                <svg viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: scale(1.5); transform-origin: center;">
-                    <circle cx="20" cy="20" r="10" stroke="white" stroke-width="2" fill="none"/>
-                    <path d="M12 35 L28 35 L24 50 L16 50 L12 35Z" stroke="white" stroke-width="2" fill="none"/>
-                    <line x1="20" y1="35" x2="20" y2="42" stroke="white" stroke-width="2"/>
-                    <circle cx="60" cy="20" r="10" stroke="white" stroke-width="2" fill="none"/>
-                    <path d="M52 35 L68 35 L64 50 L56 50 L52 35Z" stroke="white" stroke-width="2" fill="none"/>
-                    <line x1="60" y1="35" x2="60" y2="42" stroke="white" stroke-width="2"/>
-                    <circle cx="100" cy="20" r="10" stroke="white" stroke-width="2" fill="none"/>
-                    <path d="M92 35 L108 35 L104 50 L96 50 L92 35Z" stroke="white" stroke-width="2" fill="none"/>
-                    <line x1="100" y1="35" x2="100" y2="42" stroke="white" stroke-width="2"/>
-                    <line x1="30" y1="20" x2="50" y2="20" stroke="white" stroke-width="2" stroke-dasharray="4 4"/>
-                    <line x1="70" y1="20" x2="90" y2="20" stroke="white" stroke-width="2" stroke-dasharray="4 4"/>
-                    <line x1="16" y1="18" x2="20" y2="18" stroke="white" stroke-width="1.5"/>
-                    <line x1="56" y1="18" x2="60" y2="18" stroke="white" stroke-width="1.5"/>
-                    <line x1="96" y1="18" x2="100" y2="18" stroke="white" stroke-width="1.5"/>
-                    <path d="M16 24 Q20 28 24 24" stroke="white" stroke-width="1.5" fill="none"/>
-                    <path d="M56 24 Q60 28 64 24" stroke="white" stroke-width="1.5" fill="none"/>
-                    <path d="M96 24 Q100 28 104 24" stroke="white" stroke-width="1.5" fill="none"/>
-                </svg>
-            </div>
-            <h2 class="hero-sub-title" id="subTitle">Tomosche</h2>
-        </div>
-        <p class="hero-catchphrase" id="tagline">大切な人と、大切な時間を、もっとスムーズに。</p>
-        <div class="hero-user">
-            <i class="bi bi-person-circle"></i>
-            <span id="userName">読み込み中...</span>
-        </div>
-    </div>
-    <div class="menu-section">
-        <a href="friends.html" class="menu-card">
-            <div class="menu-icon"><i class="bi bi-people"></i></div>
-            <div class="menu-content">
-                <div class="menu-title" id="menuFriends">友達一覧</div>
-                <p class="menu-desc" id="menuFriendsDesc">登録済みの友達を確認・管理</p>
-            </div>
-            <div class="menu-arrow"><i class="bi bi-chevron-right"></i></div>
-        </a>
-        <a href="add_friends.html" class="menu-card">
-            <div class="menu-icon"><i class="bi bi-person-plus"></i></div>
-            <div class="menu-content">
-                <div class="menu-title" id="menuAdd">友達追加</div>
-                <p class="menu-desc" id="menuAddDesc">QRコードで友達を招待</p>
-            </div>
-            <div class="menu-arrow"><i class="bi bi-chevron-right"></i></div>
-        </a>
-        <a href="schedule.html" class="menu-card">
-            <div class="menu-icon"><i class="bi bi-calendar-event"></i></div>
-            <div class="menu-content">
-                <div class="menu-title" id="menuSchedule">スケジュール</div>
-                <p class="menu-desc" id="menuScheduleDesc">予定の追加・変更・確認</p>
-            </div>
-            <div class="menu-arrow"><i class="bi bi-chevron-right"></i></div>
-        </a>
-        <button onclick="openFeedback()" class="menu-card feedback-btn" style="background: rgba(255, 193, 7, 0.06); border: 1px solid rgba(255, 193, 7, 0.15); width: 100%; text-align: left;">
-            <div class="menu-icon" style="background: rgba(255, 193, 7, 0.12); color: #f9a825;">
-                <i class="bi bi-chat-dots"></i>
-            </div>
-            <div class="menu-content">
-                <div class="menu-title" style="color: #f9a825;" id="menuFeedback">お問い合わせ・フィードバック</div>
-                <p class="menu-desc" id="menuFeedbackDesc">ご意見・ご要望をお聞かせください</p>
-            </div>
-            <div class="menu-arrow"><i class="bi bi-chevron-right"></i></div>
-        </button>
-        <button id="logoutBtn" class="logout-button">
-            <div class="menu-icon" style="background: rgba(255,0,0,0.1); color: #e53935;">
-                <i class="bi bi-box-arrow-right"></i>
-            </div>
-            <div class="menu-content">
-                <div class="menu-title" style="color: #e53935;" id="logoutLabel">ログアウト</div>
-                <p class="menu-desc" id="logoutDesc">アカウントからログアウトします</p>
-            </div>
-            <div class="menu-arrow"><i class="bi bi-chevron-right"></i></div>
-        </button>
-    </div>
-    `;
+    // ====== 今日の日付（英語表記） ======
+    const today = new Date();
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dateStr = `Today・${monthNames[today.getMonth()]} ${today.getDate()}`;
 
-    // ====== フィードバックモーダル（共通コンポーネント） ======
-    const feedbackModal = `
-    <div id="feedbackModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 24px; padding: 28px 24px; max-width: 420px; width: 92%; margin: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="font-size: 18px; font-weight: 700; color: #333; margin: 0;" id="feedbackTitle">📝 お問い合わせ・フィードバック</h3>
-                <button onclick="closeFeedback()" style="background: none; border: none; font-size: 28px; color: #ccc; cursor: pointer;">×</button>
+    // ====== サンプル友達（画像はデフォルトアバターで代用） ======
+    const sampleFriends = [
+        { name: '田中 一郎', initial: '田', color: '#e3f2fd' },
+        { name: '佐藤 花子', initial: '佐', color: '#e8f5e9' },
+        { name: '鈴木 誠', initial: '鈴', color: '#fff3e0' },
+        { name: '山田 太郎', initial: '山', color: '#fce4ec' }
+    ];
+
+    // ====== 今日の予定（サンプル） ======
+    const todayEvents = [
+        { time: '10:00', title: '田中さんと打ち合わせ', person: '田中' },
+        { time: '14:00', title: 'カレンダー共有設定', person: '佐藤' }
+    ];
+
+    // ====== コンテンツ ======
+    const content = `
+    <!-- ====== ヘッダー ====== -->
+    <div class="header-section">
+        <div class="header-left">
+            <span class="logo-icon">🌱</span>
+            <span class="logo-title">Tomosche</span>
+            <span class="logo-sub">友助</span>
+        </div>
+        <div class="header-right">
+            <span class="header-date">${dateStr}</span>
+            <div class="profile-icon" id="profileIcon">
+                <i class="bi bi-person-circle"></i>
             </div>
-            <p style="font-size: 13px; color: #888; margin-bottom: 16px;" id="feedbackDesc">ご意見・ご要望・不具合報告など、何でもお聞かせください。</p>
-            <textarea id="feedbackMessage" rows="5" style="width: 100%; border: 1px solid #ddd; border-radius: 12px; padding: 14px; font-size: 14px; resize: vertical; outline: none;" placeholder="メッセージを入力してください..."></textarea>
-            <div style="display: flex; gap: 12px; margin-top: 16px;">
-                <button onclick="closeFeedback()" style="flex: 1; background: #f0f0f0; border: none; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: #666; cursor: pointer;" id="feedbackCancelBtn">キャンセル</button>
-                <button onclick="submitFeedback()" style="flex: 1; background: #06C755; border: none; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: white; cursor: pointer;" id="feedbackSendBtn">送信する</button>
+        </div>
+    </div>
+
+    <!-- ====== 検索窓 ====== -->
+    <div class="search-section">
+        <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" id="globalSearch" placeholder="Search events, friends, or dates..." />
+        </div>
+    </div>
+
+    <!-- ====== 友達アイコン（4人） ====== -->
+    <div class="friends-avatars">
+        <div class="avatars-row">
+            ${sampleFriends.map((f, i) => `
+                <div class="avatar-item">
+                    <div class="avatar-circle" style="background: ${f.color};">
+                        ${f.initial}
+                    </div>
+                    <span class="avatar-name">${f.name}</span>
+                </div>
+            `).join('')}
+        </div>
+        <a href="friends.html" class="avatars-more">
+            <div class="avatar-circle more-circle">
+                <i class="bi bi-plus"></i>
             </div>
-            <div id="feedbackStatus" style="margin-top: 12px; font-size: 13px; text-align: center; display: none;"></div>
+            <span class="avatar-name">追加</span>
+        </a>
+    </div>
+
+    <!-- ====== 今日の予定 ====== -->
+    <div class="today-section">
+        <div class="today-header">
+            <span><i class="bi bi-clock-history"></i> Upcoming</span>
+            <a href="schedule.html" class="today-more">See All →</a>
+        </div>
+        <div class="today-list">
+            ${todayEvents.map(e => `
+                <div class="today-item">
+                    <span class="today-time">${e.time}</span>
+                    <span class="today-title">${e.title}</span>
+                    <span class="today-person">👤 ${e.person}</span>
+                </div>
+            `).join('')}
+        </div>
+    </div>
+
+    <!-- ====== 下部ナビゲーションメニュー ====== -->
+    <div class="bottom-nav">
+        <a href="/" class="nav-item active">
+            <i class="bi bi-house-fill"></i>
+            <span>Home</span>
+        </a>
+        <a href="friends.html" class="nav-item">
+            <i class="bi bi-people-fill"></i>
+            <span>Friends</span>
+        </a>
+        <a href="schedule.html" class="nav-item">
+            <i class="bi bi-calendar-event-fill"></i>
+            <span>Calendar</span>
+        </a>
+        <a href="add_friends.html" class="nav-item">
+            <i class="bi bi-person-plus-fill"></i>
+            <span>Add</span>
+        </a>
+        <div class="nav-item" id="moreMenuBtn">
+            <i class="bi bi-grid-fill"></i>
+            <span>More</span>
+        </div>
+    </div>
+
+    <!-- ====== モアメニューポップアップ ====== -->
+    <div id="moreMenuPopup" style="display: none; position: fixed; bottom: 80px; left: 20px; right: 20px; background: white; border-radius: 20px; padding: 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.15); z-index: 999;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center;">
+            <a href="guide.html" style="text-decoration: none; color: #333; font-size: 13px;">
+                <div style="background: #f0f0f0; border-radius: 12px; padding: 12px;">
+                    <i class="bi bi-book" style="font-size: 24px; color: #6a1b9a;"></i>
+                </div>
+                <span>使い方</span>
+            </a>
+            <a href="privacy.html" style="text-decoration: none; color: #333; font-size: 13px;">
+                <div style="background: #f0f0f0; border-radius: 12px; padding: 12px;">
+                    <i class="bi bi-shield-lock" style="font-size: 24px; color: #1565c0;"></i>
+                </div>
+                <span>プライバシー</span>
+            </a>
+            <a href="terms.html" style="text-decoration: none; color: #333; font-size: 13px;">
+                <div style="background: #f0f0f0; border-radius: 12px; padding: 12px;">
+                    <i class="bi bi-file-text" style="font-size: 24px; color: #e65100;"></i>
+                </div>
+                <span>利用規約</span>
+            </a>
+            <a href="feedback.html" style="text-decoration: none; color: #333; font-size: 13px;">
+                <div style="background: #f0f0f0; border-radius: 12px; padding: 12px;">
+                    <i class="bi bi-chat-dots" style="font-size: 24px; color: #f9a825;"></i>
+                </div>
+                <span>フィードバック</span>
+            </a>
+            <a href="#" id="logoutMoreBtn" style="text-decoration: none; color: #333; font-size: 13px;">
+                <div style="background: #f0f0f0; border-radius: 12px; padding: 12px;">
+                    <i class="bi bi-box-arrow-right" style="font-size: 24px; color: #e53935;"></i>
+                </div>
+                <span>ログアウト</span>
+            </a>
+        </div>
+        <div style="text-align: center; margin-top: 12px;">
+            <button onclick="document.getElementById('moreMenuPopup').style.display='none'" style="background: none; border: none; color: #999; font-size: 14px;">閉じる</button>
         </div>
     </div>
     `;
 
     // ====== レンダリング ======
-    renderPage('友助 - トップ', content + feedbackModal);
+    renderPage('友助 - トップ', content, `
+        <style>
+            /* ====== ベース ====== */
+            body {
+                background-color: #f5f7fa;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                padding-bottom: 80px;
+            }
+
+            /* ====== ヘッダー ====== */
+            .header-section {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px 20px 8px 20px;
+                background: transparent;
+            }
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .logo-icon { font-size: 28px; }
+            .logo-title {
+                font-size: 20px;
+                font-weight: 700;
+                color: #06C755;
+            }
+            .logo-sub {
+                font-size: 11px;
+                color: #888;
+                background: #f0f0f0;
+                padding: 2px 8px;
+                border-radius: 999px;
+                margin-left: 4px;
+            }
+            .header-right {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+            .header-date {
+                font-size: 14px;
+                font-weight: 600;
+                color: #333;
+            }
+            .profile-icon {
+                font-size: 32px;
+                color: #06C755;
+                cursor: pointer;
+            }
+
+            /* ====== 検索窓 ====== */
+            .search-section {
+                padding: 8px 20px 16px 20px;
+            }
+            .search-box {
+                display: flex;
+                align-items: center;
+                background: white;
+                border-radius: 12px;
+                padding: 12px 16px;
+                gap: 10px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                border: 1px solid #e8ecf0;
+            }
+            .search-box i {
+                color: #999;
+                font-size: 18px;
+            }
+            .search-box input {
+                border: none;
+                background: none;
+                outline: none;
+                flex: 1;
+                font-size: 15px;
+                color: #333;
+            }
+            .search-box input::placeholder {
+                color: #bbb;
+            }
+
+            /* ====== 友達アイコン ====== */
+            .friends-avatars {
+                padding: 0 20px 20px 20px;
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            .avatars-row {
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            .avatar-item, .avatars-more {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+                text-decoration: none;
+                color: #333;
+            }
+            .avatar-circle {
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+                font-weight: 600;
+                color: #333;
+                border: 2px solid white;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            }
+            .more-circle {
+                background: #f0f0f0 !important;
+                border: 2px dashed #ccc;
+                color: #999;
+                font-size: 20px;
+            }
+            .avatar-name {
+                font-size: 11px;
+                color: #888;
+                max-width: 56px;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                white-space: nowrap;
+                text-align: center;
+            }
+
+            /* ====== 今日の予定 ====== */
+            .today-section {
+                background: white;
+                margin: 0 20px 16px 20px;
+                border-radius: 16px;
+                padding: 16px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            }
+            .today-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 15px;
+                font-weight: 600;
+                color: #333;
+                margin-bottom: 12px;
+            }
+            .today-header i { color: #06C755; margin-right: 6px; }
+            .today-more {
+                font-size: 13px;
+                font-weight: 400;
+                color: #06C755;
+                text-decoration: none;
+            }
+            .today-item {
+                display: flex;
+                align-items: center;
+                padding: 10px 0;
+                border-bottom: 1px solid #f5f5f5;
+                gap: 10px;
+            }
+            .today-item:last-child { border-bottom: none; }
+            .today-time {
+                font-size: 13px;
+                font-weight: 600;
+                color: #06C755;
+                min-width: 48px;
+            }
+            .today-title {
+                font-size: 14px;
+                color: #333;
+                flex: 1;
+            }
+            .today-person {
+                font-size: 12px;
+                color: #888;
+                background: #f0f0f0;
+                padding: 2px 10px;
+                border-radius: 999px;
+            }
+
+            /* ====== 下部ナビゲーション ====== */
+            .bottom-nav {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                padding: 8px 12px 16px 12px;
+                border-top: 1px solid #e8ecf0;
+                box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+                z-index: 100;
+            }
+            .nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                text-decoration: none;
+                color: #999;
+                font-size: 11px;
+                cursor: pointer;
+                background: none;
+                border: none;
+                padding: 4px 12px;
+            }
+            .nav-item i {
+                font-size: 22px;
+                transition: all 0.2s;
+            }
+            .nav-item.active {
+                color: #06C755;
+            }
+            .nav-item.active i {
+                transform: translateY(-2px);
+            }
+            .nav-item:active {
+                transform: scale(0.92);
+            }
+
+            /* ====== ダークモード ====== */
+            @media (prefers-color-scheme: dark) {
+                body { background: #0d0d1a; }
+                .search-box { background: #1a1a2e; border-color: #2a2a3e; }
+                .search-box input { color: #eee; }
+                .search-box input::placeholder { color: #666; }
+                .today-section { background: #1a1a2e; }
+                .today-header { color: #eee; }
+                .today-item { border-color: #2a2a3e; }
+                .today-title { color: #eee; }
+                .bottom-nav { background: #1a1a2e; border-color: #2a2a3e; }
+                .header-date { color: #ccc; }
+                .logo-sub { background: #2a2a3e; color: #888; }
+                #moreMenuPopup { background: #1a1a2e; }
+                #moreMenuPopup a { color: #eee !important; }
+                .avatar-name { color: #aaa; }
+            }
+        </style>
+    `);
 
     // ====== ページロード後の処理 ======
     afterPageLoad(function() {
-        // フィードバック関数を定義
-        window.openFeedback = function() {
-            document.getElementById('feedbackModal').style.display = 'flex';
-            document.getElementById('feedbackMessage').value = '';
-            document.getElementById('feedbackStatus').style.display = 'none';
-        };
-        window.closeFeedback = function() {
-            document.getElementById('feedbackModal').style.display = 'none';
-        };
-        window.submitFeedback = async function() {
-            const message = document.getElementById('feedbackMessage').value.trim();
-            const status = document.getElementById('feedbackStatus');
-            if (!message) {
-                status.style.display = 'block';
-                status.style.color = '#e53935';
-                status.textContent = 'メッセージを入力してください。';
-                return;
+        // プロフィールアイコンクリック
+        document.getElementById('profileIcon').addEventListener('click', function() {
+            const popup = document.getElementById('moreMenuPopup');
+            if (popup.style.display === 'none') {
+                popup.style.display = 'block';
+            } else {
+                popup.style.display = 'none';
             }
-            status.style.display = 'block';
-            status.textContent = '送信中...';
-            status.style.color = '#666';
-            try {
-                const profile = await liff.getProfile();
-                console.log('Feedback:', { userId: profile.userId, userName: profile.displayName, message: message });
-                status.style.color = '#06C755';
-                status.textContent = '✅ 送信しました！ありがとうございます。';
-                setTimeout(() => { document.getElementById('feedbackModal').style.display = 'none'; }, 1500);
-            } catch (err) {
-                status.style.color = '#e53935';
-                status.textContent = '❌ 送信失敗しました。再試行してください。';
-            }
-        };
-        document.getElementById('feedbackModal').addEventListener('click', function(e) {
-            if (e.target === this) closeFeedback();
         });
-        document.getElementById('logoutBtn').addEventListener('click', function(e) {
+
+        // モアメニューボタン
+        document.getElementById('moreMenuBtn').addEventListener('click', function() {
+            const popup = document.getElementById('moreMenuPopup');
+            if (popup.style.display === 'none') {
+                popup.style.display = 'block';
+            } else {
+                popup.style.display = 'none';
+            }
+        });
+
+        // ログアウト
+        document.getElementById('logoutMoreBtn').addEventListener('click', function(e) {
             e.preventDefault();
-            logout();
+            if (confirm('ログアウトしますか？')) {
+                logout();
+            }
+        });
+
+        // 検索（ダミー）
+        document.getElementById('globalSearch').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const query = this.value.trim();
+                if (query) {
+                    alert(`🔍 「${query}」を検索します（機能は開発中です）`);
+                }
+            }
+        });
+
+        // 背景クリックでポップアップを閉じる
+        document.addEventListener('click', function(e) {
+            const popup = document.getElementById('moreMenuPopup');
+            if (popup.style.display === 'block') {
+                if (!e.target.closest('#moreMenuPopup') && 
+                    !e.target.closest('#moreMenuBtn') && 
+                    !e.target.closest('#profileIcon')) {
+                    popup.style.display = 'none';
+                }
+            }
         });
     });
 </script>
