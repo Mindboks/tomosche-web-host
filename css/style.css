@@ -1,165 +1,981 @@
-/* ============================================================
-   Tomosche 共通スタイル（白基調統一）
-   ============================================================ */
+/* ================================================================
+   ■ Tomosche 共通スタイルシート
+   ■ 更新日: 2026-07-20
+   ■ 全ページで共有するスタイルを定義
+   ================================================================ */
 
-/* ---------- 基本 ---------- */
-html, body {
-    background: #ffffff !important;
+/* ================================================================
+   ■ 1. リセット & ベース
+   ================================================================ */
+* {
     margin: 0;
     padding: 0;
-    min-height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-    color: #333;
+    box-sizing: border-box;
 }
 
-/* ---------- 共通コンテナ ---------- */
-.container {
+html, body {
     background: #ffffff !important;
-    padding: 16px;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* ---------- 戻るボタン ---------- */
+/* ================================================================
+   ■ 2. 共通レイアウト
+   ================================================================ */
+.app-container {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 0 16px 80px 16px;
+    background: #ffffff;
+}
+
+/* ================================================================
+   ■ 3. ヘッダー（全ページ共通）
+   ================================================================ */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0 8px 0;
+}
+.logo {
+    font-size: 22px;
+    font-weight: 700;
+    color: #06C755;
+}
+.logo-sub {
+    font-size: 11px;
+    color: #999;
+    font-weight: 400;
+    margin-left: 6px;
+}
+.profile-icon {
+    font-size: 28px;
+    color: #06C755;
+    cursor: pointer;
+}
+
+/* ================================================================
+   ■ 4. 戻るボタン & ページタイトル（全ページ共通）
+   ================================================================ */
 .back-btn {
     background: none;
     border: none;
-    font-size: 24px;
+    font-size: 22px;
     color: #06C755;
     padding: 0;
     margin-right: 8px;
     cursor: pointer;
 }
-.back-btn:hover {
-    color: #049a44;
-}
-
-/* ---------- ページタイトル ---------- */
 .page-title {
-    font-size: clamp(1.2rem, 4vw, 1.8rem);
+    font-size: clamp(1.1rem, 4vw, 1.6rem);
     font-weight: 600;
     margin: 0;
     color: #333;
+    white-space: nowrap;
 }
 
-/* ---------- ローディング ---------- */
-.loading-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.95);
+/* ================================================================
+   ■ 5. メイン画像 + 日付 + 検索（トップページ専用）
+   ================================================================ */
+.image-wrapper {
+    position: relative;
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    margin: 4px 0 0 0;
+}
+.image-wrapper img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+.image-date {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(6px);
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-size: clamp(11px, 3vw, 14px);
+    font-weight: 600;
+    color: #333;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid rgba(255,255,255,0.6);
+    white-space: nowrap;
+    z-index: 5;
+}
+.image-search {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 88%;
+    max-width: 360px;
+    z-index: 5;
+}
+.image-search .search-box {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(6px);
+    border-radius: 12px;
+    padding: 10px 16px;
+    gap: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(255,255,255,0.6);
+}
+.image-search .search-box i {
+    color: #999;
+    font-size: 16px;
+}
+.image-search .search-box input {
+    border: none;
+    background: none;
+    outline: none;
+    flex: 1;
+    font-size: clamp(12px, 2.5vw, 14px);
+    color: #333;
+}
+.image-search .search-box input::placeholder {
+    color: #bbb;
+}
+
+/* ================================================================
+   ■ 6. 友達アイコン（トップページ専用）
+   ================================================================ */
+.avatars {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 0 8px 0;
+}
+.avatar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    color: #333;
+    width: 56px;
+}
+.avatar-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(14px, 2.5vw, 16px);
+    font-weight: 600;
+    color: #333;
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.avatar-add {
+    border: 2px dashed #ccc;
+    color: #999;
+    background: #f0f4f8;
+    font-size: 20px;
+}
+.avatar-name {
+    font-size: clamp(9px, 2vw, 10px);
+    color: #888;
+    text-align: center;
+    max-width: 56px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ================================================================
+   ■ 7. 今日の予定カード（トップページ専用）
+   ================================================================ */
+.today-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid #f0f4f8;
+    margin-top: 8px;
+}
+.today-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: clamp(13px, 2.5vw, 14px);
+    color: #333;
+    margin-bottom: 8px;
+}
+.today-header i {
+    color: #06C755;
+    margin-right: 6px;
+}
+.today-more {
+    font-size: clamp(11px, 2vw, 12px);
+    font-weight: 400;
+    color: #06C755;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.today-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f4f8;
+    gap: 10px;
+    font-size: clamp(12px, 2.2vw, 13px);
+    white-space: nowrap;
+}
+.today-item:last-child {
+    border-bottom: none;
+}
+.today-time {
+    color: #06C755;
+    font-weight: 600;
+    min-width: 44px;
+    font-size: clamp(11px, 2vw, 12px);
+}
+.today-title {
+    flex: 1;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.today-person {
+    color: #888;
+    background: #f0f4f8;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: clamp(10px, 1.8vw, 11px);
+    white-space: nowrap;
+}
+
+/* ================================================================
+   ■ 8. 友達一覧（friends.html 専用）
+   ================================================================ */
+.friend-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0f4f8;
+}
+.friend-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 14px;
+    font-weight: bold;
+    font-size: 18px;
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+.friend-info {
+    flex: 1;
+}
+.friend-name {
+    font-weight: 600;
+    color: #333;
+}
+.friend-status {
+    font-size: 12px;
+}
+.status-shared {
+    color: #2e7d32;
+}
+.status-pending {
+    color: #ff9800;
+}
+.delete-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+.delete-btn:hover {
+    color: #e53935;
+    background: rgba(229, 57, 53, 0.08);
+}
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+}
+.empty-state i {
+    font-size: 48px;
+    color: #ddd;
+}
+
+/* ================================================================
+   ■ 9. カレンダー（schedule.html 専用）
+   ================================================================ */
+.cal-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0 12px 0;
+}
+.cal-nav button {
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: #06C755;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    background: #f0f4f8;
+    border-radius: 16px;
+    overflow: hidden;
+}
+.cal-weekday {
+    background: #e8f5e9;
+    color: #2e7d32;
+    font-weight: 600;
+    font-size: 12px;
+    text-align: center;
+    padding: 8px 0;
+}
+.cal-day {
+    background: white;
+    aspect-ratio: 1 / 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    position: relative;
 }
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #e0e0e0;
-    border-top: 4px solid #06C755;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 16px;
+.cal-day:hover {
+    background: #f5f5f5;
 }
-@keyframes spin {
-    to { transform: rotate(360deg); }
+.cal-day.other {
+    color: #ccc;
 }
-
-/* ---------- カード（白基調） ---------- */
-.card-white {
-    background: #ffffff !important;
-    border: 1px solid #f0f4f8;
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-/* ---------- フッターリンク（トップページ以外で使用） ---------- */
-.footer-links {
-    text-align: center;
-    padding: 16px 0 8px 0;
-    font-size: 12px;
-    color: #bbb;
-    background: #ffffff;
-}
-.footer-links a {
-    color: #999;
-    text-decoration: none;
-    margin: 0 6px;
-}
-.footer-links a:hover {
+.cal-day.today {
+    background: #e8f5e9;
+    font-weight: 700;
     color: #06C755;
 }
-.footer-sep {
-    color: #ddd;
-    margin: 0 4px;
+.cal-day.selected {
+    background: #06C755;
+    color: white;
+    border-radius: 8px;
 }
-
-/* ---------- ボタン（共通） ---------- */
-.btn-primary {
-    background: #06C755 !important;
-    color: white !important;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 999px;
+.cal-day .dot {
+    position: absolute;
+    bottom: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+.cal-day .dot.pending {
+    background: #ff9800;
+}
+.cal-day .dot.confirmed {
+    background: #06C755;
+}
+.event-list {
+    margin-top: 16px;
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid #f0f4f8;
+}
+.event-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f5f5f5;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.event-item:last-child {
+    border-bottom: none;
+}
+.event-time {
+    font-size: 12px;
     font-weight: 600;
-    cursor: pointer;
+    min-width: 44px;
 }
-.btn-primary:hover {
-    background: #049a44 !important;
+.event-time.confirmed {
+    color: #06C755;
 }
-.btn-secondary {
-    background: #f0f4f8 !important;
-    color: #666 !important;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 999px;
-    font-weight: 600;
-    cursor: pointer;
+.event-time.pending {
+    color: #ff9800;
 }
-.btn-secondary:hover {
-    background: #e0e4e8 !important;
-}
-.btn-danger {
-    background: #e53935 !important;
-    color: white !important;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 999px;
-    font-weight: 600;
-    cursor: pointer;
-}
-.btn-danger:hover {
-    background: #c62828 !important;
-}
-
-/* ---------- 入力フォーム ---------- */
-input, select, textarea {
-    background: #ffffff !important;
-    border: 1px solid #e8ecf0;
-    border-radius: 12px;
-    padding: 12px 16px;
+.event-title {
     font-size: 14px;
     color: #333;
-    outline: none;
-    width: 100%;
-    transition: border 0.2s;
+    flex: 1;
 }
-input:focus, select:focus, textarea:focus {
-    border-color: #06C755;
-    box-shadow: 0 2px 12px rgba(6, 199, 85, 0.08);
+.event-person {
+    font-size: 12px;
+    color: #888;
+    background: #f0f4f8;
+    padding: 2px 10px;
+    border-radius: 999px;
+}
+.event-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+.event-badge.confirmed {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+.event-badge.pending {
+    background: #fff3e0;
+    color: #e65100;
+}
+.empty-events {
+    text-align: center;
+    color: #bbb;
+    padding: 16px 0;
+}
+.add-event-btn {
+    position: fixed;
+    bottom: 100px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #06C755;
+    color: white;
+    border: none;
+    font-size: 32px;
+    box-shadow: 0 4px 20px rgba(6, 199, 85, 0.4);
+    z-index: 100;
+    cursor: pointer;
+}
+.add-event-btn:active {
+    transform: scale(0.9);
 }
 
-/* ---------- ダークモード（一旦無効化：白基調を維持） ---------- */
-@media (prefers-color-scheme: dark) {
-    html, body, .container, .card-white, .footer-links,
-    input, select, textarea {
-        background: #ffffff !important;
-        color: #333 !important;
+/* ================================================================
+   ■ 10. QRコード（add_friends.html 専用）
+   ================================================================ */
+.qr-box {
+    background: white;
+    border-radius: 24px;
+    padding: 32px 20px;
+    text-align: center;
+    border: 1px solid #f0f4f8;
+    margin-top: 12px;
+}
+.qr-box h5 {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.qr-box p {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 20px;
+}
+#qrcode {
+    display: inline-block;
+    background: white;
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid #f0f4f8;
+}
+.send-btn {
+    background: #06C755;
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 600;
+    width: 100%;
+    margin-top: 16px;
+    cursor: pointer;
+}
+.send-btn:hover {
+    background: #049a44;
+}
+.note {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 16px;
+}
+
+/* ================================================================
+   ■ 11. 下部ナビゲーション（全ページ共通）
+   ================================================================ */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    display: flex;
+    justify-content: space-around;
+    padding: 6px 0 14px 0;
+    border-top: 1px solid #f0f4f8;
+    z-index: 100;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
+}
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: clamp(9px, 1.8vw, 10px);
+    color: #999;
+    text-decoration: none;
+    gap: 2px;
+    padding: 4px 12px;
+    flex: 1;
+    max-width: 80px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.nav-item i {
+    font-size: 20px;
+}
+.nav-item.active {
+    color: #06C755;
+}
+.nav-item.active i {
+    transform: translateY(-2px);
+}
+
+/* ================================================================
+   ■ 12. バージョン表示（全ページ共通）
+   ================================================================ */
+.version {
+    text-align: center;
+    font-size: 10px;
+    color: #ccc;
+    padding: 8px 0 4px 0;
+}
+
+/* ================================================================
+   ■ 13. Moreポップアップ（全ページ共通）
+   ================================================================ */
+.more-popup {
+    display: none;
+    position: fixed;
+    bottom: 76px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+    z-index: 999;
+    border: 1px solid #f0f4f8;
+    width: 92%;
+    max-width: 400px;
+}
+.more-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    text-align: center;
+}
+.more-grid a {
+    text-decoration: none;
+    color: #333;
+    font-size: 12px;
+    display: block;
+}
+.more-grid .icon-box {
+    background: #f0f4f8;
+    border-radius: 14px;
+    padding: 14px;
+}
+.more-grid .icon-box i {
+    font-size: 24px;
+}
+.more-grid span {
+    display: block;
+    margin-top: 4px;
+}
+.more-close {
+    text-align: center;
+    margin-top: 12px;
+}
+.more-close button {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 13px;
+    padding: 4px 16px;
+    cursor: pointer;
+}
+
+/* ================================================================
+   ■ 14. 言語切替（全ページ共通）
+   ================================================================ */
+.lang-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f4f8;
+}
+.lang-section .lang-label {
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+    margin-bottom: 6px;
+}
+.lang-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+}
+.lang-btn {
+    background: #f0f4f8;
+    border: none;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 10px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.lang-btn:hover {
+    background: #06C755;
+    color: white;
+}
+.lang-btn.active {
+    background: #06C755;
+    color: white;
+}
+
+/* ================================================================
+   ■ 15. フィードバックモーダル（全ページ共通）
+   ================================================================ */
+.feedback-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+.feedback-box {
+    background: white;
+    border-radius: 24px;
+    padding: 28px 24px;
+    max-width: 420px;
+    width: 92%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+.feedback-box h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
+}
+.feedback-box p {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 16px;
+}
+.feedback-box textarea {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14px;
+    outline: none;
+    min-height: 100px;
+    resize: vertical;
+    transition: border 0.2s;
+}
+.feedback-box textarea:focus {
+    border-color: #06C755;
+}
+.fb-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+.fb-actions button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+.fb-cancel {
+    background: #f0f0f0;
+    color: #666;
+}
+.fb-cancel:hover {
+    background: #e0e0e0;
+}
+.fb-send {
+    background: #06C755;
+    color: white;
+}
+.fb-send:hover {
+    background: #049a44;
+}
+#fbStatus {
+    margin-top: 12px;
+    font-size: 13px;
+    text-align: center;
+    display: none;
+}
+
+/* ================================================================
+   ■ 16. 予定追加モーダル（全ページ共通）
+   ================================================================ */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+.modal-box {
+    background: white;
+    border-radius: 24px;
+    padding: 28px 24px;
+    max-width: 420px;
+    width: 92%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+.modal-box h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 16px;
+}
+.modal-box label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-top: 12px;
+    display: block;
+}
+.modal-box input,
+.modal-box select,
+.modal-box textarea {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14px;
+    outline: none;
+    margin-top: 4px;
+    transition: border 0.2s;
+    background: white;
+}
+.modal-box input:focus,
+.modal-box select:focus,
+.modal-box textarea:focus {
+    border-color: #06C755;
+}
+.time-row {
+    display: flex;
+    gap: 12px;
+}
+.time-row > div {
+    flex: 1;
+}
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+.modal-actions button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+.btn-cancel {
+    background: #f0f0f0;
+    color: #666;
+}
+.btn-cancel:hover {
+    background: #e0e0e0;
+}
+.btn-primary {
+    background: #06C755;
+    color: white;
+}
+.btn-primary:hover {
+    background: #049a44;
+}
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ================================================================
+   ■ 17. 削除確認モーダル（friends.html 専用）
+   ================================================================ */
+.modal-overlay-danger {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+.modal-box-danger {
+    background: white;
+    border-radius: 24px;
+    padding: 32px 28px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+.modal-box-danger .modal-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    color: #e53935;
+}
+.modal-box-danger .modal-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
+}
+.modal-box-danger .modal-desc {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+.modal-box-danger .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+.modal-box-danger .modal-btn {
+    padding: 10px 28px;
+    border-radius: 999px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 100px;
+}
+.modal-box-danger .modal-btn-cancel {
+    background: #f0f0f0;
+    color: #666;
+}
+.modal-box-danger .modal-btn-cancel:hover {
+    background: #e0e0e0;
+}
+.modal-box-danger .modal-btn-delete {
+    background: #e53935;
+    color: white;
+}
+.modal-box-danger .modal-btn-delete:hover {
+    background: #c62828;
+}
+.custom-toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    z-index: 99999;
+}
+
+/* ================================================================
+   ■ 18. レスポンシブ（全ページ共通）
+   ================================================================ */
+@media (max-width: 576px) {
+    .app-container {
+        padding: 0 12px 80px 12px;
     }
-    .page-title {
-        color: #333 !important;
+    .logo {
+        font-size: 18px;
     }
-    .footer-links a {
-        color: #999 !important;
+    .logo-sub {
+        font-size: 10px;
+    }
+    .image-date {
+        font-size: clamp(10px, 2.5vw, 12px);
+        padding: 4px 14px;
+        top: 12px;
+    }
+    .image-search .search-box {
+        padding: 8px 12px;
+    }
+    .image-search .search-box input {
+        font-size: clamp(11px, 2.2vw, 12px);
+    }
+    .avatar-circle {
+        width: 44px;
+        height: 44px;
+        font-size: clamp(12px, 2.2vw, 14px);
+    }
+    .avatar-name {
+        font-size: clamp(8px, 1.8vw, 9px);
+    }
+    .today-item {
+        font-size: clamp(11px, 2vw, 12px);
+    }
+    .today-time {
+        min-width: 36px;
+        font-size: clamp(10px, 1.8vw, 11px);
+    }
+    .nav-item {
+        padding: 4px 8px;
+        font-size: clamp(8px, 1.6vw, 9px);
+    }
+    .nav-item i {
+        font-size: clamp(16px, 3.5vw, 18px);
+    }
+    .modal-box,
+    .modal-box-danger {
+        padding: 20px 16px;
+    }
+}
+
+@media (min-width: 768px) {
+    .bottom-nav {
+        max-width: 420px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    .more-popup {
+        max-width: 400px;
     }
 }
