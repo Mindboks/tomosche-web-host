@@ -6,7 +6,7 @@
                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const dateStr = `Today・${monthNames[today.getMonth()]} ${today.getDate()}`;
 
-    // ====== サンプル友達（画像はデフォルトアバターで代用） ======
+    // ====== サンプル友達 ======
     const sampleFriends = [
         { name: '田中 一郎', initial: '田', color: '#e3f2fd' },
         { name: '佐藤 花子', initial: '佐', color: '#e8f5e9' },
@@ -22,7 +22,7 @@
 
     // ====== コンテンツ ======
     const content = `
-    <!-- ====== ヘッダー ====== -->
+    <!-- ====== ヘッダー（ロゴ＋日付） ====== -->
     <div class="header-section">
         <div class="header-left">
             <span class="logo-icon">🌱</span>
@@ -37,7 +37,12 @@
         </div>
     </div>
 
-    <!-- ====== 検索窓 ====== -->
+    <!-- ====== メイン画像（中央配置） ====== -->
+    <div class="main-image-wrapper">
+        <img src="assets/images/toppageTmocha.png" alt="Tomosche" class="main-image" />
+    </div>
+
+    <!-- ====== 検索窓（画像の下） ====== -->
     <div class="search-section">
         <div class="search-box">
             <i class="bi bi-search"></i>
@@ -127,7 +132,7 @@
                 </div>
                 <span>利用規約</span>
             </a>
-            <a href="feedback.html" style="text-decoration: none; color: #333; font-size: 13px;">
+            <a href="#" id="feedbackMoreBtn" style="text-decoration: none; color: #333; font-size: 13px;">
                 <div style="background: #f0f0f0; border-radius: 12px; padding: 12px;">
                     <i class="bi bi-chat-dots" style="font-size: 24px; color: #f9a825;"></i>
                 </div>
@@ -151,9 +156,10 @@
         <style>
             /* ====== ベース ====== */
             body {
-                background-color: #f5f7fa;
+                background: linear-gradient(180deg, #f0f4f8 0%, #e8ecf0 100%);
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 padding-bottom: 80px;
+                min-height: 100vh;
             }
 
             /* ====== ヘッダー ====== */
@@ -178,10 +184,11 @@
             .logo-sub {
                 font-size: 11px;
                 color: #888;
-                background: #f0f0f0;
+                background: rgba(255,255,255,0.6);
                 padding: 2px 8px;
                 border-radius: 999px;
                 margin-left: 4px;
+                backdrop-filter: blur(4px);
             }
             .header-right {
                 display: flex;
@@ -199,9 +206,26 @@
                 cursor: pointer;
             }
 
+            /* ====== メイン画像 ====== */
+            .main-image-wrapper {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 8px 20px 12px 20px;
+            }
+            .main-image {
+                max-width: 100%;
+                height: auto;
+                max-height: 420px;
+                border-radius: 20px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+                object-fit: contain;
+                background: white;
+            }
+
             /* ====== 検索窓 ====== */
             .search-section {
-                padding: 8px 20px 16px 20px;
+                padding: 0 20px 16px 20px;
             }
             .search-box {
                 display: flex;
@@ -231,7 +255,7 @@
 
             /* ====== 友達アイコン ====== */
             .friends-avatars {
-                padding: 0 20px 20px 20px;
+                padding: 0 20px 16px 20px;
                 display: flex;
                 align-items: center;
                 flex-wrap: wrap;
@@ -264,7 +288,7 @@
                 box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             }
             .more-circle {
-                background: #f0f0f0 !important;
+                background: rgba(255,255,255,0.8) !important;
                 border: 2px dashed #ccc;
                 color: #999;
                 font-size: 20px;
@@ -281,11 +305,13 @@
 
             /* ====== 今日の予定 ====== */
             .today-section {
-                background: white;
+                background: rgba(255,255,255,0.85);
+                backdrop-filter: blur(8px);
                 margin: 0 20px 16px 20px;
                 border-radius: 16px;
                 padding: 16px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                border: 1px solid rgba(255,255,255,0.6);
             }
             .today-header {
                 display: flex;
@@ -307,7 +333,7 @@
                 display: flex;
                 align-items: center;
                 padding: 10px 0;
-                border-bottom: 1px solid #f5f5f5;
+                border-bottom: 1px solid rgba(0,0,0,0.05);
                 gap: 10px;
             }
             .today-item:last-child { border-bottom: none; }
@@ -325,7 +351,7 @@
             .today-person {
                 font-size: 12px;
                 color: #888;
-                background: #f0f0f0;
+                background: rgba(0,0,0,0.05);
                 padding: 2px 10px;
                 border-radius: 999px;
             }
@@ -336,12 +362,13 @@
                 bottom: 0;
                 left: 0;
                 right: 0;
-                background: white;
+                background: rgba(255,255,255,0.92);
+                backdrop-filter: blur(12px);
                 display: flex;
                 justify-content: space-around;
                 align-items: center;
                 padding: 8px 12px 16px 12px;
-                border-top: 1px solid #e8ecf0;
+                border-top: 1px solid rgba(0,0,0,0.05);
                 box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
                 z-index: 100;
             }
@@ -374,20 +401,59 @@
 
             /* ====== ダークモード ====== */
             @media (prefers-color-scheme: dark) {
-                body { background: #0d0d1a; }
-                .search-box { background: #1a1a2e; border-color: #2a2a3e; }
-                .search-box input { color: #eee; }
-                .search-box input::placeholder { color: #666; }
-                .today-section { background: #1a1a2e; }
-                .today-header { color: #eee; }
-                .today-item { border-color: #2a2a3e; }
-                .today-title { color: #eee; }
-                .bottom-nav { background: #1a1a2e; border-color: #2a2a3e; }
-                .header-date { color: #ccc; }
-                .logo-sub { background: #2a2a3e; color: #888; }
-                #moreMenuPopup { background: #1a1a2e; }
-                #moreMenuPopup a { color: #eee !important; }
-                .avatar-name { color: #aaa; }
+                body {
+                    background: linear-gradient(180deg, #0d0d1a 0%, #1a1a2e 100%);
+                }
+                .search-box {
+                    background: rgba(26,26,46,0.8);
+                    border-color: rgba(255,255,255,0.08);
+                }
+                .search-box input {
+                    color: #eee;
+                }
+                .search-box input::placeholder {
+                    color: #666;
+                }
+                .today-section {
+                    background: rgba(26,26,46,0.85);
+                    border-color: rgba(255,255,255,0.05);
+                }
+                .today-header {
+                    color: #eee;
+                }
+                .today-item {
+                    border-color: rgba(255,255,255,0.05);
+                }
+                .today-title {
+                    color: #eee;
+                }
+                .bottom-nav {
+                    background: rgba(26,26,46,0.92);
+                    border-color: rgba(255,255,255,0.05);
+                }
+                .header-date {
+                    color: #ccc;
+                }
+                .logo-sub {
+                    background: rgba(255,255,255,0.08);
+                    color: #888;
+                }
+                #moreMenuPopup {
+                    background: #1a1a2e;
+                }
+                #moreMenuPopup a {
+                    color: #eee !important;
+                }
+                .avatar-name {
+                    color: #aaa;
+                }
+                .today-person {
+                    background: rgba(255,255,255,0.08);
+                    color: #aaa;
+                }
+                .main-image {
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                }
             }
         </style>
     `);
@@ -397,21 +463,13 @@
         // プロフィールアイコンクリック
         document.getElementById('profileIcon').addEventListener('click', function() {
             const popup = document.getElementById('moreMenuPopup');
-            if (popup.style.display === 'none') {
-                popup.style.display = 'block';
-            } else {
-                popup.style.display = 'none';
-            }
+            popup.style.display = (popup.style.display === 'none') ? 'block' : 'none';
         });
 
         // モアメニューボタン
         document.getElementById('moreMenuBtn').addEventListener('click', function() {
             const popup = document.getElementById('moreMenuPopup');
-            if (popup.style.display === 'none') {
-                popup.style.display = 'block';
-            } else {
-                popup.style.display = 'none';
-            }
+            popup.style.display = (popup.style.display === 'none') ? 'block' : 'none';
         });
 
         // ログアウト
@@ -419,6 +477,16 @@
             e.preventDefault();
             if (confirm('ログアウトしますか？')) {
                 logout();
+            }
+        });
+
+        // フィードバック
+        document.getElementById('feedbackMoreBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (window.openFeedback) {
+                window.openFeedback();
+            } else {
+                alert('📝 フィードバック機能は準備中です。\n代わりに tomosche.line@gmail.com へご連絡ください。');
             }
         });
 
