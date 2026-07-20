@@ -4,36 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Tomosche - Shared Calendar</title>
-    
-    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    
-    <!-- 共通スタイル -->
     <link rel="stylesheet" href="css/style.css">
-    
-    <!-- LIFF SDK -->
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-    
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-auth-compat.js"></script>
-    
-    <!-- アプリケーションJS -->
     <script src="js/config.js"></script>
     <script src="js/i18n.js"></script>
     <script src="js/app.js"></script>
 </head>
 <body>
     <div class="app-container">
-        <!-- ヘッダー -->
         <div class="header">
             <div class="logo">🌱 Tomosche <span class="logo-sub">Shared Calendar</span></div>
             <div class="profile-icon" id="profileIcon"><i class="bi bi-person-circle"></i></div>
         </div>
-
-        <!-- 画像＋日付＋検索 -->
         <div class="image-wrapper">
             <img src="assets/images/toppageTmocha.png" alt="Tomosche" />
             <div class="image-date" id="dateDisplay">Loading...</div>
@@ -44,11 +31,7 @@
                 </div>
             </div>
         </div>
-
-        <!-- 友達アイコン -->
         <div class="avatars" id="avatars"></div>
-
-        <!-- 今日の予定 -->
         <div class="today-card">
             <div class="today-header">
                 <span><i class="bi bi-clock-history"></i> Today's Events</span>
@@ -57,7 +40,6 @@
             <div id="todayList"></div>
         </div>
     </div>
-
     <div class="version" id="versionDisplay">Tomosche v1.0.0</div>
 
     <!-- 下部ナビ -->
@@ -102,7 +84,7 @@
     <div class="feedback-modal" id="feedbackModal">
         <div class="feedback-box">
             <h3>📝 Send Feedback</h3>
-            <p>Your feedback helps us improve. We'll get back to you soon.</p>
+            <p>Your feedback helps us improve.</p>
             <textarea id="fbMessage" placeholder="Write your message here..."></textarea>
             <div class="fb-actions">
                 <button class="fb-cancel" onclick="closeFeedback()">Cancel</button>
@@ -137,20 +119,12 @@
 
     <script>
         // ================================================================
-        // ■ ページ読み込み時の初期化処理
+        // 初期化
         // ================================================================
         document.addEventListener('DOMContentLoaded', function() {
-            // Firebase初期化
             initFirebase();
-            console.log('🔥 Firebase initialized');
-
-            // 日付表示
             updateDateDisplay();
-
-            // 友達アイコン
             renderFriends();
-
-            // 今日の予定
             renderTodayEvents();
 
             // Moreメニュー
@@ -212,7 +186,7 @@
             });
             document.getElementById('friendSelect').addEventListener('change', checkAddEventForm);
 
-            // LIFF初期化
+            // LIFF
             (async function() {
                 try {
                     await liff.init({ liffId: '2010384200-BS1cr2CR' });
@@ -229,9 +203,8 @@
         });
 
         // ================================================================
-        // ■ 各機能の実装
+        // 各機能
         // ================================================================
-
         function updateDateDisplay() {
             const now = new Date();
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

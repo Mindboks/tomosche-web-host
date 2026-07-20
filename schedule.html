@@ -32,14 +32,52 @@
             <div id="eventList"><div class="empty-events">Select a date</div></div>
         </div>
     </div>
-    <button class="add-event-btn" onclick="alert('Add event coming soon')"><i class="bi bi-plus-lg"></i></button>
 
+    <!-- 予定追加ボタン（モーダルを表示） -->
+    <button class="add-event-btn" onclick="openAddEventModal(selectedDate || 'Select a date')"><i class="bi bi-plus-lg"></i></button>
+
+    <!-- 予定追加モーダル -->
+    <div class="modal-overlay" id="addEventModal">
+        <div class="modal-box">
+            <h3>📝 New Event</h3>
+            <p style="font-size:13px;color:#888;" id="modalDate">Select a date</p>
+            <label>👤 Select a friend</label>
+            <select id="friendSelect"><option value="">-- Select a friend --</option></select>
+            <label>📌 Event name</label>
+            <input type="text" id="eventTitle" placeholder="e.g. Lunch, Meeting..." />
+            <div class="time-row">
+                <div><label>⏰ Start</label><input type="time" id="eventStart" step="900" /></div>
+                <div><label>⏰ End</label><input type="time" id="eventEnd" step="900" /></div>
+            </div>
+            <label>📝 Note (optional)</label>
+            <textarea id="eventNote" rows="2" placeholder="Add details..."></textarea>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeAddEventModal()">Cancel</button>
+                <button class="btn-primary" id="confirmAddEventBtn" onclick="confirmAddEvent()" disabled>Submit</button>
+            </div>
+            <div id="addEventStatus" style="margin-top:12px;font-size:13px;text-align:center;display:none;"></div>
+        </div>
+    </div>
+
+    <!-- 下部ナビ -->
     <div class="bottom-nav">
         <a href="/" class="nav-item"><i class="bi bi-house-fill"></i><span>Home</span></a>
         <a href="friends.html" class="nav-item"><i class="bi bi-people-fill"></i><span>Friends</span></a>
         <a href="schedule.html" class="nav-item active"><i class="bi bi-calendar-event-fill"></i><span>Calendar</span></a>
         <a href="add_friends.html" class="nav-item"><i class="bi bi-person-plus-fill"></i><span>Add</span></a>
         <div class="nav-item" id="moreMenuBtn"><i class="bi bi-grid-fill"></i><span>More</span></div>
+    </div>
+
+    <!-- Moreポップアップ -->
+    <div class="more-popup" id="moreMenuPopup">
+        <div class="more-grid">
+            <a href="guide.html"><div class="icon-box"><i class="bi bi-book" style="color:#6a1b9a;"></i></div><span>Guide</span></a>
+            <a href="privacy.html"><div class="icon-box"><i class="bi bi-shield-lock" style="color:#1565c0;"></i></div><span>Privacy</span></a>
+            <a href="terms.html"><div class="icon-box"><i class="bi bi-file-text" style="color:#e65100;"></i></div><span>Terms</span></a>
+            <a href="#" id="feedbackMoreBtn"><div class="icon-box"><i class="bi bi-chat-dots" style="color:#f9a825;"></i></div><span>Feedback</span></a>
+            <a href="#" id="logoutMoreBtn"><div class="icon-box"><i class="bi bi-box-arrow-right" style="color:#e53935;"></i></div><span>Logout</span></a>
+        </div>
+        <div class="more-close"><button onclick="document.getElementById('moreMenuPopup').style.display='none'">Close</button></div>
     </div>
 
     <script>
@@ -50,7 +88,8 @@
             '2026-07-20': [{ time: '10:00', title: 'Meeting with Tanaka', person: 'Tanaka', status: 'confirmed' }],
             '2026-07-22': [{ time: '09:00', title: 'Morning meeting', person: 'Suzuki', status: 'pending' }]
         };
-        let year = new Date().getFullYear(), month = new Date().getMonth(), selected = null;
+        let year = new Date().getFullYear(), month = new Date().getMonth();
+        let selectedDate = null;
 
         function renderCal(y, m) {
             const grid = document.getElementById('calGrid');
@@ -68,7 +107,7 @@
                 const ev = events[ds] || [];
                 const hasPending = ev.some(e => e.status === 'pending');
                 const hasConfirmed = ev.some(e => e.status === 'confirmed');
-                const sel = selected === ds;
+                const sel = selectedDate === ds;
                 let cls = 'cal-day';
                 if (isToday) cls += ' today';
                 if (sel) cls += ' selected';
@@ -81,7 +120,7 @@
         }
 
         function selectDate(ds) {
-            selected = ds;
+            selectedDate = ds;
             renderCal(year, month);
             const el = document.getElementById('eventList');
             const ev = events[ds] || [];
@@ -99,11 +138,125 @@
         document.getElementById('prevBtn').addEventListener('click', () => { month--; if (month < 0) { month = 11; year--; } renderCal(year, month); });
         document.getElementById('nextBtn').addEventListener('click', () => { month++; if (month > 11) { month = 0; year++; } renderCal(year, month); });
 
+        // ================================================================
+        // 予定追加モーダル
+        // ================================================================
+        function openAddEventModal(dateStr) {
+            document.getElementById('modalDate').textContent = dateStr || 'Select a date';
+            document.getElementById('addEventModal').style.display = 'flex';
+            document.getElementById('confirmAddEventBtn').disabled = true;
+            document.getElementById('addEventStatus').style.display = 'none';
+            // 友達選択肢をリセット
+            const select = document.getElementById('friendSelect');
+            select.innerHTML = '<option value="">-- Select a friend --</option>';
+            ['Friend A', 'Friend B', 'Friend C'].forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f;
+                opt.textContent = f;
+                select.appendChild(opt);
+            });
+        }
+
+        function closeAddEventModal() {
+            document.getElementById('addEventModal').style.display = 'none';
+        }
+
+        function checkAddEventForm() {
+            const title = document.getElementById('eventTitle').value.trim();
+            const start = document.getElementById('eventStart').value;
+            const end = document.getElementById('eventEnd').value;
+            const friend = document.getElementById('friendSelect').value;
+            document.getElementById('confirmAddEventBtn').disabled = !(title && start && end && friend);
+        }
+
+        function confirmAddEvent() {
+            const title = document.getElementById('eventTitle').value.trim();
+            const start = document.getElementById('eventStart').value;
+            const end = document.getElementById('eventEnd').value;
+            const friend = document.getElementById('friendSelect').value;
+            const status = document.getElementById('addEventStatus');
+
+            if (!title || !start || !end || !friend) {
+                status.style.display = 'block';
+                status.style.color = '#e53935';
+                status.textContent = 'Please fill in all fields.';
+                return;
+            }
+            if (start >= end) {
+                status.style.display = 'block';
+                status.style.color = '#e53935';
+                status.textContent = '⚠️ End time must be after start time.';
+                return;
+            }
+            // 予定を追加（サンプル）
+            const dateStr = selectedDate || new Date().toISOString().split('T')[0];
+            if (!events[dateStr]) events[dateStr] = [];
+            events[dateStr].push({ time: start, endTime: end, title, person: friend, status: 'pending' });
+            status.style.display = 'block';
+            status.style.color = '#06C755';
+            status.textContent = '✅ Event added!';
+            setTimeout(() => {
+                closeAddEventModal();
+                renderCal(year, month);
+                selectDate(selectedDate);
+            }, 1500);
+        }
+
+        // 入力チェック
+        ['eventTitle', 'eventStart', 'eventEnd'].forEach(id => {
+            document.getElementById(id).addEventListener('input', checkAddEventForm);
+        });
+        document.getElementById('friendSelect').addEventListener('change', checkAddEventForm);
+
+        // モーダル外クリックで閉じる
+        document.getElementById('addEventModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAddEventModal();
+        });
+
+        // ================================================================
+        // Moreメニュー
+        // ================================================================
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date();
-            selected = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+            selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
             renderCal(year, month);
-            selectDate(selected);
+            selectDate(selectedDate);
+
+            const moreBtn = document.getElementById('moreMenuBtn');
+            const popup = document.getElementById('moreMenuPopup');
+            if (moreBtn && popup) {
+                moreBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
+                });
+                document.addEventListener('click', function(e) {
+                    if (popup.style.display === 'block') {
+                        if (!e.target.closest('#moreMenuPopup') && !e.target.closest('#moreMenuBtn')) {
+                            popup.style.display = 'none';
+                        }
+                    }
+                });
+            }
+
+            // フィードバック
+            document.getElementById('feedbackMoreBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('📝 Feedback feature is under development.\nPlease contact us at tomosche.line@gmail.com');
+            });
+
+            // ログアウト
+            document.getElementById('logoutMoreBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Logout?')) {
+                    if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                        liff.logout();
+                        window.location.reload();
+                    } else {
+                        window.location.href = '/';
+                    }
+                }
+            });
         });
     </script>
 </body>
