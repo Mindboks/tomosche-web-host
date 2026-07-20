@@ -1,560 +1,82 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>友助 - Tomosche</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.5.0/firebase-auth-compat.js"></script>
-    <style>
-        /* ====== 強制白背景 ====== */
-        html, body {
-            background: #ffffff !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            min-height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        /* ローディング */
-        #loadingOverlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(255,255,255,0.95);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #e0e0e0;
-            border-top: 4px solid #06C755;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 16px;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        /* メインコンテンツ */
-        #mainContent {
-            display: none;
-            background: #ffffff;
-            min-height: 100vh;
-            padding-bottom: 80px;
-        }
-        /* ヘッダー */
-        .header-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px 8px 20px;
-            background: #ffffff;
-        }
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .logo-icon { font-size: 26px; }
-        .logo-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #06C755;
-        }
-        .header-right .profile-icon {
-            font-size: 30px;
-            color: #06C755;
-            cursor: pointer;
-        }
-        /* メイン画像 */
-        .main-image-wrapper {
-            display: flex;
-            justify-content: center;
-            padding: 4px 16px 8px 16px;
-        }
-        .main-image-container {
-            position: relative;
-            width: 100%;
-            max-width: 420px;
-            border-radius: 20px;
-            overflow: hidden;
-            background: #ffffff;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-        }
-        .main-image {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-        .image-date {
-            position: absolute;
-            top: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255,255,255,0.92);
-            backdrop-filter: blur(6px);
-            padding: 6px 18px;
-            border-radius: 999px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            border: 1px solid rgba(255,255,255,0.6);
-            white-space: nowrap;
-        }
-        .image-search {
-            position: absolute;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 88%;
-            max-width: 360px;
-        }
-        .image-search .search-box {
-            display: flex;
-            align-items: center;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(6px);
-            border-radius: 12px;
-            padding: 10px 16px;
-            gap: 10px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            border: 1px solid rgba(255,255,255,0.6);
-        }
-        .image-search .search-box i {
-            color: #999;
-            font-size: 16px;
-        }
-        .image-search .search-box input {
-            border: none;
-            background: none;
-            outline: none;
-            flex: 1;
-            font-size: 13px;
-            color: #333;
-        }
-        .image-search .search-box input::placeholder {
-            color: #bbb;
-        }
-        /* 友達アイコン */
-        .friends-avatars {
-            display: flex;
-            gap: 12px;
-            padding: 8px 16px 16px 16px;
-            background: #ffffff;
-            flex-wrap: wrap;
-        }
-        .avatar-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            text-decoration: none;
-            color: #333;
-        }
-        .avatar-circle {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-            border: 2px solid white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-        .more-circle {
-            background: #f0f4f8 !important;
-            border: 2px dashed #ccc;
-            color: #999;
-            font-size: 18px;
-        }
-        .avatar-name {
-            font-size: 10px;
-            color: #888;
-            text-align: center;
-        }
-        /* 今日の予定 */
-        .today-section {
-            background: #ffffff;
-            margin: 0 16px 16px 16px;
-            border-radius: 16px;
-            padding: 16px;
-            border: 1px solid #f0f4f8;
-        }
-        .today-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        .today-header i { color: #06C755; margin-right: 6px; }
-        .today-more {
-            font-size: 12px;
-            font-weight: 400;
-            color: #06C755;
-            text-decoration: none;
-        }
-        .today-item {
-            display: flex;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #f0f4f8;
-            gap: 10px;
-        }
-        .today-item:last-child { border-bottom: none; }
-        .today-time {
-            font-size: 12px;
-            font-weight: 600;
-            color: #06C755;
-            min-width: 44px;
-        }
-        .today-title {
-            font-size: 13px;
-            color: #333;
-            flex: 1;
-        }
-        .today-person {
-            font-size: 11px;
-            color: #888;
-            background: #f0f4f8;
-            padding: 2px 10px;
-            border-radius: 999px;
-        }
-        /* 下部ナビゲーション */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #ffffff;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 6px 8px 14px 8px;
-            border-top: 1px solid #f0f4f8;
-            box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
-            z-index: 100;
-        }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            text-decoration: none;
-            color: #999;
-            font-size: 10px;
-            cursor: pointer;
-            background: none;
-            border: none;
-            padding: 4px 10px;
-        }
-        .nav-item i {
-            font-size: 20px;
-            transition: all 0.2s;
-        }
-        .nav-item.active {
-            color: #06C755;
-        }
-        .nav-item.active i {
-            transform: translateY(-2px);
-        }
-        .nav-item:active {
-            transform: scale(0.92);
-        }
-        /* Moreメニュー */
-        #moreMenuPopup {
-            display: none;
-            position: fixed;
-            bottom: 80px;
-            left: 16px;
-            right: 16px;
-            background: white;
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.12);
-            z-index: 999;
-            border: 1px solid rgba(0,0,0,0.04);
-        }
-        #moreMenuPopup .menu-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 12px;
-            text-align: center;
-        }
-        #moreMenuPopup .menu-grid a {
-            text-decoration: none;
-            color: #333;
-            font-size: 12px;
-        }
-        #moreMenuPopup .menu-grid .icon-box {
-            background: #f0f4f8;
-            border-radius: 14px;
-            padding: 14px;
-        }
-        #moreMenuPopup .menu-grid .icon-box i {
-            font-size: 24px;
-        }
-        #moreMenuPopup .menu-grid span {
-            margin-top: 4px;
-            display: block;
-        }
-        #moreMenuPopup .close-btn {
-            text-align: center;
-            margin-top: 12px;
-        }
-        #moreMenuPopup .close-btn button {
-            background: none;
-            border: none;
-            color: #999;
-            font-size: 13px;
-            padding: 4px 16px;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
+<script src="js/template.js"></script>
+<script>
+    // ====== 今日の日付 ======
+    const today = new Date();
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dateStr = `Today・${monthNames[today.getMonth()]} ${today.getDate()}`;
 
-    <!-- ====== ローディング ====== -->
-    <div id="loadingOverlay">
-        <div class="spinner"></div>
-        <div id="loadingText">読み込み中...</div>
-    </div>
+    // ====== サンプル友達 ======
+    const sampleFriends = [
+        { name: '田中', initial: '田', color: '#e3f2fd' },
+        { name: '佐藤', initial: '佐', color: '#e8f5e9' },
+        { name: '鈴木', initial: '鈴', color: '#fff3e0' },
+        { name: '山田', initial: '山', color: '#fce4ec' }
+    ];
 
-    <!-- ====== メインコンテンツ ====== -->
-    <div id="mainContent">
+    // ====== 今日の予定 ======
+    const todayEvents = [
+        { time: '10:00', title: '田中さんと打ち合わせ', person: '田中' },
+        { time: '14:00', title: 'カレンダー共有設定', person: '佐藤' }
+    ];
 
-        <!-- ヘッダー -->
-        <div class="header-section">
-            <div class="header-left">
-                <span class="logo-icon">🌱</span>
-                <span class="logo-title">Tomosche</span><span style="font-size:10px; color:#999; margin-left:6px;">Social Scheduling</span>
-            </div>
-            <div class="header-right">
-                <div class="profile-icon" id="profileIcon">
-                    <i class="bi bi-person-circle"></i>
+    // ====== コンテンツ ======
+    const content = `
+    <!-- メイン画像 -->
+    <div class="main-image-wrapper" style="display:flex; justify-content:center; padding:4px 16px 8px 16px;">
+        <div style="position:relative; width:100%; max-width:420px; border-radius:20px; overflow:hidden; background:#ffffff; box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+            <img src="assets/images/toppageTmocha.png" alt="Tomosche" style="width:100%; height:auto; display:block;" />
+            <div style="position:absolute; top:16px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,0.92); backdrop-filter:blur(6px); padding:6px 18px; border-radius:999px; font-size:14px; font-weight:600; color:#333; box-shadow:0 2px 8px rgba(0,0,0,0.04); border:1px solid rgba(255,255,255,0.6); white-space:nowrap;">${dateStr}</div>
+            <div style="position:absolute; bottom:16px; left:50%; transform:translateX(-50%); width:88%; max-width:360px;">
+                <div style="display:flex; align-items:center; background:rgba(255,255,255,0.95); backdrop-filter:blur(6px); border-radius:12px; padding:10px 16px; gap:10px; box-shadow:0 2px 12px rgba(0,0,0,0.06); border:1px solid rgba(255,255,255,0.6);">
+                    <i class="bi bi-search" style="color:#999; font-size:16px;"></i>
+                    <input type="text" id="globalSearch" placeholder="Search events, friends, or dates..." style="border:none; background:none; outline:none; flex:1; font-size:13px; color:#333;" />
                 </div>
-            </div>
-        </div>
-
-        <!-- メイン画像 -->
-        <div class="main-image-wrapper">
-            <div class="main-image-container">
-                <img src="assets/images/toppageTmocha.png" alt="Tomosche" class="main-image" />
-                <div class="image-date" id="dateDisplay">Today・Jul 20</div>
-                <div class="image-search">
-                    <div class="search-box">
-                        <i class="bi bi-search"></i>
-                        <input type="text" id="globalSearch" placeholder="Search events, friends, or dates..." />
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 友達アイコン -->
-        <div class="friends-avatars" id="friendsAvatars">
-            <!-- JavaScriptで動的生成 -->
-        </div>
-
-        <!-- 今日の予定 -->
-        <div class="today-section">
-            <div class="today-header">
-                <span><i class="bi bi-clock-history"></i> Upcoming</span>
-                <a href="schedule.html" class="today-more">See All →</a>
-            </div>
-            <div class="today-list" id="todayList">
-                <!-- JavaScriptで動的生成 -->
-            </div>
-        </div>
-
-        <!-- 下部ナビゲーション -->
-        <div class="bottom-nav">
-            <a href="/" class="nav-item active">
-                <i class="bi bi-house-fill"></i>
-                <span>Home</span>
-            </a>
-            <a href="friends.html" class="nav-item">
-                <i class="bi bi-people-fill"></i>
-                <span>Friends</span>
-            </a>
-            <a href="schedule.html" class="nav-item">
-                <i class="bi bi-calendar-event-fill"></i>
-                <span>Calendar</span>
-            </a>
-            <a href="add_friends.html" class="nav-item">
-                <i class="bi bi-person-plus-fill"></i>
-                <span>Add</span>
-            </a>
-            <div class="nav-item" id="moreMenuBtn">
-                <i class="bi bi-grid-fill"></i>
-                <span>More</span>
-            </div>
-        </div>
-
-        <!-- Moreメニュー -->
-        <div id="moreMenuPopup">
-            <div class="menu-grid">
-                <a href="guide.html">
-                    <div class="icon-box"><i class="bi bi-book" style="color: #6a1b9a;"></i></div>
-                    <span>使い方</span>
-                </a>
-                <a href="privacy.html">
-                    <div class="icon-box"><i class="bi bi-shield-lock" style="color: #1565c0;"></i></div>
-                    <span>プライバシー</span>
-                </a>
-                <a href="terms.html">
-                    <div class="icon-box"><i class="bi bi-file-text" style="color: #e65100;"></i></div>
-                    <span>利用規約</span>
-                </a>
-                <a href="#" id="feedbackMoreBtn">
-                    <div class="icon-box"><i class="bi bi-chat-dots" style="color: #f9a825;"></i></div>
-                    <span>フィードバック</span>
-                </a>
-                <a href="#" id="logoutMoreBtn">
-                    <div class="icon-box"><i class="bi bi-box-arrow-right" style="color: #e53935;"></i></div>
-                    <span>ログアウト</span>
-                </a>
-            </div>
-            <div class="close-btn">
-                <button onclick="document.getElementById('moreMenuPopup').style.display='none'">閉じる</button>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/i18n.js"></script>
-    <script src="js/config.js"></script>
-    <script>
-        // ====== 今日の日付 ======
-        const today = new Date();
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const dateStr = `Today・${monthNames[today.getMonth()]} ${today.getDate()}`;
-        document.getElementById('dateDisplay').textContent = dateStr;
+    <!-- 友達アイコン -->
+    <div style="display:flex; gap:12px; padding:8px 16px 16px 16px; background:#ffffff; flex-wrap:wrap;">
+        ${sampleFriends.map(f => `
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                <div style="width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600; color:#333; border:2px solid white; box-shadow:0 2px 8px rgba(0,0,0,0.06); background:${f.color};">${f.initial}</div>
+                <span style="font-size:10px; color:#888; text-align:center;">${f.name}</span>
+            </div>
+        `).join('')}
+        <a href="add_friends.html" style="display:flex; flex-direction:column; align-items:center; gap:4px; text-decoration:none;">
+            <div style="width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:#999; border:2px dashed #ccc; box-shadow:0 2px 8px rgba(0,0,0,0.06); background:#f0f4f8 !important;"><i class="bi bi-plus"></i></div>
+            <span style="font-size:10px; color:#888; text-align:center;">Add</span>
+        </a>
+    </div>
 
-        // ====== サンプル友達 ======
-        const sampleFriends = [
-            { name: '田中', initial: '田', color: '#e3f2fd' },
-            { name: '佐藤', initial: '佐', color: '#e8f5e9' },
-            { name: '鈴木', initial: '鈴', color: '#fff3e0' },
-            { name: '山田', initial: '山', color: '#fce4ec' }
-        ];
+    <!-- 今日の予定 -->
+    <div style="background:#ffffff; margin:0 16px 16px 16px; border-radius:16px; padding:16px; border:1px solid #f0f4f8;">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:600; color:#333; margin-bottom:10px;">
+            <span><i class="bi bi-clock-history" style="color:#06C755; margin-right:6px;"></i> Upcoming</span>
+            <a href="schedule.html" style="font-size:12px; font-weight:400; color:#06C755; text-decoration:none;">See All →</a>
+        </div>
+        ${todayEvents.map(e => `
+            <div style="display:flex; align-items:center; padding:8px 0; border-bottom:1px solid #f0f4f8; gap:10px;">
+                <span style="font-size:12px; font-weight:600; color:#06C755; min-width:44px;">${e.time}</span>
+                <span style="font-size:13px; color:#333; flex:1;">${e.title}</span>
+                <span style="font-size:11px; color:#888; background:#f0f4f8; padding:2px 10px; border-radius:999px;">👤 ${e.person}</span>
+            </div>
+        `).join('')}
+    </div>
+    `;
 
-        // 友達アイコンを描画
-        const avatarsContainer = document.getElementById('friendsAvatars');
-        sampleFriends.forEach(f => {
-            const div = document.createElement('div');
-            div.className = 'avatar-item';
-            div.innerHTML = `
-                <div class="avatar-circle" style="background: ${f.color};">${f.initial}</div>
-                <span class="avatar-name">${f.name}</span>
-            `;
-            avatarsContainer.appendChild(div);
-        });
-        // Addボタン
-        const addDiv = document.createElement('a');
-        addDiv.href = 'add_friends.html';
-        addDiv.className = 'avatar-item';
-        addDiv.innerHTML = `
-            <div class="avatar-circle more-circle"><i class="bi bi-plus"></i></div>
-            <span class="avatar-name">Add</span>
-        `;
-        avatarsContainer.appendChild(addDiv);
+    // ====== レンダリング ======
+    renderPage('友助 - トップ', content, 'home');
 
-        // ====== 今日の予定 ======
-        const todayEvents = [
-            { time: '10:00', title: '田中さんと打ち合わせ', person: '田中' },
-            { time: '14:00', title: 'カレンダー共有設定', person: '佐藤' }
-        ];
-        const todayList = document.getElementById('todayList');
-        todayEvents.forEach(e => {
-            const div = document.createElement('div');
-            div.className = 'today-item';
-            div.innerHTML = `
-                <span class="today-time">${e.time}</span>
-                <span class="today-title">${e.title}</span>
-                <span class="today-person">👤 ${e.person}</span>
-            `;
-            todayList.appendChild(div);
-        });
-
-        // ====== ページロード処理 ======
-        document.addEventListener('DOMContentLoaded', async function() {
-            // LIFF初期化
-            const success = await initLiff();
-            if (success) {
-                setUserName('userName');
-                document.getElementById('loadingOverlay').style.display = 'none';
-                document.getElementById('mainContent').style.display = 'block';
+    // ====== ページロード後 ======
+    afterPageLoad(function() {
+        // 検索機能
+        document.getElementById('globalSearch').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const query = this.value.trim();
+                if (query) alert(`🔍 「${query}」を検索します（機能は開発中です）`);
             }
-
-            // プロフィールアイコン
-            document.getElementById('profileIcon').addEventListener('click', function() {
-                const popup = document.getElementById('moreMenuPopup');
-                popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
-            });
-
-            // Moreボタン
-            document.getElementById('moreMenuBtn').addEventListener('click', function() {
-                const popup = document.getElementById('moreMenuPopup');
-                popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
-            });
-
-            // ログアウト
-            document.getElementById('logoutMoreBtn').addEventListener('click', function(e) {
-                e.preventDefault();
-                if (confirm('ログアウトしますか？')) {
-                    logout();
-                }
-            });
-
-            // フィードバック
-            document.getElementById('feedbackMoreBtn').addEventListener('click', function(e) {
-                e.preventDefault();
-                alert('📝 フィードバック機能は準備中です。\ntomosche.line@gmail.com へご連絡ください。');
-            });
-
-            // 検索
-            document.getElementById('globalSearch').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    const query = this.value.trim();
-                    if (query) {
-                        alert(`🔍 「${query}」を検索します（機能は開発中です）`);
-                    }
-                }
-            });
-
-            // 背景クリックでポップアップを閉じる
-            document.addEventListener('click', function(e) {
-                const popup = document.getElementById('moreMenuPopup');
-                if (popup.style.display === 'block') {
-                    if (!e.target.closest('#moreMenuPopup') && 
-                        !e.target.closest('#moreMenuBtn') && 
-                        !e.target.closest('#profileIcon')) {
-                        popup.style.display = 'none';
-                    }
-                }
-            });
         });
-    </script>
-
-    <!-- バージョン表示 -->
-    <div style="text-align: center; padding: 4px 0 16px 0; font-size: 10px; color: #ccc;">
-        <span id="versionDisplay">Tomosche v0.0.0</span>
-    </div>
-
-</body>
-</html>
+    });
+</script>
