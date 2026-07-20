@@ -1,0 +1,33 @@
+<script src="js/template.js"></script>
+<script>
+    const content = `
+    <div style="padding:16px 0;">
+        <div class="d-flex align-items-center mb-4">
+            <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
+            <h1 class="page-title">📖 使い方ガイド</h1>
+        </div>
+        <div style="background:white;border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid #f0f4f8;">
+            <h3 style="font-size:17px;font-weight:700;color:#333;margin-bottom:6px;"><span style="display:inline-block;width:28px;height:28px;background:#06C755;color:white;border-radius:50%;text-align:center;line-height:28px;font-size:14px;margin-right:10px;">1</span>友達を追加する</h3>
+            <p style="font-size:14px;color:#555;padding-left:38px;">トップページの「Add」からQRコードを生成し、友達に共有します。</p>
+            <p style="font-size:13px;color:#888;background:#f8f9fa;padding:8px 12px;border-radius:8px;margin-top:4px;padding-left:38px;">友達がQRコードを読み取ると、自動的に友達申請が届きます。</p>
+        </div>
+        <div style="background:white;border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid #f0f4f8;">
+            <h3 style="font-size:17px;font-weight:700;color:#333;margin-bottom:6px;"><span style="display:inline-block;width:28px;height:28px;background:#06C755;color:white;border-radius:50%;text-align:center;line-height:28px;font-size:14px;margin-right:10px;">2</span>友達とカレンダーを共有する</h3>
+            <p style="font-size:14px;color:#555;padding-left:38px;">友達一覧から共有したい友達を選び、「カレンダー共有」をタップします。</p>
+            <p style="font-size:13px;color:#888;background:#f8f9fa;padding:8px 12px;border-radius:8px;margin-top:4px;padding-left:38px;">相手が承認すると、お互いのカレンダーが共有されます。</p>
+        </div>
+        <div style="background:white;border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid #f0f4f8;">
+            <h3 style="font-size:17px;font-weight:700;color:#333;margin-bottom:6px;"><span style="display:inline-block;width:28px;height:28px;background:#06C755;color:white;border-radius:50%;text-align:center;line-height:28px;font-size:14px;margin-right:10px;">3</span>予定を追加する</h3>
+            <p style="font-size:14px;color:#555;padding-left:38px;">スケジュール画面で日付を選び、予定を追加します。</p>
+            <p style="font-size:13px;color:#888;background:#f8f9fa;padding:8px 12px;border-radius:8px;margin-top:4px;padding-left:38px;">共有中の友達が予定を承認すると、双方のカレンダーに反映されます。</p>
+        </div>
+        <div style="background:white;border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid #f0f4f8;">
+            <h3 style="font-size:17px;font-weight:700;color:#333;margin-bottom:6px;"><span style="display:inline-block;width:28px;height:28px;background:#06C755;color:white;border-radius:50%;text-align:center;line-height:28px;font-size:14px;margin-right:10px;">4</span>予定を確認・管理する</h3>
+            <p style="font-size:14px;color:#555;padding-left:38px;">スケジュール画面で月間カレンダーと日別の予定一覧を確認できます。</p>
+            <p style="font-size:13px;color:#888;background:#f8f9fa;padding:8px 12px;border-radius:8px;margin-top:4px;padding-left:38px;">予定は「承認待ち」と「確定」の状態で表示されます。</p>
+        </div>
+        <div style="text-align:center;margin-top:24px;color:#888;font-size:13px;"><i class="bi bi-info-circle"></i> わからないことがあれば、フィードバックからお問い合わせください。</div>
+    </div>
+    `;
+    renderPage('使い方ガイド', content);
+</script>

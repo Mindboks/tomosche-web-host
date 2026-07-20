@@ -44,9 +44,9 @@ const UI = {
     morePopup: () => `
         <div class="more-popup" id="moreMenuPopup">
             <div class="more-grid">
-                <a href="guide.html"><div class="icon-box"><i class="bi bi-book"></i></div><span>Guide</span></a>
-                <a href="privacy.html"><div class="icon-box"><i class="bi bi-shield-lock"></i></div><span>Privacy</span></a>
-                <a href="terms.html"><div class="icon-box"><i class="bi bi-file-text"></i></div><span>Terms</span></a>
+                <a href="/docs/guide.html"><div class="icon-box"><i class="bi bi-book"></i></div><span>Guide</span></a>
+                <a href="/docs/privacy.html"><div class="icon-box"><i class="bi bi-shield-lock"></i></div><span>Privacy</span></a>
+                <a href="/docs/terms.html"><div class="icon-box"><i class="bi bi-file-text"></i></div><span>Terms</span></a>
                 <a href="#" id="feedbackMoreBtn"><div class="icon-box"><i class="bi bi-chat-dots"></i></div><span>Feedback</span></a>
                 <a href="#" id="logoutMoreBtn"><div class="icon-box"><i class="bi bi-box-arrow-right"></i></div><span>Logout</span></a>
             </div>

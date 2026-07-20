@@ -1,0 +1,40 @@
+<script src="js/template.js"></script>
+<script>
+    const content = `
+    <div style="padding:16px 0;">
+        <div class="d-flex align-items-center mb-3">
+            <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
+            <h1 class="page-title">🔒 プライバシーポリシー</h1>
+        </div>
+        <div style="background:white;border-radius:16px;padding:24px;border:1px solid #f0f4f8;margin-top:8px;">
+            <p style="color:#888;font-size:13px;">最終更新日：2026年7月20日</p>
+            <p>Tomosche（以下「当アプリ」）は、ユーザーの皆様のプライバシーを尊重し、個人情報の保護に最大限の注意を払います。</p>
+            <h2 style="font-size:18px;color:#333;margin-top:20px;">1. 収集する情報</h2>
+            <p>当アプリは、以下の情報を収集することがあります：</p>
+            <ul style="padding-left:20px;">
+                <li><strong>LINEユーザーID</strong>：LINEログイン機能の提供</li>
+                <li><strong>LINEプロフィール情報</strong>（表示名・プロフィール画像）</li>
+                <li><strong>予定データ</strong>（日時・タイトル・相手ユーザーID）</li>
+                <li><strong>友達関係データ</strong>：QRコード招待や共有関係の管理</li>
+            </ul>
+            <h2 style="font-size:18px;color:#333;margin-top:20px;">2. 情報の利用目的</h2>
+            <ul style="padding-left:20px;">
+                <li>LINEアカウントによる認証機能の提供</li>
+                <li>友達とのスケジュール共有機能の提供</li>
+                <li>アプリの改善・新機能開発のための統計データの分析</li>
+                <li>ユーザーからのお問い合わせ対応</li>
+            </ul>
+            <h2 style="font-size:18px;color:#333;margin-top:20px;">3. 情報の第三者提供</h2>
+            <p>当アプリは、ユーザー本人の同意がある場合や法令に基づく場合を除き、ユーザー情報を第三者に提供することはありません。</p>
+            <h2 style="font-size:18px;color:#333;margin-top:20px;">4. お問い合わせ</h2>
+            <p>本ポリシーに関するお問い合わせは、以下の連絡先までお願いいたします。</p>
+            <p style="background:#f8f9fa;padding:12px 16px;border-radius:8px;">
+                <strong>運営者</strong>：Ikeda Hiromasa<br>
+                <strong>所在地</strong>：埼玉県さいたま市<br>
+                <strong>メールアドレス</strong>：tomosche.line@gmail.com
+            </p>
+        </div>
+    </div>
+    `;
+    renderPage('プライバシーポリシー', content);
+</script>

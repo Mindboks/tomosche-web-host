@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+    <script>
+        // サポート言語一覧
+        const supportedLangs = ['ja', 'en', 'vi', 'th', 'ne', 'hi', 'ur', 'bn', 'si', 'my', 'ta'];
+        
+        // ブラウザの言語を取得
+        let userLang = navigator.language || navigator.userLanguage || 'en';
+        let shortLang = userLang.split('-')[0];
+        
+        // サポートされていない場合は英語にフォールバック
+        if (!supportedLangs.includes(shortLang)) {
+            shortLang = 'en';
+        }
+        
+        // リダイレクト
+        window.location.href = `/${shortLang}/privacy.html`;
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+</body>
+</html>
