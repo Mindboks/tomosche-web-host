@@ -26,7 +26,7 @@ function renderPage(title, content) {
         .back-btn { background:none; border:none; font-size:22px; color:#06C755; padding:0; margin-right:8px; cursor:pointer; }
         .page-title { font-size:clamp(1.1rem,4vw,1.6rem); font-weight:600; margin:0; color:#333; white-space:nowrap; }
         .version { text-align:center; font-size:10px; color:#ccc; padding:8px 0 4px 0; }
-        .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:#fff; display:flex; justify-content:space-around; padding:6px 0 14px 0; border-top:1px solid #f0f4f8; z-index:100; box-shadow:0 -2px 12px rgba(0,0,0,0.04); }
+        .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:#fff; display:flex; justify-content:space-around; padding:6px 0 14px 0; border-top:1px solid #f0f4f8; z-index:100; box-shadow:0 -2px 12px rgba(0,0,0,0.04); max-width:420px; margin:0 auto; }
         .nav-item { display:flex; flex-direction:column; align-items:center; font-size:clamp(9px,1.8vw,10px); color:#999; text-decoration:none; gap:2px; background:none; border:none; padding:4px 12px; cursor:pointer; flex:1; max-width:80px; white-space:nowrap; }
         .nav-item i { font-size:clamp(18px,4vw,20px); }
         .nav-item.active { color:#06C755; }
@@ -44,7 +44,7 @@ function renderPage(title, content) {
         .modal-box { background:white; border-radius:24px; padding:28px 24px; max-width:420px; width:92%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
         .modal-box h3 { font-size:18px; font-weight:700; color:#333; margin-bottom:16px; }
         .modal-box label { font-size:13px; font-weight:600; color:#555; margin-top:12px; display:block; }
-        .modal-box input, .modal-box select, .modal-box textarea { width:100%; border:1px solid #ddd; border-radius:12px; padding:12px 14px; font-size:14px; outline:none; margin-top:4px; transition:border 0.2s; background:white; }
+        .modal-box input, .modal-box select, .modal-box textarea { width:100%; border:1px solid #ddd; border-radius:12px; padding:12px 14px; font-size:14px; outline:none; margin-top:4px; background:white; }
         .modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus { border-color:#06C755; }
         .time-row { display:flex; gap:12px; }
         .time-row > div { flex:1; }
@@ -58,7 +58,7 @@ function renderPage(title, content) {
         .add-event-btn { position:fixed; bottom:100px; right:24px; width:60px; height:60px; border-radius:50%; background:#06C755; color:white; border:none; font-size:32px; box-shadow:0 4px 20px rgba(6,199,85,0.4); z-index:100; cursor:pointer; }
         .add-event-btn:active { transform:scale(0.9); }
         @media (max-width:576px) { .app-container { padding:0 12px 80px 12px; } .logo { font-size:18px; } .logo-sub { font-size:10px; } .nav-item { padding:4px 8px; font-size:clamp(8px,1.6vw,9px); } .nav-item i { font-size:clamp(16px,3.5vw,18px); } .modal-box { padding:20px 16px; } }
-        @media (min-width:768px) { .bottom-nav { max-width:420px; left:50%; transform:translateX(-50%); } .more-popup { max-width:400px; } }
+        @media (min-width:768px) { .bottom-nav { max-width:420px; } .more-popup { max-width:400px; } }
     </style>
 </head>
 <body>
@@ -76,12 +76,12 @@ function renderPage(title, content) {
         <div class="nav-item" id="moreMenuBtn"><i class="bi bi-grid-fill"></i><span>More</span></div>
     </div>
 
-    <!-- ====== Moreメニュー ====== -->
+    <!-- ====== Moreポップアップ（完全英語表記） ====== -->
     <div class="more-popup" id="moreMenuPopup">
         <div class="more-grid">
             <a href="guide.html"><div class="icon-box"><i class="bi bi-book" style="color:#6a1b9a;"></i></div><span>Guide</span></a>
-            <a href="privacy.html"><div class="icon-box"><i class="bi bi-shield-lock" style="color:#1565c0;"></i></div><span>Privacy</span></a>
-            <a href="terms.html"><div class="icon-box"><i class="bi bi-file-text" style="color:#e65100;"></i></div><span>Terms</span></a>
+            <a href="privacy.html"><div class="icon-box"><i class="bi bi-shield-lock" style="color:#1565c0;"></i></div><span>Privacy Policy</span></a>
+            <a href="terms.html"><div class="icon-box"><i class="bi bi-file-text" style="color:#e65100;"></i></div><span>Terms of Service</span></a>
             <a href="#" id="feedbackMoreBtn"><div class="icon-box"><i class="bi bi-chat-dots" style="color:#f9a825;"></i></div><span>Feedback</span></a>
             <a href="#" id="logoutMoreBtn"><div class="icon-box"><i class="bi bi-box-arrow-right" style="color:#e53935;"></i></div><span>Logout</span></a>
         </div>
