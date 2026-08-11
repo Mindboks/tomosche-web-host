@@ -9,21 +9,8 @@
     <link rel="stylesheet" href="css/style.css">
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     <style>
-        /* calendar.html 固有スタイル */
-        .add-btn-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-        }
-        .add-btn-group button {
-            flex: 1;
-            padding: 12px;
-            border-radius: 999px;
-            font-size: 14px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-        }
+        .add-btn-group { display: flex; gap: 12px; margin-top: 16px; }
+        .add-btn-group button { flex: 1; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
         .add-btn-group button:active { transform: scale(0.95); }
         .btn-own { background: #2196f3; color: white; }
         .btn-own:hover { background: #1976d2; }
@@ -173,12 +160,15 @@
             openAddEventModal(selectedDate, 'shared');
         });
 
+        // ====== カレンダーHTMLを content として渡す ======
+        const calendarContent = document.getElementById('app').innerHTML;
+
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date();
             selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
             renderCalendar();
             renderEvents(selectedDate);
-            renderPage('Calendar', '', 'calendar');
+            renderPage('Calendar', calendarContent, 'calendar');
         });
     </script>
 </body>

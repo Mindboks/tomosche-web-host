@@ -74,7 +74,7 @@ function renderPage(title, content, activeNav) {
         .nav-item:hover { color: #06C755; }
         /* アクティブなページのボタン：薄くして押せなくする */
         .nav-item.active-disabled {
-            opacity: 0.4;
+            opacity: 0.5;
             pointer-events: none;
             cursor: default;
         }
