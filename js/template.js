@@ -1,5 +1,5 @@
 // ================================================================
-// Tomosche 共通テンプレート v1.0.0.3
+// Tomosche 共通テンプレート
 // ================================================================
 
 function renderPage(title, content, activeNav) {
@@ -131,7 +131,7 @@ function renderPage(title, content, activeNav) {
 
         ${content}
 
-        <div class="version" id="versionDisplay">Tomosche v1.0.0.3</div>
+        <div class="version" id="versionDisplay"></div>
     </div>
 
     <div class="bottom-nav">
