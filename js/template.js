@@ -183,7 +183,7 @@ function renderPage(title, content, activeNav) {
             }
         }
 
-        // ====== Moreメニュー制御（共通化・確実に動作） ======
+        // ====== Moreメニュー制御 ======
         function toggleMorePopup() {
             const popup = document.getElementById('moreMenuPopup');
             if (!popup) return;
@@ -196,6 +196,7 @@ function renderPage(title, content, activeNav) {
             if (popup) popup.style.display = 'none';
         }
 
+        // ====== DOMContentLoaded イベント ======
         document.addEventListener('DOMContentLoaded', function() {
             // ====== バージョン表示 ======
             const vEl = document.getElementById('versionDisplay');
@@ -206,12 +207,11 @@ function renderPage(title, content, activeNav) {
             setTimeout(updateProfileDisplay, 500);
             setTimeout(updateProfileDisplay, 1500);
 
-            // ====== Moreメニュー（確実に動作） ======
+            // ====== Moreメニュー ======
             const moreBtn = document.getElementById('moreMenuBtn');
             const popup = document.getElementById('moreMenuPopup');
             
             if (moreBtn) {
-                // クリックで切り替え
                 moreBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     e.preventDefault();
@@ -251,16 +251,21 @@ function renderPage(title, content, activeNav) {
             if (feedbackBtn) {
                 feedbackBtn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    document.getElementById('feedbackModal').style.display = 'flex';
+                    const modal = document.getElementById('feedbackModal');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                    }
                     document.getElementById('feedbackMessage').value = '';
                     document.getElementById('feedbackStatus').style.display = 'none';
-                    closeMorePopup(); // Moreポップアップを閉じる
+                    closeMorePopup();
                 });
             }
         });
 
+        // ====== フィードバックモーダル ======
         function closeFeedbackModal() {
-            document.getElementById('feedbackModal').style.display = 'none';
+            const modal = document.getElementById('feedbackModal');
+            if (modal) modal.style.display = 'none';
         }
 
         function submitFeedback() {
@@ -282,8 +287,15 @@ function renderPage(title, content, activeNav) {
             }, 1000);
         }
 
-        document.getElementById('feedbackModal').addEventListener('click', function(e) {
-            if (e.target === this) closeFeedbackModal();
+        // モーダル外クリックで閉じる
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('feedbackModal');
+            if (!modal) return;
+            if (modal.style.display === 'flex') {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            }
         });
     </script>
 </body>
