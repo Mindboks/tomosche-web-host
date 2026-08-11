@@ -1,75 +1,321 @@
-<script src="js/template.js"></script>
-<script>
-    let year = new Date().getFullYear(), month = new Date().getMonth();
-    let selected = null;
-    const events = {
-        '2026-07-20': [{time:'10:00',title:'田中さんと打ち合わせ',person:'田中 一郎',status:'confirmed'}],
-        '2026-07-22': [{time:'09:00',title:'朝会',person:'鈴木 誠',status:'pending'}]
-    };
-
-    function renderCal(y,m) {
-        const g = document.getElementById('grid');
-        const first = new Date(y,m,1).getDay();
-        const last = new Date(y,m+1,0).getDate();
-        const today = new Date();
-        let html = ['日','月','火','水','木','金','土'].map(w=>`<div style="background:#e8f5e9;color:#2e7d32;font-weight:600;font-size:12px;text-align:center;padding:8px 0;">${w}</div>`).join('');
-        for (let i=0;i<first;i++) html += `<div style="background:white;aspect-ratio:1;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:14px;">${new Date(y,m,0).getDate()-first+i+1}</div>`;
-        for (let d=1; d<=last; d++) {
-            const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            const isToday = y===today.getFullYear() && m===today.getMonth() && d===today.getDate();
-            const ev = events[ds] || [];
-            const has = ev.length > 0;
-            const sel = selected === ds;
-            html += `<div onclick="selectDate('${ds}')" style="background:${sel?'#06C755':isToday?'#e8f5e9':'white'};color:${sel?'white':isToday?'#06C755':'#333'};aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;font-weight:${sel||isToday?'700':'500'};cursor:pointer;position:relative;border-radius:${sel?'8px':'0'};">
-                ${d}
-                ${has ? `<div style="position:absolute;bottom:4px;width:6px;height:6px;border-radius:50%;background:${ev.some(e=>e.status==='pending')?'#ff9800':'#06C755'};"></div>` : ''}
-            </div>`;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Calendar - Tomosche</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+    <style>
+        .back-btn { background: none; border: none; font-size: 22px; color: #06C755; padding: 0; margin-right: 8px; cursor: pointer; }
+        .page-title { font-size: clamp(1.1rem, 4vw, 1.6rem); font-weight: 600; margin: 0; color: #333; white-space: nowrap; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: #f0f4f8; border-radius: 16px; overflow: hidden; margin-top: 12px; }
+        .calendar-weekday { background: #e8f5e9; color: #2e7d32; font-weight: 600; font-size: 12px; text-align: center; padding: 8px 0; }
+        .calendar-day { background: white; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: #333; cursor: pointer; position: relative; }
+        .calendar-day.other-month { color: #ccc; }
+        .calendar-day.today { background: #e8f5e9; font-weight: 700; color: #06C755; }
+        .calendar-day.selected { background: #06C755; color: white; border-radius: 8px; }
+        .calendar-day .dot { position: absolute; bottom: 4px; width: 6px; height: 6px; border-radius: 50%; }
+        .calendar-day .dot.pending { background: #ff9800; }
+        .calendar-day .dot.confirmed { background: #06C755; }
+        .event-list { margin-top: 16px; background: white; border-radius: 16px; padding: 16px; border: 1px solid #f0f4f8; }
+        .event-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; gap: 8px; flex-wrap: wrap; }
+        .event-item:last-child { border-bottom: none; }
+        .event-time { font-size: 12px; font-weight: 600; }
+        .event-time.confirmed { color: #06C755; }
+        .event-time.pending { color: #ff9800; }
+        .event-title { font-size: 14px; color: #333; flex: 1; }
+        .event-person { font-size: 12px; color: #888; background: #f0f4f8; padding: 2px 10px; border-radius: 999px; }
+        .event-status { font-size: 10px; padding: 2px 8px; border-radius: 999px; }
+        .event-status.confirmed { background: #e8f5e9; color: #2e7d32; }
+        .event-status.pending { background: #fff3e0; color: #e65100; }
+        .empty-events { text-align: center; color: #bbb; padding: 16px 0; }
+        .add-event-btn {
+            position: fixed; bottom: 100px; right: 24px;
+            width: 60px; height: 60px; border-radius: 50%;
+            background: #06C755; color: white; border: none; font-size: 32px;
+            box-shadow: 0 4px 20px rgba(6,199,85,0.4); z-index: 100;
+            cursor: pointer;
         }
-        document.getElementById('title').textContent = `${y}年 ${m+1}月`;
-        g.innerHTML = html;
-    }
-
-    function selectDate(ds) {
-        selected = ds;
-        renderCal(year, month);
-        const c = document.getElementById('events');
-        const ev = events[ds] || [];
-        if (!ev.length) { c.innerHTML = '<div style="text-align:center;color:#bbb;padding:16px 0;">📭 予定はありません</div>'; return; }
-        c.innerHTML = ev.map(e => `
-            <div style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #f5f5f5;gap:8px;flex-wrap:wrap;">
-                <span style="font-size:12px;font-weight:600;color:${e.status==='confirmed'?'#06C755':'#ff9800'};">${e.time}</span>
-                <span style="font-size:14px;color:#333;flex:1;">${e.title}</span>
-                <span style="font-size:12px;color:#888;background:#f0f4f8;padding:2px 10px;border-radius:999px;">👤 ${e.person}</span>
-                <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:${e.status==='confirmed'?'#e8f5e9':'#fff3e0'};color:${e.status==='confirmed'?'#2e7d32':'#e65100'};">${e.status==='confirmed'?'✅ 確定':'⏳ 承認待ち'}</span>
+        .add-event-btn:active { transform: scale(0.9); }
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+            align-items: center; justify-content: center; z-index: 9999;
+        }
+        .modal-box {
+            background: white; border-radius: 24px; padding: 28px 24px;
+            max-width: 420px; width: 92%; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-box h3 { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 16px; }
+        .modal-box label { font-size: 13px; font-weight: 600; color: #555; margin-top: 12px; display: block; }
+        .modal-box input, .modal-box select, .modal-box textarea {
+            width: 100%; border: 1px solid #ddd; border-radius: 12px;
+            padding: 12px 14px; font-size: 14px; outline: none; margin-top: 4px;
+            background: white;
+        }
+        .modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus { border-color: #06C755; }
+        .time-row { display: flex; gap: 12px; }
+        .time-row > div { flex: 1; }
+        .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+        .modal-actions button { flex: 1; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
+        .btn-cancel { background: #f0f0f0; color: #666; }
+        .btn-cancel:hover { background: #e0e0e0; }
+        .btn-primary { background: #06C755; color: white; }
+        .btn-primary:hover { background: #049a44; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .cal-nav { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
+        .cal-nav button { background: none; border: none; font-size: 22px; color: #06C755; padding: 8px 12px; cursor: pointer; }
+        .cal-nav span { font-size: clamp(1.1rem, 3vw, 1.4rem); font-weight: 600; color: #333; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container py-3">
+            <div class="d-flex align-items-center mb-2">
+                <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
+                <h1 class="page-title">Calendar</h1>
             </div>
-        `).join('');
-    }
 
-    const content = `
-    <div style="padding:16px 0;">
-        <div class="d-flex align-items-center mb-2">
-            <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
-            <h1 class="page-title">スケジュール</h1>
+            <div class="cal-nav">
+                <button onclick="changeMonth(-1)"><i class="bi bi-chevron-left"></i></button>
+                <span id="calTitle"></span>
+                <button onclick="changeMonth(1)"><i class="bi bi-chevron-right"></i></button>
+            </div>
+
+            <div class="calendar-grid" id="calGrid"></div>
+
+            <div class="event-list">
+                <div style="font-size:14px;font-weight:600;color:#666;margin-bottom:8px;">📋 Events for this day</div>
+                <div id="eventList"><div class="empty-events">Select a date</div></div>
+            </div>
+
+            <button class="add-event-btn" id="addEventBtn"><i class="bi bi-plus-lg"></i></button>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
-            <button onclick="month--;if(month<0){month=11;year--;}renderCal(year,month);" style="background:none;border:none;font-size:22px;color:#06C755;padding:8px 12px;"><i class="bi bi-chevron-left"></i></button>
-            <span id="title" style="font-size:clamp(1.1rem,3vw,1.4rem);font-weight:600;color:#333;">${year}年 ${month+1}月</span>
-            <button onclick="month++;if(month>11){month=0;year++;}renderCal(year,month);" style="background:none;border:none;font-size:22px;color:#06C755;padding:8px 12px;"><i class="bi bi-chevron-right"></i></button>
-        </div>
-        <div id="grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;background:#f0f4f8;border-radius:16px;overflow:hidden;"></div>
-        <div style="margin-top:16px;background:white;border-radius:16px;padding:16px;border:1px solid #f0f4f8;">
-            <div style="font-size:14px;font-weight:600;color:#666;margin-bottom:8px;">📋 この日の予定</div>
-            <div id="events"><div style="text-align:center;color:#bbb;padding:16px 0;">日付を選択してください</div></div>
-        </div>
-        <button class="add-event-btn" onclick="openAddEventModal(selected || '日付未選択')"><i class="bi bi-plus-lg"></i></button>
     </div>
-    `;
 
-    renderPage('スケジュール', content);
-    document.addEventListener('DOMContentLoaded', ()=>{
-        const today = new Date();
-        selected = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-        renderCal(year, month);
-        selectDate(selected);
-    });
-</script>
+    <!-- 予定追加モーダル -->
+    <div class="modal-overlay" id="addEventModal">
+        <div class="modal-box">
+            <h3>📝 New Event</h3>
+            <p style="font-size:13px;color:#888;" id="modalDate">Select a date</p>
+            <label>👤 Select Friend</label>
+            <select id="friendSelect"><option value="">-- Select a friend --</option></select>
+            <label>📌 Event Name</label>
+            <input type="text" id="eventTitle" placeholder="e.g., Lunch, Meeting..." />
+            <div class="time-row">
+                <div><label>⏰ Start</label><input type="time" id="eventStart" step="900" /></div>
+                <div><label>⏰ End</label><input type="time" id="eventEnd" step="900" /></div>
+            </div>
+            <label>📝 Note (optional)</label>
+            <textarea id="eventNote" rows="2" placeholder="Add details..."></textarea>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeAddEventModal()">Cancel</button>
+                <button class="btn-primary" id="confirmAddEventBtn" onclick="confirmAddEvent()" disabled>Send</button>
+            </div>
+            <div id="addEventStatus" style="margin-top:12px;font-size:13px;text-align:center;display:none;"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // ====== カレンダー状態 ======
+        let calYear = new Date().getFullYear();
+        let calMonth = new Date().getMonth();
+        let selectedDate = null;
+
+        // ====== サンプル予定 ======
+        const sampleEvents = {};
+
+        function getEvents(dateStr) {
+            return sampleEvents[dateStr] || [];
+        }
+
+        // ====== カレンダー描画 ======
+        function renderCalendar() {
+            const grid = document.getElementById('calGrid');
+            document.getElementById('calTitle').textContent = `${calYear}年 ${calMonth+1}月`;
+
+            const first = new Date(calYear, calMonth, 1).getDay();
+            const last = new Date(calYear, calMonth + 1, 0).getDate();
+            const today = new Date();
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+
+            let html = weekdays.map(w => `<div class="calendar-weekday">${w}</div>`).join('');
+
+            for (let i = 0; i < first; i++) {
+                const d = new Date(calYear, calMonth, 0).getDate() - first + i + 1;
+                html += `<div class="calendar-day other-month">${d}</div>`;
+            }
+
+            for (let d = 1; d <= last; d++) {
+                const ds = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = calYear === today.getFullYear() && calMonth === today.getMonth() && d === today.getDate();
+                const ev = getEvents(ds);
+                const hasPending = ev.some(e => e.status === 'pending');
+                const hasConfirmed = ev.some(e => e.status === 'confirmed');
+                const isSelected = selectedDate === ds;
+
+                let cls = 'calendar-day';
+                if (isToday) cls += ' today';
+                if (isSelected) cls += ' selected';
+
+                html += `<div class="${cls}" onclick="selectDate('${ds}')">${d}`;
+                if (hasPending || hasConfirmed) {
+                    html += `<div class="dot ${hasPending ? 'pending' : 'confirmed'}"></div>`;
+                }
+                html += `</div>`;
+            }
+
+            const endOffset = (first + last) % 7;
+            if (endOffset > 0) {
+                for (let i = 1; i <= 7 - endOffset; i++) {
+                    html += `<div class="calendar-day other-month">${i}</div>`;
+                }
+            }
+
+            grid.innerHTML = html;
+        }
+
+        // ====== 日付選択 ======
+        function selectDate(ds) {
+            selectedDate = ds;
+            renderCalendar();
+            renderEvents(ds);
+        }
+
+        // ====== 予定表示 ======
+        function renderEvents(ds) {
+            const container = document.getElementById('eventList');
+            const ev = getEvents(ds);
+            if (!ev.length) {
+                container.innerHTML = `<div class="empty-events">📭 No events on this day</div>`;
+                return;
+            }
+            container.innerHTML = ev.map(e => `
+                <div class="event-item">
+                    <span class="event-time ${e.status}">${e.time}</span>
+                    <span class="event-title">${e.title}</span>
+                    <span class="event-person">👤 ${e.person}</span>
+                    <span class="event-status ${e.status}">${e.status === 'confirmed' ? '✅ Confirmed' : '⏳ Pending'}</span>
+                </div>
+            `).join('');
+        }
+
+        // ====== 月移動 ======
+        function changeMonth(delta) {
+            calMonth += delta;
+            if (calMonth < 0) { calMonth = 11; calYear--; }
+            if (calMonth > 11) { calMonth = 0; calYear++; }
+            renderCalendar();
+            if (selectedDate) renderEvents(selectedDate);
+        }
+
+        // ================================================================
+        // ★ 予定追加モーダル（ここが今回の追加ポイント）
+        // ================================================================
+
+        // モーダルを開く関数（カレンダーの「+」ボタンから呼び出す）
+        function openAddEventModal(dateStr) {
+            const displayDate = dateStr || selectedDate || 'Select a date';
+            document.getElementById('modalDate').textContent = displayDate;
+            document.getElementById('addEventModal').style.display = 'flex';
+            document.getElementById('confirmAddEventBtn').disabled = true;
+            document.getElementById('addEventStatus').style.display = 'none';
+
+            // 入力チェック
+            ['eventTitle', 'eventStart', 'eventEnd'].forEach(id => {
+                document.getElementById(id).addEventListener('input', checkAddEventForm);
+            });
+            document.getElementById('friendSelect').addEventListener('change', checkAddEventForm);
+        }
+
+        // モーダルを閉じる
+        function closeAddEventModal() {
+            document.getElementById('addEventModal').style.display = 'none';
+        }
+
+        // フォーム入力チェック
+        function checkAddEventForm() {
+            const title = document.getElementById('eventTitle').value.trim();
+            const start = document.getElementById('eventStart').value;
+            const end = document.getElementById('eventEnd').value;
+            const friend = document.getElementById('friendSelect').value;
+            document.getElementById('confirmAddEventBtn').disabled = !(title && start && end && friend);
+        }
+
+        // 予定確定処理
+        function confirmAddEvent() {
+            const title = document.getElementById('eventTitle').value.trim();
+            const start = document.getElementById('eventStart').value;
+            const end = document.getElementById('eventEnd').value;
+            const friend = document.getElementById('friendSelect').value;
+            const status = document.getElementById('addEventStatus');
+
+            if (!title || !start || !end || !friend) {
+                status.style.display = 'block';
+                status.style.color = '#e53935';
+                status.textContent = 'Please fill in all fields.';
+                return;
+            }
+            if (start >= end) {
+                status.style.display = 'block';
+                status.style.color = '#e53935';
+                status.textContent = '⚠️ End time must be after start time.';
+                return;
+            }
+
+            // 予定を保存（デモ用）
+            const dateStr = selectedDate || '2026-08-11';
+            if (!sampleEvents[dateStr]) sampleEvents[dateStr] = [];
+            sampleEvents[dateStr].push({
+                time: start,
+                title: title,
+                person: friend,
+                status: 'pending'
+            });
+
+            status.style.display = 'block';
+            status.style.color = '#06C755';
+            status.textContent = '✅ Event added!';
+
+            setTimeout(() => {
+                closeAddEventModal();
+                renderCalendar();
+                if (selectedDate) renderEvents(selectedDate);
+            }, 1500);
+        }
+
+        // モーダル外クリックで閉じる
+        document.getElementById('addEventModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAddEventModal();
+        });
+
+        // ====== 「+」ボタン ======
+        document.getElementById('addEventBtn').addEventListener('click', function() {
+            if (!selectedDate) {
+                alert('📅 Please select a date on the calendar first.');
+                return;
+            }
+            openAddEventModal(selectedDate);
+        });
+
+        // ====== 初期化 ======
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+            renderCalendar();
+            renderEvents(selectedDate);
+
+            // バージョン表示
+            document.getElementById('versionDisplay').textContent = getFullVersion();
+        });
+    </script>
+    <div style="text-align:center;padding:4px 0 16px 0;font-size:10px;color:#ccc;"><span id="versionDisplay"></span></div>
+</body>
+</html>
