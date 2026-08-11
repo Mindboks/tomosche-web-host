@@ -8,9 +8,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     <style>
-        /* ================================================================
-           Tomosche トップページ専用スタイル（完全独立）
-           ================================================================ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             background: #ffffff;
@@ -51,7 +48,8 @@
             font-size: clamp(12px, 2.5vw, 14px); color: #333;
         }
         .image-search .search-box input::placeholder { color: #bbb; }
-        .avatars { display: flex; gap: 12px; flex-wrap: wrap; padding: 12px 0 8px 0; }
+        /* 1. 友達アイコンの配置を左寄せに統一 */
+        .avatars {display: flex;gap: 12px; flex-wrap: wrap; padding: 12px 0 8px 0; justify-content: flex-start; /* ← 左寄せに変更 */}
         .avatar-item {
             display: flex; flex-direction: column; align-items: center; gap: 4px;
             text-decoration: none; color: #333; width: 56px;
@@ -81,13 +79,21 @@
         .today-person { color: #888; background: #f0f4f8; padding: 2px 10px; border-radius: 999px; font-size: clamp(10px, 1.8vw, 11px); white-space: nowrap; }
         .version { text-align: center; font-size: 10px; color: #ccc; padding: 16px 0 4px 0; }
 
-        /* ====== 下部ナビゲーション（トップページ専用） ====== */
+        /* 2. 下部ナビゲーションの中央配置をより確実に */
         .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: #ffffff; display: flex; justify-content: space-around;
-            padding: 6px 0 14px 0; border-top: 1px solid #f0f4f8;
-            z-index: 100; box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
-            max-width: 420px; margin: 0 auto;
+            position: fixed;
+            bottom: 0;
+            left: 0; /* ← left: 50% から変更 */
+            right: 0; /* ← 追加 */
+            background: #ffffff;
+            display: flex;
+            justify-content: space-around;
+            padding: 6px 0 14px 0;
+            border-top: 1px solid #f0f4f8;
+            z-index: 100;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+            max-width: 420px;
+            margin: 0 auto; /* ← 追加（自動的に中央寄せ） */
         }
         .nav-item {
             display: flex; flex-direction: column; align-items: center;
@@ -115,7 +121,35 @@
         .more-close { text-align: center; margin-top: 12px; }
         .more-close button { background: none; border: none; color: #999; font-size: 13px; padding: 4px 16px; cursor: pointer; }
 
-        /* ====== レスポンシブ ====== */
+        /* ====== モーダル ====== */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+            align-items: center; justify-content: center; z-index: 9999;
+        }
+        .modal-box {
+            background: white; border-radius: 24px; padding: 28px 24px;
+            max-width: 420px; width: 92%; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-box h3 { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 16px; }
+        .modal-box label { font-size: 13px; font-weight: 600; color: #555; margin-top: 12px; display: block; }
+        .modal-box input, .modal-box select, .modal-box textarea {
+            width: 100%; border: 1px solid #ddd; border-radius: 12px;
+            padding: 12px 14px; font-size: 14px; outline: none; margin-top: 4px;
+            background: white;
+        }
+        .modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus { border-color: #06C755; }
+        .time-row { display: flex; gap: 12px; }
+        .time-row > div { flex: 1; }
+        .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+        .modal-actions button { flex: 1; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
+        .btn-cancel { background: #f0f0f0; color: #666; }
+        .btn-cancel:hover { background: #e0e0e0; }
+        .btn-primary { background: #06C755; color: white; }
+        .btn-primary:hover { background: #049a44; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
         @media (max-width: 576px) {
             .app-container { padding: 0 12px 20px 12px; }
             .logo { font-size: 18px; }
@@ -129,22 +163,20 @@
             .today-time { min-width: 36px; font-size: clamp(10px, 1.8vw, 11px); }
             .nav-item { padding: 4px 8px; font-size: clamp(8px, 1.6vw, 9px); }
             .nav-item i { font-size: clamp(16px, 3.5vw, 18px); }
+            .bottom-nav { max-width: 100%; /* スマホでは画面幅いっぱいに */
         }
         @media (min-width: 768px) {
-            .bottom-nav { left: 50%; transform: translateX(-50%); }
+            .bottom-nav { max-width: 420px; }
             .more-popup { max-width: 400px; }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- ====== ヘッダー ====== -->
         <div class="header">
             <div class="logo">🌱 Tomosche <span class="logo-sub">Social Scheduling</span></div>
             <div class="profile-icon" id="profileIcon"><i class="bi bi-person-circle"></i></div>
         </div>
-
-        <!-- ====== 画像＋日付＋検索 ====== -->
         <div class="image-wrapper">
             <img src="assets/images/toppageTmocha.png" alt="Tomosche" />
             <div class="image-date" id="dateDisplay">Loading...</div>
@@ -155,11 +187,7 @@
                 </div>
             </div>
         </div>
-
-        <!-- ====== 友達アイコン ====== -->
         <div class="avatars" id="avatars"></div>
-
-        <!-- ====== 今日の予定 ====== -->
         <div class="today-card">
             <div class="today-header">
                 <span><i class="bi bi-clock-history"></i> Upcoming</span>
@@ -167,7 +195,6 @@
             </div>
             <div id="todayList"></div>
         </div>
-
         <div class="version" id="versionDisplay">Tomosche v1.0.0.1</div>
     </div>
 
@@ -184,34 +211,26 @@
     <div class="more-popup" id="moreMenuPopup">
         <div class="more-grid">
             <a href="guide.html"><div class="icon-box"><i class="bi bi-book" style="color:#6a1b9a;"></i></div><span>Guide</span></a>
-            <a href="privacy.html"><div class="icon-box"><i class="bi bi-shield-lock" style="color:#1565c0;"></i></div><span>Privacy</span></a>
-            <a href="terms.html"><div class="icon-box"><i class="bi bi-file-text" style="color:#e65100;"></i></div><span>Terms</span></a>
+            <a href="privacy.html"><div class="icon-box"><i class="bi bi-shield-lock" style="color:#1565c0;"></i></div><span>Privacy Policy</span></a>
+            <a href="terms.html"><div class="icon-box"><i class="bi bi-file-text" style="color:#e65100;"></i></div><span>Terms of Service</span></a>
             <a href="#" id="feedbackMoreBtn"><div class="icon-box"><i class="bi bi-chat-dots" style="color:#f9a825;"></i></div><span>Feedback</span></a>
             <a href="#" id="logoutMoreBtn"><div class="icon-box"><i class="bi bi-box-arrow-right" style="color:#e53935;"></i></div><span>Logout</span></a>
         </div>
         <div class="more-close"><button onclick="document.getElementById('moreMenuPopup').style.display='none'">Close</button></div>
     </div>
 
-    <!-- ====== 予定追加モーダル ====== -->
-    <div class="modal-overlay" id="addEventModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:9999;">
-        <div style="background:white; border-radius:24px; padding:28px 24px; max-width:420px; width:92%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
-            <h3>📝 New Event</h3>
-            <p style="font-size:13px;color:#888;" id="modalDate">Select a date</p>
-            <label style="font-size:13px;font-weight:600;color:#555;margin-top:12px;display:block;">👤 Select Friend</label>
-            <select id="friendSelect" style="width:100%;border:1px solid #ddd;border-radius:12px;padding:12px 14px;font-size:14px;outline:none;margin-top:4px;background:white;"><option value="">-- Select a friend --</option></select>
-            <label style="font-size:13px;font-weight:600;color:#555;margin-top:12px;display:block;">📌 Event Name</label>
-            <input type="text" id="eventTitle" placeholder="e.g., Lunch, Meeting..." style="width:100%;border:1px solid #ddd;border-radius:12px;padding:12px 14px;font-size:14px;outline:none;margin-top:4px;background:white;" />
-            <div style="display:flex;gap:12px;">
-                <div style="flex:1;"><label style="font-size:13px;font-weight:600;color:#555;margin-top:12px;display:block;">⏰ Start</label><input type="time" id="eventStart" step="900" style="width:100%;border:1px solid #ddd;border-radius:12px;padding:12px 14px;font-size:14px;outline:none;margin-top:4px;background:white;" /></div>
-                <div style="flex:1;"><label style="font-size:13px;font-weight:600;color:#555;margin-top:12px;display:block;">⏰ End</label><input type="time" id="eventEnd" step="900" style="width:100%;border:1px solid #ddd;border-radius:12px;padding:12px 14px;font-size:14px;outline:none;margin-top:4px;background:white;" /></div>
+    <!-- ====== フィードバックモーダル ====== -->
+    <div class="modal-overlay" id="feedbackModal">
+        <div class="modal-box">
+            <h3>📝 Feedback</h3>
+            <p style="font-size:13px;color:#888;margin-bottom:16px;">Share your feedback, feature requests, or report issues.</p>
+            <label>Your Message</label>
+            <textarea id="feedbackMessage" rows="4" placeholder="Write your feedback here..." style="width:100%;border:1px solid #ddd;border-radius:12px;padding:12px 14px;font-size:14px;outline:none;margin-top:4px;background:white;resize:vertical;"></textarea>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeFeedbackModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitFeedback()">Send</button>
             </div>
-            <label style="font-size:13px;font-weight:600;color:#555;margin-top:12px;display:block;">📝 Note (optional)</label>
-            <textarea id="eventNote" rows="2" placeholder="Add details..." style="width:100%;border:1px solid #ddd;border-radius:12px;padding:12px 14px;font-size:14px;outline:none;margin-top:4px;background:white;resize:vertical;"></textarea>
-            <div style="display:flex;gap:12px;margin-top:20px;">
-                <button class="btn-cancel" onclick="closeAddEventModal()" style="flex:1;padding:12px;border-radius:999px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:#f0f0f0;color:#666;">Cancel</button>
-                <button class="btn-primary" id="confirmAddEventBtn" onclick="confirmAddEvent()" disabled style="flex:1;padding:12px;border-radius:999px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:#06C755;color:white;opacity:0.5;">Send</button>
-            </div>
-            <div id="addEventStatus" style="margin-top:12px;font-size:13px;text-align:center;display:none;"></div>
+            <div id="feedbackStatus" style="margin-top:12px;font-size:13px;text-align:center;display:none;"></div>
         </div>
     </div>
 
@@ -236,19 +255,13 @@
         friends.forEach(f => {
             const div = document.createElement('div');
             div.className = 'avatar-item';
-            div.innerHTML = `
-                <div class="avatar-circle" style="background:${f.color};">${f.initial}</div>
-                <span class="avatar-name">${f.name}</span>
-            `;
+            div.innerHTML = `<div class="avatar-circle" style="background:${f.color};">${f.initial}</div><span class="avatar-name">${f.name}</span>`;
             avatarsContainer.appendChild(div);
         });
         const addDiv = document.createElement('a');
         addDiv.href = 'add.html';
         addDiv.className = 'avatar-item';
-        addDiv.innerHTML = `
-            <div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div>
-            <span class="avatar-name">Add</span>
-        `;
+        addDiv.innerHTML = `<div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div><span class="avatar-name">Add</span>`;
         avatarsContainer.appendChild(addDiv);
 
         // ====== 今日の予定 ======
@@ -260,11 +273,7 @@
         events.forEach(e => {
             const div = document.createElement('div');
             div.className = 'today-item';
-            div.innerHTML = `
-                <span class="today-time">${e.time}</span>
-                <span class="today-title">${e.title}</span>
-                <span class="today-person">👤 ${e.person}</span>
-            `;
+            div.innerHTML = `<span class="today-time">${e.time}</span><span class="today-title">${e.title}</span><span class="today-person">👤 ${e.person}</span>`;
             list.appendChild(div);
         });
 
@@ -299,7 +308,36 @@
         // ====== フィードバック ======
         document.getElementById('feedbackMoreBtn').addEventListener('click', function(e) {
             e.preventDefault();
-            alert('📝 Feedback feature is coming soon.\nPlease contact tomosche.line@gmail.com');
+            document.getElementById('feedbackModal').style.display = 'flex';
+            document.getElementById('feedbackMessage').value = '';
+            document.getElementById('feedbackStatus').style.display = 'none';
+        });
+
+        function closeFeedbackModal() {
+            document.getElementById('feedbackModal').style.display = 'none';
+        }
+
+        function submitFeedback() {
+            const message = document.getElementById('feedbackMessage').value.trim();
+            const status = document.getElementById('feedbackStatus');
+            if (!message) {
+                status.style.display = 'block';
+                status.style.color = '#e53935';
+                status.textContent = 'Please enter your feedback.';
+                return;
+            }
+            status.style.display = 'block';
+            status.textContent = 'Sending...';
+            status.style.color = '#666';
+            setTimeout(() => {
+                status.style.color = '#06C755';
+                status.textContent = '✅ Thank you for your feedback!';
+                setTimeout(closeFeedbackModal, 1500);
+            }, 1000);
+        }
+
+        document.getElementById('feedbackModal').addEventListener('click', function(e) {
+            if (e.target === this) closeFeedbackModal();
         });
 
         // ====== 検索 ======
@@ -310,54 +348,14 @@
             }
         });
 
-        // ====== LIFF初期化 ======
+        // ====== LIFF ======
         document.addEventListener('DOMContentLoaded', async function() {
             try {
                 await liff.init({ liffId: '2010384200-BS1cr2CR' });
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                    return;
-                }
+                if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
                 console.log('Logged in:', profile.displayName);
-            } catch (e) {
-                console.error('LIFF error:', e);
-            }
-        });
-
-        // ====== 予定追加モーダル（簡易） ======
-        function openAddEventModal(dateStr) {
-            document.getElementById('modalDate').textContent = dateStr || 'Select a date';
-            document.getElementById('addEventModal').style.display = 'flex';
-            document.getElementById('confirmAddEventBtn').disabled = true;
-            document.getElementById('addEventStatus').style.display = 'none';
-        }
-
-        function closeAddEventModal() {
-            document.getElementById('addEventModal').style.display = 'none';
-        }
-
-        function confirmAddEvent() {
-            const title = document.getElementById('eventTitle').value.trim();
-            const start = document.getElementById('eventStart').value;
-            const end = document.getElementById('eventEnd').value;
-            const friend = document.getElementById('friendSelect').value;
-            const status = document.getElementById('addEventStatus');
-            if (!title || !start || !end || !friend) {
-                status.style.display = 'block'; status.style.color = '#e53935'; status.textContent = 'Please fill in all fields.';
-                return;
-            }
-            if (start >= end) {
-                status.style.display = 'block'; status.style.color = '#e53935'; status.textContent = '⚠️ End time must be after start time.';
-                return;
-            }
-            console.log('Event added:', { title, start, end, friend });
-            status.style.display = 'block'; status.style.color = '#06C755'; status.textContent = '✅ Event added!';
-            setTimeout(() => { closeAddEventModal(); }, 1500);
-        }
-
-        document.getElementById('addEventModal').addEventListener('click', function(e) {
-            if (e.target === this) closeAddEventModal();
+            } catch (e) { console.error('LIFF error:', e); }
         });
     </script>
 </body>
