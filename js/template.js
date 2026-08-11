@@ -147,7 +147,7 @@ function renderPage(title, content, activeNav) {
             <a href="#" id="feedbackMoreBtn"><div class="icon-box"><i class="bi bi-chat-dots" style="color:#f9a825;"></i></div><span>Feedback</span></a>
             <a href="#" id="logoutMoreBtn"><div class="icon-box"><i class="bi bi-box-arrow-right" style="color:#e53935;"></i></div><span>Logout</span></a>
         </div>
-        <div class="more-close"><button onclick="document.getElementById('moreMenuPopup').style.display='none'">Close</button></div>
+        <div class="more-close"><button onclick="closeMorePopup()">Close</button></div>
     </div>
 
     <div class="modal-overlay" id="feedbackModal">
@@ -183,36 +183,52 @@ function renderPage(title, content, activeNav) {
             }
         }
 
+        // ====== Moreメニュー制御（共通化・確実に動作） ======
+        function toggleMorePopup() {
+            const popup = document.getElementById('moreMenuPopup');
+            if (!popup) return;
+            const isVisible = popup.style.display === 'block';
+            popup.style.display = isVisible ? 'none' : 'block';
+        }
+
+        function closeMorePopup() {
+            const popup = document.getElementById('moreMenuPopup');
+            if (popup) popup.style.display = 'none';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // ====== バージョン表示 ======
             const vEl = document.getElementById('versionDisplay');
             if (vEl) vEl.textContent = getFullVersion();
 
-            // ====== プロフィール表示（確実に更新） ======
+            // ====== プロフィール表示 ======
             updateProfileDisplay();
-            // LIFFの初期化を待つため、遅延実行を複数設定
-            setTimeout(updateProfileDisplay, 300);
-            setTimeout(updateProfileDisplay, 800);
+            setTimeout(updateProfileDisplay, 500);
             setTimeout(updateProfileDisplay, 1500);
-            setTimeout(updateProfileDisplay, 3000);
 
-            // ====== Moreメニュー ======
+            // ====== Moreメニュー（確実に動作） ======
             const moreBtn = document.getElementById('moreMenuBtn');
             const popup = document.getElementById('moreMenuPopup');
-            if (moreBtn && popup) {
+            
+            if (moreBtn) {
+                // クリックで切り替え
                 moreBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    const isVisible = popup.style.display === 'block';
-                    popup.style.display = isVisible ? 'none' : 'block';
-                });
-                document.addEventListener('click', function(e) {
-                    if (popup.style.display === 'block') {
-                        if (!e.target.closest('#moreMenuPopup') && !e.target.closest('#moreMenuBtn')) {
-                            popup.style.display = 'none';
-                        }
-                    }
+                    e.preventDefault();
+                    toggleMorePopup();
                 });
             }
+
+            // ポップアップ外クリックで閉じる
+            document.addEventListener('click', function(e) {
+                if (!popup) return;
+                if (popup.style.display === 'block') {
+                    const isClickInside = popup.contains(e.target) || (moreBtn && moreBtn.contains(e.target));
+                    if (!isClickInside) {
+                        popup.style.display = 'none';
+                    }
+                }
+            });
 
             // ====== ログアウト ======
             const logoutBtn = document.getElementById('logoutMoreBtn');
@@ -238,6 +254,7 @@ function renderPage(title, content, activeNav) {
                     document.getElementById('feedbackModal').style.display = 'flex';
                     document.getElementById('feedbackMessage').value = '';
                     document.getElementById('feedbackStatus').style.display = 'none';
+                    closeMorePopup(); // Moreポップアップを閉じる
                 });
             }
         });
