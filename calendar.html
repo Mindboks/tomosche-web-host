@@ -160,7 +160,7 @@
             openAddEventModal(selectedDate, 'shared');
         });
 
-        // ====== カレンダーHTMLを content として渡す ======
+        // カレンダーコンテンツを取得して template.js に渡す
         const calendarContent = document.getElementById('app').innerHTML;
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -168,6 +168,7 @@
             selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
             renderCalendar();
             renderEvents(selectedDate);
+            // template.js でレンダリング（content に calendarContent を渡す）
             renderPage('Calendar', calendarContent, 'calendar');
         });
     </script>

@@ -1,14 +1,8 @@
 // ================================================================
-// Tomosche 共通テンプレート v1.0.0.2
-// 全ページのヘッダー・フッター・モーダルを一元管理
+// Tomosche 共通テンプレート v1.0.0.3
 // ================================================================
 
 function renderPage(title, content, activeNav) {
-    const now = new Date();
-    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const dateStr = `${monthNames[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
-
-    // ナビゲーション項目（すべて表示、activeは薄くする）
     const navItems = [
         { id: 'home', href: '/', icon: 'bi-house-fill', label: 'Home' },
         { id: 'friends', href: 'friends.html', icon: 'bi-people-fill', label: 'Friends' },
@@ -18,8 +12,8 @@ function renderPage(title, content, activeNav) {
 
     let navHtml = navItems.map(item => {
         const isActive = (item.id === activeNav);
-        // すべて表示し、activeの場合は薄く＋押せなくする
-        const activeClass = isActive ? 'active-disabled' : '';
+        // active: 薄緑, それ以外: イメージカラー
+        const activeClass = isActive ? 'active-page' : '';
         return `<a href="${item.href}" class="nav-item ${activeClass}" data-nav="${item.id}">
             <i class="bi ${item.icon}"></i>
             <span>${item.label}</span>
@@ -37,52 +31,30 @@ function renderPage(title, content, activeNav) {
     <link rel="stylesheet" href="css/style.css">
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     <style>
-        /* ====== ナビゲーション（template.js で制御） ====== */
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #ffffff;
-            display: flex;
-            justify-content: space-around;
-            padding: 6px 0 14px 0;
-            border-top: 1px solid #f0f4f8;
-            z-index: 100;
-            box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
-            max-width: 420px;
-            margin: 0 auto;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #ffffff; display: flex; justify-content: space-around;
+            padding: 6px 0 14px 0; border-top: 1px solid #f0f4f8;
+            z-index: 100; box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+            max-width: 420px; margin: 0 auto;
         }
         .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            display: flex; flex-direction: column; align-items: center;
             font-size: clamp(9px, 1.8vw, 10px);
-            color: #999;
-            text-decoration: none;
-            gap: 2px;
-            background: none;
-            border: none;
-            padding: 4px 12px;
-            cursor: pointer;
-            flex: 1;
-            max-width: 80px;
-            white-space: nowrap;
-            transition: opacity 0.2s;
+            text-decoration: none; gap: 2px; background: none; border: none;
+            padding: 4px 12px; cursor: pointer; flex: 1; max-width: 80px; white-space: nowrap;
+            transition: all 0.2s;
+            color: #06C755;  /* イメージカラー */
         }
         .nav-item i { font-size: clamp(18px, 4vw, 20px); }
-        .nav-item:hover { color: #06C755; }
-        /* アクティブなページのボタン：薄くして押せなくする */
-        .nav-item.active-disabled {
-            opacity: 0.5;
+        .nav-item:hover { color: #049a44; }  /* ホバーで濃く */
+        .nav-item:active { transform: scale(0.92); }
+        /* 現在のページ：薄緑 */
+        .nav-item.active-page {
+            color: #a5d6a7;  /* 薄緑 */
             pointer-events: none;
             cursor: default;
         }
-        .nav-item.active-disabled i {
-            transform: translateY(-2px);
-        }
-
-        /* ====== その他共通スタイル ====== */
         .app-container { max-width:420px; margin:0 auto; padding:0 16px 80px 16px; background:#fff; }
         .header { display:flex; justify-content:space-between; align-items:center; padding:16px 0 8px 0; }
         .logo { font-size:22px; font-weight:700; color:#06C755; }
@@ -93,7 +65,6 @@ function renderPage(title, content, activeNav) {
         .page-title { font-size:clamp(1.1rem,4vw,1.6rem); font-weight:600; margin:0; color:#333; white-space:nowrap; }
         .version { text-align:center; font-size:10px; color:#ccc; padding:8px 0 4px 0; }
 
-        /* ====== Moreポップアップ ====== */
         .more-popup {
             display:none; position:fixed; bottom:76px; left:50%; transform:translateX(-50%);
             background:white; border-radius:20px; padding:20px;
@@ -108,7 +79,6 @@ function renderPage(title, content, activeNav) {
         .more-close { text-align:center; margin-top:12px; }
         .more-close button { background:none; border:none; color:#999; font-size:13px; padding:4px 16px; cursor:pointer; }
 
-        /* ====== モーダル共通 ====== */
         .modal-overlay {
             display:none; position:fixed; inset:0;
             background:rgba(0,0,0,0.4); backdrop-filter:blur(4px);
@@ -153,7 +123,6 @@ function renderPage(title, content, activeNav) {
 </head>
 <body>
     <div class="app-container">
-        <!-- ====== ヘッダー ====== -->
         <div class="header">
             <div class="logo">🌱 Tomosche <span class="logo-sub">Social Scheduling</span></div>
             <div class="profile-icon" id="profileIcon">
@@ -162,19 +131,16 @@ function renderPage(title, content, activeNav) {
             </div>
         </div>
 
-        <!-- ====== ページコンテンツ ====== -->
         ${content}
 
-        <div class="version" id="versionDisplay">Tomosche v1.0.0.2</div>
+        <div class="version" id="versionDisplay">Tomosche v1.0.0.3</div>
     </div>
 
-    <!-- ====== 下部ナビゲーション ====== -->
     <div class="bottom-nav">
         ${navHtml}
         <div class="nav-item" id="moreMenuBtn"><i class="bi bi-grid-fill"></i><span>More</span></div>
     </div>
 
-    <!-- ====== Moreポップアップ ====== -->
     <div class="more-popup" id="moreMenuPopup">
         <div class="more-grid">
             <a href="guide.html"><div class="icon-box"><i class="bi bi-book" style="color:#6a1b9a;"></i></div><span>Guide</span></a>
@@ -186,7 +152,6 @@ function renderPage(title, content, activeNav) {
         <div class="more-close"><button onclick="document.getElementById('moreMenuPopup').style.display='none'">Close</button></div>
     </div>
 
-    <!-- ====== フィードバックモーダル ====== -->
     <div class="modal-overlay" id="feedbackModal">
         <div class="modal-box">
             <h3>📝 Feedback</h3>
@@ -204,27 +169,30 @@ function renderPage(title, content, activeNav) {
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
     <script>
+        function updateProfileDisplay() {
+            const nameEl = document.getElementById('userNameDisplay');
+            if (!nameEl) return;
+            if (window.currentUser && window.currentUser.displayName) {
+                nameEl.textContent = window.currentUser.displayName;
+            } else if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                liff.getProfile().then(profile => {
+                    nameEl.textContent = profile.displayName;
+                    window.currentUser = { userId: profile.userId, displayName: profile.displayName };
+                }).catch(() => { nameEl.textContent = 'Guest'; });
+            } else {
+                nameEl.textContent = 'Guest';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            // ====== バージョン表示 ======
             const vEl = document.getElementById('versionDisplay');
             if (vEl) vEl.textContent = getFullVersion();
 
-            // ====== プロフィールアイコン ======
-            const nameEl = document.getElementById('userNameDisplay');
-            if (nameEl) {
-                if (currentUser && currentUser.displayName) {
-                    nameEl.textContent = currentUser.displayName;
-                } else if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                    liff.getProfile().then(profile => {
-                        nameEl.textContent = profile.displayName;
-                        currentUser = { userId: profile.userId, displayName: profile.displayName };
-                    }).catch(() => { nameEl.textContent = 'Guest'; });
-                } else {
-                    nameEl.textContent = 'Guest';
-                }
-            }
+            updateProfileDisplay();
+            setTimeout(updateProfileDisplay, 1000);
+            setTimeout(updateProfileDisplay, 2000);
 
-            // ====== Moreメニュー ======
+            // Moreメニュー
             const moreBtn = document.getElementById('moreMenuBtn');
             const popup = document.getElementById('moreMenuPopup');
             if (moreBtn && popup) {
@@ -241,7 +209,7 @@ function renderPage(title, content, activeNav) {
                 });
             }
 
-            // ====== ログアウト ======
+            // ログアウト
             const logoutBtn = document.getElementById('logoutMoreBtn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', function(e) {
@@ -257,7 +225,7 @@ function renderPage(title, content, activeNav) {
                 });
             }
 
-            // ====== フィードバック ======
+            // フィードバック
             const feedbackBtn = document.getElementById('feedbackMoreBtn');
             if (feedbackBtn) {
                 feedbackBtn.addEventListener('click', function(e) {
