@@ -62,13 +62,7 @@
     <script src="js/app.js"></script>
     <script src="js/template.js"></script>
     <script>
-        // add.html のコンテンツを取得
-        const addContent = document.getElementById('app').innerHTML;
-
         document.addEventListener('DOMContentLoaded', function() {
-            renderPage('Add Friends', addContent, 'add');
-
-            // QRコード生成
             const url = 'https://tomosche.com/add.html';
             try {
                 new QRCode(document.getElementById('qrcode'), {
@@ -88,6 +82,8 @@
                     alert('LINEにログインしてください');
                 }
             });
+
+            renderPage('Add Friends', '', 'add');
         });
     </script>
 </body>
