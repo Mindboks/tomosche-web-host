@@ -9,70 +9,41 @@
     <link rel="stylesheet" href="css/style.css">
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     <style>
-        .back-btn { background: none; border: none; font-size: 22px; color: #06C755; padding: 0; margin-right: 8px; cursor: pointer; }
-        .page-title { font-size: clamp(1.1rem, 4vw, 1.6rem); font-weight: 600; margin: 0; color: #333; white-space: nowrap; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: #f0f4f8; border-radius: 16px; overflow: hidden; margin-top: 12px; }
-        .calendar-weekday { background: #e8f5e9; color: #2e7d32; font-weight: 600; font-size: 12px; text-align: center; padding: 8px 0; }
-        .calendar-day { background: white; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: #333; cursor: pointer; position: relative; }
-        .calendar-day.other-month { color: #ccc; }
-        .calendar-day.today { background: #e8f5e9; font-weight: 700; color: #06C755; }
-        .calendar-day.selected { background: #06C755; color: white; border-radius: 8px; }
-        .calendar-day .dot { position: absolute; bottom: 4px; width: 6px; height: 6px; border-radius: 50%; }
-        .calendar-day .dot.pending { background: #ff9800; }
-        .calendar-day .dot.confirmed { background: #06C755; }
-        .calendar-day .dot.own { background: #2196f3; }
-        .event-list { margin-top: 16px; background: white; border-radius: 16px; padding: 16px; border: 1px solid #f0f4f8; }
-        .event-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; gap: 8px; flex-wrap: wrap; }
-        .event-item:last-child { border-bottom: none; }
-        .event-time { font-size: 12px; font-weight: 600; }
-        .event-time.confirmed { color: #06C755; }
-        .event-time.pending { color: #ff9800; }
-        .event-time.own { color: #2196f3; }
-        .event-title { font-size: 14px; color: #333; flex: 1; }
-        .event-person { font-size: 12px; color: #888; background: #f0f4f8; padding: 2px 10px; border-radius: 999px; }
-        .event-status { font-size: 10px; padding: 2px 8px; border-radius: 999px; }
-        .event-status.confirmed { background: #e8f5e9; color: #2e7d32; }
-        .event-status.pending { background: #fff3e0; color: #e65100; }
-        .event-status.own { background: #e3f2fd; color: #1565c0; }
-        .empty-events { text-align: center; color: #bbb; padding: 16px 0; }
-        .cal-nav { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
-        .cal-nav button { background: none; border: none; font-size: 22px; color: #06C755; padding: 8px 12px; cursor: pointer; }
-        .cal-nav span { font-size: clamp(1.1rem, 3vw, 1.4rem); font-weight: 600; color: #333; }
-        .add-btn-group { display: flex; gap: 12px; margin-top: 16px; }
-        .add-btn-group button { flex: 1; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
-        .btn-own { background: #2196f3; color: white; }
-        .btn-own:hover { background: #1976d2; }
-        .btn-shared { background: #06C755; color: white; }
-        .btn-shared:hover { background: #049a44; }
-        .btn-own:active, .btn-shared:active { transform: scale(0.95); }
-        .modal-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
-            align-items: center; justify-content: center; z-index: 9999;
-        }
-        .modal-box {
-            background: white; border-radius: 24px; padding: 28px 24px;
-            max-width: 420px; width: 92%; max-height: 90vh; overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-        }
-        .modal-box h3 { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 16px; }
-        .modal-box label { font-size: 13px; font-weight: 600; color: #555; margin-top: 12px; display: block; }
-        .modal-box input, .modal-box select, .modal-box textarea {
-            width: 100%; border: 1px solid #ddd; border-radius: 12px;
-            padding: 12px 14px; font-size: 14px; outline: none; margin-top: 4px;
-            background: white;
-        }
-        .modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus { border-color: #06C755; }
-        .time-row { display: flex; gap: 12px; }
-        .time-row > div { flex: 1; }
-        .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
-        .modal-actions button { flex: 1; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
-        .btn-cancel { background: #f0f0f0; color: #666; }
-        .btn-cancel:hover { background: #e0e0e0; }
-        .btn-primary { background: #06C755; color: white; }
-        .btn-primary:hover { background: #049a44; }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .version { text-align: center; font-size: 10px; color: #ccc; padding: 8px 0 4px 0; }
+        /* calendar.html 固有スタイル */
+        .cal-nav { display:flex; justify-content:space-between; align-items:center; padding:12px 0; }
+        .cal-nav button { background:none; border:none; font-size:22px; color:#06C755; padding:8px 12px; cursor:pointer; }
+        .cal-nav span { font-size:clamp(1.1rem,3vw,1.4rem); font-weight:600; color:#333; }
+        .calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; background:#f0f4f8; border-radius:16px; overflow:hidden; margin-top:12px; }
+        .calendar-weekday { background:#e8f5e9; color:#2e7d32; font-weight:600; font-size:12px; text-align:center; padding:8px 0; }
+        .calendar-day { background:white; aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:14px; font-weight:500; color:#333; cursor:pointer; position:relative; }
+        .calendar-day.other-month { color:#ccc; }
+        .calendar-day.today { background:#e8f5e9; font-weight:700; color:#06C755; }
+        .calendar-day.selected { background:#06C755; color:white; border-radius:8px; }
+        .calendar-day .dot { position:absolute; bottom:4px; width:6px; height:6px; border-radius:50%; }
+        .calendar-day .dot.own { background:#2196f3; }
+        .calendar-day .dot.pending { background:#ff9800; }
+        .calendar-day .dot.confirmed { background:#06C755; }
+        .event-list { margin-top:16px; background:white; border-radius:16px; padding:16px; border:1px solid #f0f4f8; }
+        .event-item { display:flex; align-items:center; padding:10px 0; border-bottom:1px solid #f5f5f5; gap:8px; flex-wrap:wrap; }
+        .event-item:last-child { border-bottom:none; }
+        .event-time { font-size:12px; font-weight:600; }
+        .event-time.own { color:#2196f3; }
+        .event-time.pending { color:#ff9800; }
+        .event-time.confirmed { color:#06C755; }
+        .event-title { font-size:14px; color:#333; flex:1; }
+        .event-person { font-size:12px; color:#888; background:#f0f4f8; padding:2px 10px; border-radius:999px; }
+        .event-status { font-size:10px; padding:2px 8px; border-radius:999px; }
+        .event-status.own { background:#e3f2fd; color:#1565c0; }
+        .event-status.pending { background:#fff3e0; color:#e65100; }
+        .event-status.confirmed { background:#e8f5e9; color:#2e7d32; }
+        .empty-events { text-align:center; color:#bbb; padding:16px 0; }
+        .add-btn-group { display:flex; gap:12px; margin-top:16px; }
+        .add-btn-group button { flex:1; padding:12px; border-radius:999px; font-size:14px; font-weight:600; border:none; cursor:pointer; }
+        .btn-own { background:#2196f3; color:white; }
+        .btn-own:hover { background:#1976d2; }
+        .btn-shared { background:#06C755; color:white; }
+        .btn-shared:hover { background:#049a44; }
+        .btn-own:active, .btn-shared:active { transform:scale(0.95); }
     </style>
 </head>
 <body>
@@ -85,7 +56,7 @@
 
             <div class="cal-nav">
                 <button onclick="changeMonth(-1)"><i class="bi bi-chevron-left"></i></button>
-                <span id="calTitle"></span>
+                <span id="calTitle">August 2026</span>
                 <button onclick="changeMonth(1)"><i class="bi bi-chevron-right"></i></button>
             </div>
 
@@ -96,7 +67,6 @@
                 <div id="eventList"><div class="empty-events">Select a date</div></div>
             </div>
 
-            <!-- 予定追加ボタン（2種類） -->
             <div class="add-btn-group">
                 <button class="btn-own" id="addOwnEventBtn"><i class="bi bi-person"></i> My Schedule</button>
                 <button class="btn-shared" id="addSharedEventBtn"><i class="bi bi-people"></i> With Friend</button>
@@ -104,40 +74,18 @@
         </div>
     </div>
 
-    <!-- 予定追加モーダル -->
-    <div class="modal-overlay" id="addEventModal">
-        <div class="modal-box">
-            <h3 id="modalTitle">📝 New Event</h3>
-            <p style="font-size:13px;color:#888;" id="modalDate">Select a date</p>
-            <input type="hidden" id="eventType" value="own" />
-            <label id="friendLabel">👤 Select Friend</label>
-            <select id="friendSelect"><option value="">-- Select a friend --</option></select>
-            <label>📌 Event Name</label>
-            <input type="text" id="eventTitle" placeholder="e.g., Lunch, Meeting..." />
-            <div class="time-row">
-                <div><label>⏰ Start</label><input type="time" id="eventStart" step="900" /></div>
-                <div><label>⏰ End</label><input type="time" id="eventEnd" step="900" /></div>
-            </div>
-            <label>📝 Note (optional)</label>
-            <textarea id="eventNote" rows="2" placeholder="Add details..."></textarea>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeAddEventModal()">Cancel</button>
-                <button class="btn-primary" id="confirmAddEventBtn" onclick="confirmAddEvent()" disabled>Send</button>
-            </div>
-            <div id="addEventStatus" style="margin-top:12px;font-size:13px;text-align:center;display:none;"></div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/template.js"></script>
     <script>
         // ====== カレンダー状態 ======
         let calYear = new Date().getFullYear();
         let calMonth = new Date().getMonth();
         let selectedDate = null;
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-        // ====== サンプル予定（種別付き） ======
+        // ====== サンプル予定 ======
         const sampleEvents = {
             '2026-08-11': [
                 { time: '09:00', title: 'Morning Meeting', person: 'Myself', status: 'confirmed', type: 'own' },
@@ -148,19 +96,16 @@
             ]
         };
 
-        function getEvents(dateStr) {
-            return sampleEvents[dateStr] || [];
-        }
+        function getEvents(dateStr) { return sampleEvents[dateStr] || []; }
 
         // ====== カレンダー描画 ======
         function renderCalendar() {
             const grid = document.getElementById('calGrid');
-            document.getElementById('calTitle').textContent = `${calYear}年 ${calMonth+1}月`;
+            document.getElementById('calTitle').textContent = `${monthNames[calMonth]} ${calYear}`;
 
             const first = new Date(calYear, calMonth, 1).getDay();
             const last = new Date(calYear, calMonth + 1, 0).getDate();
             const today = new Date();
-            const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
             let html = weekdays.map(w => `<div class="calendar-weekday">${w}</div>`).join('');
 
@@ -183,14 +128,9 @@
                 if (isSelected) cls += ' selected';
 
                 html += `<div class="${cls}" onclick="selectDate('${ds}')">${d}`;
-                // ドット表示（優先順位：own > pending > confirmed）
-                if (hasOwn) {
-                    html += `<div class="dot own"></div>`;
-                } else if (hasPending) {
-                    html += `<div class="dot pending"></div>`;
-                } else if (hasConfirmed) {
-                    html += `<div class="dot confirmed"></div>`;
-                }
+                if (hasOwn) html += `<div class="dot own"></div>`;
+                else if (hasPending) html += `<div class="dot pending"></div>`;
+                else if (hasConfirmed) html += `<div class="dot confirmed"></div>`;
                 html += `</div>`;
             }
 
@@ -204,14 +144,12 @@
             grid.innerHTML = html;
         }
 
-        // ====== 日付選択 ======
         function selectDate(ds) {
             selectedDate = ds;
             renderCalendar();
             renderEvents(ds);
         }
 
-        // ====== 予定表示 ======
         function renderEvents(ds) {
             const container = document.getElementById('eventList');
             const ev = getEvents(ds);
@@ -233,7 +171,6 @@
             }).join('');
         }
 
-        // ====== 月移動 ======
         function changeMonth(delta) {
             calMonth += delta;
             if (calMonth < 0) { calMonth = 11; calYear--; }
@@ -242,132 +179,15 @@
             if (selectedDate) renderEvents(selectedDate);
         }
 
-        // ================================================================
-        // ★ 予定追加モーダル（自分の予定 / 友達共有）
-        // ================================================================
-
-        // モーダルを開く（種別指定）
+        // ====== モーダル ======
         function openAddEventModal(dateStr, type) {
-            if (!dateStr) {
-                alert('📅 Please select a date on the calendar first.');
-                return;
-            }
-
-            const displayDate = dateStr || 'Select a date';
-            document.getElementById('modalDate').textContent = displayDate;
-            document.getElementById('modalTitle').textContent = type === 'own' ? '📝 My Schedule' : '📝 Event with Friend';
-            document.getElementById('eventType').value = type;
-
-            // 友達選択の表示/非表示
-            const friendLabel = document.getElementById('friendLabel');
-            const friendSelect = document.getElementById('friendSelect');
-            if (type === 'own') {
-                friendLabel.style.display = 'none';
-                friendSelect.style.display = 'none';
-                friendSelect.value = 'Myself';
-            } else {
-                friendLabel.style.display = 'block';
-                friendSelect.style.display = 'block';
-                // 友達リストを設定（サンプル）
-                const friends = ['Tanaka', 'Sato', 'Suzuki', 'Yamada'];
-                friendSelect.innerHTML = '<option value="">-- Select a friend --</option>';
-                friends.forEach(f => {
-                    const opt = document.createElement('option');
-                    opt.value = f;
-                    opt.textContent = f;
-                    friendSelect.appendChild(opt);
-                });
-            }
-
-            document.getElementById('addEventModal').style.display = 'flex';
-            document.getElementById('confirmAddEventBtn').disabled = true;
-            document.getElementById('addEventStatus').style.display = 'none';
-
-            // 入力チェック
-            ['eventTitle', 'eventStart', 'eventEnd'].forEach(id => {
-                document.getElementById(id).addEventListener('input', checkAddEventForm);
-            });
-            if (type !== 'own') {
-                document.getElementById('friendSelect').addEventListener('change', checkAddEventForm);
-            }
+            if (!dateStr) { alert('📅 Please select a date on the calendar first.'); return; }
+            alert(`📝 ${type === 'own' ? 'My Schedule' : 'Event with Friend'} (${dateStr})\nThis feature will be fully implemented with Firebase.`);
         }
 
-        // モーダルを閉じる
-        function closeAddEventModal() {
-            document.getElementById('addEventModal').style.display = 'none';
-        }
-
-        // フォーム入力チェック
-        function checkAddEventForm() {
-            const title = document.getElementById('eventTitle').value.trim();
-            const start = document.getElementById('eventStart').value;
-            const end = document.getElementById('eventEnd').value;
-            const type = document.getElementById('eventType').value;
-            const friend = document.getElementById('friendSelect').value;
-            const isOwn = type === 'own';
-            const hasFriend = isOwn || friend;
-            document.getElementById('confirmAddEventBtn').disabled = !(title && start && end && hasFriend);
-        }
-
-        // 予定確定処理
-        function confirmAddEvent() {
-            const title = document.getElementById('eventTitle').value.trim();
-            const start = document.getElementById('eventStart').value;
-            const end = document.getElementById('eventEnd').value;
-            const type = document.getElementById('eventType').value;
-            const friend = type === 'own' ? 'Myself' : document.getElementById('friendSelect').value;
-            const status = document.getElementById('addEventStatus');
-
-            if (!title || !start || !end) {
-                status.style.display = 'block';
-                status.style.color = '#e53935';
-                status.textContent = 'Please fill in all fields.';
-                return;
-            }
-            if (type !== 'own' && !friend) {
-                status.style.display = 'block';
-                status.style.color = '#e53935';
-                status.textContent = 'Please select a friend.';
-                return;
-            }
-            if (start >= end) {
-                status.style.display = 'block';
-                status.style.color = '#e53935';
-                status.textContent = '⚠️ End time must be after start time.';
-                return;
-            }
-
-            const dateStr = selectedDate || '2026-08-11';
-            if (!sampleEvents[dateStr]) sampleEvents[dateStr] = [];
-            sampleEvents[dateStr].push({
-                time: start,
-                title: title,
-                person: friend,
-                status: type === 'own' ? 'confirmed' : 'pending',
-                type: type
-            });
-
-            status.style.display = 'block';
-            status.style.color = '#06C755';
-            status.textContent = type === 'own' ? '✅ My schedule added!' : '✅ Event request sent!';
-
-            setTimeout(() => {
-                closeAddEventModal();
-                renderCalendar();
-                if (selectedDate) renderEvents(selectedDate);
-            }, 1500);
-        }
-
-        // モーダル外クリックで閉じる
-        document.getElementById('addEventModal').addEventListener('click', function(e) {
-            if (e.target === this) closeAddEventModal();
-        });
-
-        // ====== 「+」ボタン ======
         document.getElementById('addOwnEventBtn').addEventListener('click', function() {
             openAddEventModal(selectedDate, 'own');
         });
-
         document.getElementById('addSharedEventBtn').addEventListener('click', function() {
             openAddEventModal(selectedDate, 'shared');
         });
@@ -378,11 +198,9 @@
             selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
             renderCalendar();
             renderEvents(selectedDate);
-
-            // バージョン表示
-            document.getElementById('versionDisplay').textContent = getFullVersion();
+            // template.js で共通部分をレンダリング
+            renderPage('Calendar', '', 'calendar');
         });
     </script>
-    <div style="text-align:center;padding:4px 0 16px 0;font-size:10px;color:#ccc;"><span id="versionDisplay"></span></div>
 </body>
 </html>
