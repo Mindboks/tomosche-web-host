@@ -167,7 +167,7 @@ function renderPage(title, content, activeNav) {
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
     <script>
-        // プロフィール表示
+        // ====== プロフィール表示 ======
         function updateProfileDisplay() {
             const nameEl = document.getElementById('userNameDisplay');
             if (!nameEl) return;
@@ -184,16 +184,19 @@ function renderPage(title, content, activeNav) {
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // バージョン
+            // ====== バージョン表示 ======
             const vEl = document.getElementById('versionDisplay');
             if (vEl) vEl.textContent = getFullVersion();
 
-            // プロフィール
+            // ====== プロフィール表示（確実に更新） ======
             updateProfileDisplay();
-            setTimeout(updateProfileDisplay, 500);
+            // LIFFの初期化を待つため、遅延実行を複数設定
+            setTimeout(updateProfileDisplay, 300);
+            setTimeout(updateProfileDisplay, 800);
             setTimeout(updateProfileDisplay, 1500);
+            setTimeout(updateProfileDisplay, 3000);
 
-            // Moreメニュー
+            // ====== Moreメニュー ======
             const moreBtn = document.getElementById('moreMenuBtn');
             const popup = document.getElementById('moreMenuPopup');
             if (moreBtn && popup) {
@@ -211,7 +214,7 @@ function renderPage(title, content, activeNav) {
                 });
             }
 
-            // ログアウト
+            // ====== ログアウト ======
             const logoutBtn = document.getElementById('logoutMoreBtn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', function(e) {
@@ -227,7 +230,7 @@ function renderPage(title, content, activeNav) {
                 });
             }
 
-            // フィードバック
+            // ====== フィードバック ======
             const feedbackBtn = document.getElementById('feedbackMoreBtn');
             if (feedbackBtn) {
                 feedbackBtn.addEventListener('click', function(e) {

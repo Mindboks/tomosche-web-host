@@ -19,7 +19,8 @@
     </style>
 </head>
 <body>
-    <div class="container py-3">
+    <!-- カレンダー本体（template.js で wrap される） -->
+    <div class="container py-3" id="calendarContent">
         <div class="d-flex align-items-center mb-2">
             <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
             <h1 class="page-title">Calendar</h1>
@@ -150,13 +151,16 @@
             openAddEventModal(selectedDate, 'shared');
         });
 
+        // ====== 初期化 ======
+        const today = new Date();
+        selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        renderCalendar();
+        renderEvents(selectedDate);
+
+        // ====== template.js で共通部分をレンダリング ======
         document.addEventListener('DOMContentLoaded', function() {
-            const today = new Date();
-            selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-            renderCalendar();
-            renderEvents(selectedDate);
-            // template.js で共通部分をレンダリング（contentは空でOK）
-            renderPage('Calendar', '', 'calendar');
+            const content = document.getElementById('calendarContent').innerHTML;
+            renderPage('Calendar', content, 'calendar');
         });
     </script>
 </body>

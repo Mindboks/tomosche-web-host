@@ -28,14 +28,12 @@
     </style>
 </head>
 <body>
-    <div id="app">
-        <div class="container py-3">
-            <div class="d-flex align-items-center mb-3">
-                <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
-                <h1 class="page-title">Friends</h1>
-            </div>
-            <div id="friendList"></div>
+    <div class="container py-3" id="friendsContent">
+        <div class="d-flex align-items-center mb-3">
+            <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
+            <h1 class="page-title">Friends</h1>
         </div>
+        <div id="friendList"></div>
     </div>
 
     <script src="js/config.js"></script>
@@ -79,7 +77,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            renderPage('Friends', '', 'friends');
+            const content = document.getElementById('friendsContent').innerHTML;
+            renderPage('Friends', content, 'friends');
             renderFriendList();
         });
     </script>
