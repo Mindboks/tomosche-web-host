@@ -8,7 +8,7 @@ function renderPage(title, content, activeNav) {
     const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const dateStr = `${monthNames[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
 
-    // ナビゲーション項目
+    // ナビゲーション項目（すべて表示、activeは薄くする）
     const navItems = [
         { id: 'home', href: '/', icon: 'bi-house-fill', label: 'Home' },
         { id: 'friends', href: 'friends.html', icon: 'bi-people-fill', label: 'Friends' },
@@ -18,8 +18,9 @@ function renderPage(title, content, activeNav) {
 
     let navHtml = navItems.map(item => {
         const isActive = (item.id === activeNav);
-        // 現在のページのボタンは非表示（hidden-itemクラス）
-        return `<a href="${item.href}" class="nav-item ${isActive ? 'hidden-item' : ''}" data-nav="${item.id}">
+        // すべて表示し、activeの場合は薄く＋押せなくする
+        const activeClass = isActive ? 'active-disabled' : '';
+        return `<a href="${item.href}" class="nav-item ${activeClass}" data-nav="${item.id}">
             <i class="bi ${item.icon}"></i>
             <span>${item.label}</span>
         </a>`;
@@ -35,6 +36,120 @@ function renderPage(title, content, activeNav) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+    <style>
+        /* ====== ナビゲーション（template.js で制御） ====== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            display: flex;
+            justify-content: space-around;
+            padding: 6px 0 14px 0;
+            border-top: 1px solid #f0f4f8;
+            z-index: 100;
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: clamp(9px, 1.8vw, 10px);
+            color: #999;
+            text-decoration: none;
+            gap: 2px;
+            background: none;
+            border: none;
+            padding: 4px 12px;
+            cursor: pointer;
+            flex: 1;
+            max-width: 80px;
+            white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+        .nav-item i { font-size: clamp(18px, 4vw, 20px); }
+        .nav-item:hover { color: #06C755; }
+        /* アクティブなページのボタン：薄くして押せなくする */
+        .nav-item.active-disabled {
+            opacity: 0.4;
+            pointer-events: none;
+            cursor: default;
+        }
+        .nav-item.active-disabled i {
+            transform: translateY(-2px);
+        }
+
+        /* ====== その他共通スタイル ====== */
+        .app-container { max-width:420px; margin:0 auto; padding:0 16px 80px 16px; background:#fff; }
+        .header { display:flex; justify-content:space-between; align-items:center; padding:16px 0 8px 0; }
+        .logo { font-size:22px; font-weight:700; color:#06C755; }
+        .logo-sub { font-size:11px; color:#999; font-weight:400; margin-left:6px; }
+        .profile-icon { font-size:28px; color:#06C755; cursor:pointer; display:flex; align-items:center; gap:6px; }
+        .profile-icon .user-name { font-size:12px; color:#333; font-weight:500; }
+        .back-btn { background:none; border:none; font-size:22px; color:#06C755; padding:0; margin-right:8px; cursor:pointer; }
+        .page-title { font-size:clamp(1.1rem,4vw,1.6rem); font-weight:600; margin:0; color:#333; white-space:nowrap; }
+        .version { text-align:center; font-size:10px; color:#ccc; padding:8px 0 4px 0; }
+
+        /* ====== Moreポップアップ ====== */
+        .more-popup {
+            display:none; position:fixed; bottom:76px; left:50%; transform:translateX(-50%);
+            background:white; border-radius:20px; padding:20px;
+            box-shadow:0 8px 40px rgba(0,0,0,0.12); z-index:999;
+            border:1px solid #f0f4f8; width:92%; max-width:400px;
+        }
+        .more-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center; }
+        .more-grid a { text-decoration:none; color:#333; font-size:12px; }
+        .more-grid .icon-box { background:#f0f4f8; border-radius:14px; padding:14px; }
+        .more-grid .icon-box i { font-size:24px; }
+        .more-grid span { display:block; margin-top:4px; }
+        .more-close { text-align:center; margin-top:12px; }
+        .more-close button { background:none; border:none; color:#999; font-size:13px; padding:4px 16px; cursor:pointer; }
+
+        /* ====== モーダル共通 ====== */
+        .modal-overlay {
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,0.4); backdrop-filter:blur(4px);
+            align-items:center; justify-content:center; z-index:9999;
+        }
+        .modal-box {
+            background:white; border-radius:24px; padding:28px 24px;
+            max-width:420px; width:92%; max-height:90vh; overflow-y:auto;
+            box-shadow:0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-box h3 { font-size:18px; font-weight:700; color:#333; margin-bottom:16px; }
+        .modal-box label { font-size:13px; font-weight:600; color:#555; margin-top:12px; display:block; }
+        .modal-box input, .modal-box select, .modal-box textarea {
+            width:100%; border:1px solid #ddd; border-radius:12px;
+            padding:12px 14px; font-size:14px; outline:none; margin-top:4px;
+            background:white;
+        }
+        .modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus { border-color:#06C755; }
+        .time-row { display:flex; gap:12px; }
+        .time-row > div { flex:1; }
+        .modal-actions { display:flex; gap:12px; margin-top:20px; }
+        .modal-actions button { flex:1; padding:12px; border-radius:999px; font-size:14px; font-weight:600; border:none; cursor:pointer; }
+        .btn-cancel { background:#f0f0f0; color:#666; }
+        .btn-cancel:hover { background:#e0e0e0; }
+        .btn-primary { background:#06C755; color:white; }
+        .btn-primary:hover { background:#049a44; }
+        .btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
+
+        @media (max-width:576px) {
+            .app-container { padding:0 12px 80px 12px; }
+            .logo { font-size:18px; }
+            .logo-sub { font-size:10px; }
+            .nav-item { padding:4px 8px; font-size:clamp(8px,1.6vw,9px); }
+            .nav-item i { font-size:clamp(16px,3.5vw,18px); }
+            .modal-box { padding:20px 16px; }
+        }
+        @media (min-width:768px) {
+            .bottom-nav { max-width:420px; }
+            .more-popup { max-width:400px; }
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -94,23 +209,18 @@ function renderPage(title, content, activeNav) {
             const vEl = document.getElementById('versionDisplay');
             if (vEl) vEl.textContent = getFullVersion();
 
-            // ====== プロフィールアイコン（LINEログイン情報） ======
+            // ====== プロフィールアイコン ======
             const nameEl = document.getElementById('userNameDisplay');
             if (nameEl) {
                 if (currentUser && currentUser.displayName) {
                     nameEl.textContent = currentUser.displayName;
+                } else if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                    liff.getProfile().then(profile => {
+                        nameEl.textContent = profile.displayName;
+                        currentUser = { userId: profile.userId, displayName: profile.displayName };
+                    }).catch(() => { nameEl.textContent = 'Guest'; });
                 } else {
-                    // LIFFから取得を試みる
-                    if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                        liff.getProfile().then(profile => {
-                            nameEl.textContent = profile.displayName;
-                            currentUser = { userId: profile.userId, displayName: profile.displayName };
-                        }).catch(() => {
-                            nameEl.textContent = 'Guest';
-                        });
-                    } else {
-                        nameEl.textContent = 'Guest';
-                    }
+                    nameEl.textContent = 'Guest';
                 }
             }
 
@@ -159,7 +269,6 @@ function renderPage(title, content, activeNav) {
             }
         });
 
-        // ====== フィードバック関数 ======
         function closeFeedbackModal() {
             document.getElementById('feedbackModal').style.display = 'none';
         }
