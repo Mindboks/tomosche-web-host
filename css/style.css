@@ -605,3 +605,36 @@ html, body {
     .bottom-nav { max-width: 420px; }
     .more-popup { max-width: 400px; }
 }
+/* ====== カレンダー レスポンシブ最適化 ====== */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    background: #f0f4f8;
+    border-radius: 16px;
+    overflow: hidden;
+    max-width: 100%;
+}
+.calendar-day {
+    background: white;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(12px, 2.5vw, 18px);
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    position: relative;
+    min-height: 30px;
+    min-width: 30px;
+}
+.calendar-weekday {
+    background: #e8f5e9;
+    color: #2e7d32;
+    font-weight: 600;
+    font-size: clamp(10px, 1.8vw, 14px);
+    text-align: center;
+    padding: 6px 0;
+}
