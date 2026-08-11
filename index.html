@@ -162,19 +162,21 @@
         document.getElementById('dateDisplay').textContent = `Today・${monthNames[now.getMonth()]} ${now.getDate()}  ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
         // 友達アイコン
-        const friends = [
-            { name: 'Tanaka', initial: '田', color: '#e3f2fd' },
-            { name: 'Sato', initial: '佐', color: '#e8f5e9' },
-            { name: 'Suzuki', initial: '鈴', color: '#fff3e0' },
-            { name: 'Yamada', initial: '山', color: '#fce4ec' }
-        ];
+        const friends = [];
+
+        // avatars レンダリング部分
         const avatarsContainer = document.getElementById('avatars');
-        friends.forEach(f => {
-            const div = document.createElement('div');
-            div.className = 'avatar-item';
-            div.innerHTML = `<div class="avatar-circle" style="background:${f.color};">${f.initial}</div><span class="avatar-name">${f.name}</span>`;
-            avatarsContainer.appendChild(div);
-        });
+        if (friends.length === 0) {
+            avatarsContainer.innerHTML = `
+                <div style="text-align:center;color:#bbb;padding:12px 0;font-size:14px;width:100%;">
+                    <i class="bi bi-people" style="font-size:24px;display:block;margin-bottom:4px;"></i>
+                    No friends added yet
+                </div>
+            `;
+        } else {
+            // 友達アイコンを表示
+            friends.forEach(f => { });
+        }
         const addDiv = document.createElement('a');
         addDiv.href = 'add.html';
         addDiv.className = 'avatar-item';
