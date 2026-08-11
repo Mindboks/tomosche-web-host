@@ -1,37 +1,124 @@
-<script src="js/template.js"></script>
-<script>
-    const rawFriends = ['青山 隆','赤井 美香','秋山 健太','浅野 裕子','安藤 誠','石井 秀樹','伊藤 真由美','井上 達也','岩崎 千尋','上田 公平','遠藤 翔太','大川 さやか','大野 浩二','岡田 奈々','小川 和也','加藤 彩乃','河野 哲也','木村 直人','工藤 明日香','久保 優子','小林 正明','佐々木 健','佐藤 花子','鈴木 誠','関 健一','高橋 美咲','田中 一郎','谷口 真由','千葉 翔','中村 みな','中山 聖也','西村 好美','野口 大輔','長谷川 陽子','浜田 健吾','林 香織','原田 博之','日高 宏','平野 奈緒','藤田 理沙','古川 正人','細川 裕太','前田 夏美','松本 勇気','三浦 優希','宮崎 綾','村上 真一','森 萌','山田 太郎','渡辺 美咲'];
-    let friends = rawFriends.map((n,i)=>({id:i+1,name:n,initial:n.charAt(0),status:i%3===0?'shared':'pending'}));
-
-    function renderList(f) {
-        const c = document.getElementById('list');
-        if (!f||!f.length) { c.innerHTML='<div style="text-align:center;padding:40px;color:#999;">まだ友達がいません</div>'; return; }
-        c.innerHTML = f.map(fr => `
-            <div style="display:flex;align-items:center;padding:14px 0;border-bottom:1px solid #f0f4f8;">
-                <div style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;background:#e8f5e9;color:#2e7d32;margin-right:14px;">${fr.initial}</div>
-                <div style="flex:1;"><div style="font-weight:600;color:#333;">${fr.name}</div><div style="font-size:12px;color:${fr.status==='shared'?'#2e7d32':'#ff9800'};">${fr.status==='shared'?'✓ カレンダー共有中':'⏳ 招待承認待ち'}</div></div>
-                <button onclick="del(${fr.id})" style="background:none;border:none;color:#ccc;font-size:20px;cursor:pointer;padding:8px;"><i class="bi bi-trash3"></i></button>
-            </div>
-        `).join('');
-    }
-
-    window.del = function(id) {
-        if (confirm('削除しますか？')) {
-            friends = friends.filter(f => f.id !== id);
-            renderList(friends);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Friends - Tomosche</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+    <style>
+        .friend-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #f0f4f8;
         }
-    };
-
-    const content = `
-    <div style="padding:16px 0;">
-        <div class="d-flex align-items-center mb-3">
-            <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
-            <h1 class="page-title">友達一覧</h1>
+        .friend-item:last-child { border-bottom: none; }
+        .friend-avatar {
+            width: 48px; height: 48px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 18px; color: #2e7d32; background: #e8f5e9;
+            margin-right: 14px; flex-shrink: 0;
+        }
+        .friend-info { flex: 1; min-width: 0; }
+        .friend-name { font-weight: 600; color: #333; font-size: clamp(0.95rem, 2.5vw, 1.1rem); }
+        .friend-status { font-size: clamp(0.7rem, 1.8vw, 0.85rem); margin-top: 2px; }
+        .friend-status.shared { color: #2e7d32; }
+        .friend-status.pending { color: #ff9800; }
+        .friend-delete {
+            background: none; border: none; color: #ccc; font-size: 20px;
+            cursor: pointer; padding: 8px; border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .friend-delete:hover { color: #e53935; background: rgba(229,57,53,0.08); }
+        .friend-delete:active { transform: scale(0.85); }
+        .empty-state { text-align: center; padding: 48px 20px; color: #999; }
+        .empty-state i { font-size: 56px; color: #ddd; display: block; margin-bottom: 16px; }
+        .empty-state p { font-size: 14px; margin-bottom: 4px; }
+        .empty-state .sub { font-size: 12px; color: #bbb; }
+        .empty-state .btn-add {
+            display: inline-block; margin-top: 16px;
+            background: #06C755; color: white;
+            padding: 10px 32px; border-radius: 999px;
+            text-decoration: none; font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container py-3">
+            <div class="d-flex align-items-center mb-3">
+                <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
+                <h1 class="page-title">Friends</h1>
+            </div>
+            <div id="friendList"></div>
         </div>
-        <div id="list"></div>
     </div>
-    `;
 
-    renderPage('友達一覧', content);
-    document.addEventListener('DOMContentLoaded', ()=> renderList(friends));
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/template.js"></script>
+    <script>
+        // ====== Sample Friends Data ======
+        const rawFriends = [
+            'Aoyama Takashi','Akai Mika','Akiyama Kenta','Asano Yuko','Ando Makoto',
+            'Ishii Hideki','Ito Mayumi','Inoue Tatsuya','Iwasaki Chihiro','Ueda Kohei',
+            'Endo Shota','Okawa Sayaka','Ono Koji','Okada Nana','Ogawa Kazuya',
+            'Kato Ayano','Kawano Tetsuya','Kimura Naoto','Kudo Asuka','Kubo Yuko',
+            'Kobayashi Masaaki','Sasaki Ken','Sato Hanako','Suzuki Makoto','Seki Kenichi',
+            'Takahashi Misaki','Tanaka Ichiro','Taniuchi Mayu','Chiba Sho','Nakamura Mina',
+            'Nakayama Seiya','Nishimura Yoshimi','Noguchi Daisuke','Hasegawa Yoko','Hamada Kengo',
+            'Hayashi Kaori','Harada Hiroyuki','Hidaka Hiroshi','Hirano Nao','Fujita Risa',
+            'Furukawa Masato','Hosokawa Yuta','Maeda Natsumi','Matsumoto Yuki','Miura Yuki',
+            'Miyazaki Aya','Murakami Shinichi','Mori Moe','Yamada Taro','Watanabe Misaki'
+        ];
+        let friends = rawFriends.map((n,i)=>({id:i+1,name:n,initial:n.charAt(0),status:i%3===0?'shared':'pending'}));
+
+        function renderFriendList() {
+            const c = document.getElementById('friendList');
+            if (!friends||!friends.length) {
+                c.innerHTML = `<div class="empty-state"><i class="bi bi-people"></i><p>No friends yet</p><p class="sub">Invite friends from the Add page</p><a href="add.html" class="btn-add">Add Friends</a></div>`;
+                return;
+            }
+            c.innerHTML = friends.map(fr => `
+                <div class="friend-item">
+                    <div class="friend-avatar">${fr.initial}</div>
+                    <div class="friend-info">
+                        <div class="friend-name">${fr.name}</div>
+                        <div class="friend-status ${fr.status}">${fr.status==='shared'?'✓ Calendar shared':'⏳ Pending approval'}</div>
+                    </div>
+                    <button class="friend-delete" onclick="deleteFriend(${fr.id})"><i class="bi bi-trash3"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function deleteFriend(id) {
+            const fr = friends.find(f=>f.id===id);
+            if (!fr) return;
+            if (confirm(`Delete "${fr.name}"?`)) {
+                friends = friends.filter(f=>f.id!==id);
+                renderFriendList();
+                showToast('Friend removed');
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;z-index:9999;animation:fadeIn 0.3s ease;';
+            t.innerHTML = `<i class="bi bi-check-circle" style="color:#06C755;margin-right:8px;"></i>${msg}`;
+            document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(()=>t.remove(),300); }, 2000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            renderPage('Friends', '');
+            renderFriendList();
+        });
+    </script>
+    <div style="text-align:center;padding:4px 0 16px 0;font-size:10px;color:#ccc;"><span id="versionDisplay"></span></div>
+</body>
+</html>
