@@ -9,9 +9,11 @@
     <link rel="stylesheet" href="css/style.css">
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     <style>
-        .guide-item { padding: 14px 0; border-bottom: 1px solid #f0f4f8; }
+        .guide-item { padding: 16px 0; border-bottom: 1px solid #f0f4f8; }
         .guide-item:last-child { border-bottom: none; }
-        .guide-icon { font-size: 28px; margin-right: 14px; }
+        .guide-icon { font-size: 28px; margin-right: 16px; width: 40px; text-align: center; }
+        .back-btn { background: none; border: none; font-size: 22px; color: #06C755; padding: 0; margin-right: 8px; cursor: pointer; }
+        .page-title { font-size: clamp(1.1rem, 4vw, 1.6rem); font-weight: 600; margin: 0; color: #333; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -19,31 +21,73 @@
         <div class="container py-3">
             <div class="d-flex align-items-center mb-3">
                 <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
-                <h1 class="page-title">Guide</h1>
+                <h1 class="page-title">How to Use Tomosche</h1>
             </div>
             <div style="background:white;border-radius:16px;padding:20px;border:1px solid #f0f4f8;">
                 <div class="guide-item">
-                    <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-start">
                         <span class="guide-icon">📱</span>
-                        <div><strong>Add Friends</strong><div style="font-size:13px;color:#888;">Scan QR codes to connect with friends</div></div>
+                        <div>
+                            <strong>1. Add Friends</strong>
+                            <div style="font-size:13px;color:#555;margin-top:4px;line-height:1.6;">
+                                Tap the <strong>"Add"</strong> button in the bottom menu to display your QR code.
+                                Have your friend scan it with the LINE app's QR scanner.
+                                Once scanned, they will appear in your Friends list.
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="guide-item">
-                    <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-start">
                         <span class="guide-icon">📅</span>
-                        <div><strong>Share Calendar</strong><div style="font-size:13px;color:#888;">Share your schedule with friends</div></div>
+                        <div>
+                            <strong>2. Share Your Calendar</strong>
+                            <div style="font-size:13px;color:#555;margin-top:4px;line-height:1.6;">
+                                Go to <strong>"Friends"</strong> and select a friend.
+                                Tap "Share Calendar" to send them a sharing request.
+                                Once they accept, both calendars become visible to each other.
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="guide-item">
-                    <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-start">
                         <span class="guide-icon">⏰</span>
-                        <div><strong>Plan Together</strong><div style="font-size:13px;color:#888;">Find mutual free time and make plans</div></div>
+                        <div>
+                            <strong>3. Plan Together</strong>
+                            <div style="font-size:13px;color:#555;margin-top:4px;line-height:1.6;">
+                                Open the <strong>"Calendar"</strong> and select a date.
+                                Tap the "+" button to add a new event.
+                                Select the friend you want to meet, set a time, and send the request.
+                                They will receive a notification to confirm or decline.
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="guide-item">
-                    <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-start">
                         <span class="guide-icon">🔔</span>
-                        <div><strong>Get Notified</strong><div style="font-size:13px;color:#888;">Receive updates when friends respond</div></div>
+                        <div>
+                            <strong>4. Get Notified</strong>
+                            <div style="font-size:13px;color:#555;margin-top:4px;line-height:1.6;">
+                                When a friend responds to your event request,
+                                you will receive a notification in the app.
+                                You can also check the status of each event in the Calendar view.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="guide-item">
+                    <div class="d-flex align-items-start">
+                        <span class="guide-icon">🌐</span>
+                        <div>
+                            <strong>5. Privacy & Security</strong>
+                            <div style="font-size:13px;color:#555;margin-top:4px;line-height:1.6;">
+                                Your calendar is shared only with friends you approve.
+                                All data is stored securely and you can revoke sharing anytime.
+                                Review our <a href="privacy.html" style="color:#06C755;">Privacy Policy</a> for more details.
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -52,12 +96,11 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/config.js"></script>
-    <script src="js/i18n.js"></script>
     <script src="js/app.js"></script>
-    <script src="js/template.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            renderPage('Guide', '');
+            // バージョン表示
+            document.getElementById('versionDisplay').textContent = getFullVersion();
         });
     </script>
     <div style="text-align:center;padding:4px 0 16px 0;font-size:10px;color:#ccc;"><span id="versionDisplay"></span></div>
