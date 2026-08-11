@@ -19,7 +19,6 @@ function renderPage(title, content, activeNav) {
         </a>`;
     }).join('');
 
-    // ★ ヘッダー・フッター・モーダルのHTML（部分挿入用）
     const headerHtml = `
         <div class="header">
             <div class="logo">🌱 Tomosche <span class="logo-sub">Social Scheduling</span></div>
@@ -66,39 +65,28 @@ function renderPage(title, content, activeNav) {
         </div>
     `;
 
-    // ★ document.write を使わず、既存の #app を置き換え
     const appContainer = document.querySelector('.app-container');
-    if (appContainer) {
-        // ヘッダーを先頭に挿入
-        appContainer.insertAdjacentHTML('afterbegin', headerHtml);
-        // コンテンツは既に存在するのでそのまま
-        // フッターを末尾に挿入
-        appContainer.insertAdjacentHTML('beforeend', footerHtml);
-        // ナビゲーション・モーダルは body の末尾に挿入
-        document.body.insertAdjacentHTML('beforeend', navHtmlFull);
-    } else {
-        // フォールバック：従来のdocument.write方式（互換性維持）
-        // ただし新規ページでは使用しない
-        document.open();
-        document.write(html);
-        document.close();
+    if (!appContainer) {
+        console.error('renderPage(): ".app-container" 要素が見つかりません。HTML側で <div id="app"> を <div class="app-container"> に変更してください。');
+        return;
     }
 
-    // バージョン表示
+    appContainer.insertAdjacentHTML('afterbegin', headerHtml);
+    appContainer.insertAdjacentHTML('beforeend', footerHtml);
+    document.body.insertAdjacentHTML('beforeend', navHtmlFull);
+
     const vEl = document.getElementById('versionDisplay');
     if (vEl) vEl.textContent = getFullVersion();
 
-    // プロフィール表示（非同期対応）
     updateProfileDisplay();
+    bindHeaderFooterEvents();
 }
 
-// ====== プロフィール表示（非同期・安全） ======
 async function updateProfileDisplay() {
     const nameEl = document.getElementById('userNameDisplay');
     if (!nameEl) return;
 
     try {
-        // initLiff() の完了を待つ
         if (window.liffReadyPromise) {
             await window.liffReadyPromise;
         }
@@ -113,7 +101,6 @@ async function updateProfileDisplay() {
     }
 }
 
-// ====== Moreメニュー制御 ======
 function toggleMorePopup() {
     const popup = document.getElementById('moreMenuPopup');
     if (!popup) return;
@@ -126,7 +113,6 @@ function closeMorePopup() {
     if (popup) popup.style.display = 'none';
 }
 
-// ====== フィードバックモーダル ======
 function closeFeedbackModal() {
     const modal = document.getElementById('feedbackModal');
     if (modal) modal.style.display = 'none';
@@ -141,7 +127,6 @@ function submitFeedback() {
         status.textContent = 'Please enter your feedback.';
         return;
     }
-    // XSS対策：エスケープ
     const safeMessage = escapeHtml(rawMessage);
     status.style.display = 'block';
     status.textContent = 'Sending...';
@@ -153,9 +138,11 @@ function submitFeedback() {
     }, 1000);
 }
 
-// ====== DOMContentLoaded イベント ======
-document.addEventListener('DOMContentLoaded', function() {
-    // Moreメニュー
+let _headerFooterEventsBound = false;
+function bindHeaderFooterEvents() {
+    if (_headerFooterEventsBound) return;
+    _headerFooterEventsBound = true;
+
     const moreBtn = document.getElementById('moreMenuBtn');
     const popup = document.getElementById('moreMenuPopup');
     if (moreBtn && popup) {
@@ -174,13 +161,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ログアウト
     const logoutBtn = document.getElementById('logoutMoreBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
             if (confirm('Logout?')) {
-                if (liff.isLoggedIn()) {
+                if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
                     liff.logout();
                     window.location.reload();
                 } else {
@@ -190,25 +176,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // フィードバック
     const feedbackBtn = document.getElementById('feedbackMoreBtn');
+    const feedbackModal = document.getElementById('feedbackModal');
     if (feedbackBtn) {
         feedbackBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            const modal = document.getElementById('feedbackModal');
-            if (modal) {
-                modal.style.display = 'flex';
+            if (feedbackModal) {
+                feedbackModal.style.display = 'flex';
             }
-            document.getElementById('feedbackMessage').value = '';
-            document.getElementById('feedbackStatus').style.display = 'none';
+            const msgEl = document.getElementById('feedbackMessage');
+            const statusEl = document.getElementById('feedbackStatus');
+            if (msgEl) msgEl.value = '';
+            if (statusEl) statusEl.style.display = 'none';
             closeMorePopup();
         });
     }
 
-    // モーダル外クリックで閉じる
-    document.getElementById('feedbackModal').addEventListener('click', function(e) {
-        if (e.target === this) closeFeedbackModal();
-    });
-});
+    if (feedbackModal) {
+        feedbackModal.addEventListener('click', function(e) {
+            if (e.target === this) closeFeedbackModal();
+        });
+    }
+}
 
 console.log('📦 template.js loaded (partial insertion mode)');

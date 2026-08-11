@@ -1,35 +1,11 @@
 // ================================================================
 // Tomosche アプリケーション本体
 // ================================================================
+// LIFFの初期化・ログイン確認・window.currentUser のセットは
+// js/auth-guard.js が一元的に行う（このファイルでは liff.init() を呼ばない）。
+// このファイルは auth-guard.js より後に読み込むこと。
 
-window.currentUser = null;
-
-// LIFF初期化
-async function initLiff() {
-    try {
-        await liff.init({ liffId: '2010384200-BS1cr2CR' });
-        if (!liff.isLoggedIn()) {
-            liff.login();
-            return false;
-        }
-        const profile = await liff.getProfile();
-        window.currentUser = {
-            userId: profile.userId,
-            displayName: profile.displayName,
-            pictureUrl: profile.pictureUrl
-        };
-        console.log('✅ LIFF initialized for:', window.currentUser.displayName);
-        return true;
-    } catch (err) {
-        console.error('❌ LIFF init error:', err);
-        return false;
-    }
-}
-
-// ★ ページ読み込み時に自動実行し、Promiseを保持
-window.liffReadyPromise = initLiff();
-
-// ユーザー名表示（同期用）
+// ユーザー名表示（同期用・window.currentUser がセット済みの場合のみ有効）
 function setUserName(elementId) {
     const el = document.getElementById(elementId);
     if (el && window.currentUser) {
@@ -39,7 +15,7 @@ function setUserName(elementId) {
 
 // ログアウト
 function logout() {
-    if (liff.isLoggedIn()) {
+    if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
         liff.logout();
         window.location.reload();
     }
