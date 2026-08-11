@@ -20,26 +20,31 @@
         .calendar-day .dot { position: absolute; bottom: 4px; width: 6px; height: 6px; border-radius: 50%; }
         .calendar-day .dot.pending { background: #ff9800; }
         .calendar-day .dot.confirmed { background: #06C755; }
+        .calendar-day .dot.own { background: #2196f3; }
         .event-list { margin-top: 16px; background: white; border-radius: 16px; padding: 16px; border: 1px solid #f0f4f8; }
         .event-item { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; gap: 8px; flex-wrap: wrap; }
         .event-item:last-child { border-bottom: none; }
         .event-time { font-size: 12px; font-weight: 600; }
         .event-time.confirmed { color: #06C755; }
         .event-time.pending { color: #ff9800; }
+        .event-time.own { color: #2196f3; }
         .event-title { font-size: 14px; color: #333; flex: 1; }
         .event-person { font-size: 12px; color: #888; background: #f0f4f8; padding: 2px 10px; border-radius: 999px; }
         .event-status { font-size: 10px; padding: 2px 8px; border-radius: 999px; }
         .event-status.confirmed { background: #e8f5e9; color: #2e7d32; }
         .event-status.pending { background: #fff3e0; color: #e65100; }
+        .event-status.own { background: #e3f2fd; color: #1565c0; }
         .empty-events { text-align: center; color: #bbb; padding: 16px 0; }
-        .add-event-btn {
-            position: fixed; bottom: 100px; right: 24px;
-            width: 60px; height: 60px; border-radius: 50%;
-            background: #06C755; color: white; border: none; font-size: 32px;
-            box-shadow: 0 4px 20px rgba(6,199,85,0.4); z-index: 100;
-            cursor: pointer;
-        }
-        .add-event-btn:active { transform: scale(0.9); }
+        .cal-nav { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
+        .cal-nav button { background: none; border: none; font-size: 22px; color: #06C755; padding: 8px 12px; cursor: pointer; }
+        .cal-nav span { font-size: clamp(1.1rem, 3vw, 1.4rem); font-weight: 600; color: #333; }
+        .add-btn-group { display: flex; gap: 12px; margin-top: 16px; }
+        .add-btn-group button { flex: 1; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
+        .btn-own { background: #2196f3; color: white; }
+        .btn-own:hover { background: #1976d2; }
+        .btn-shared { background: #06C755; color: white; }
+        .btn-shared:hover { background: #049a44; }
+        .btn-own:active, .btn-shared:active { transform: scale(0.95); }
         .modal-overlay {
             display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
@@ -67,9 +72,7 @@
         .btn-primary { background: #06C755; color: white; }
         .btn-primary:hover { background: #049a44; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .cal-nav { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
-        .cal-nav button { background: none; border: none; font-size: 22px; color: #06C755; padding: 8px 12px; cursor: pointer; }
-        .cal-nav span { font-size: clamp(1.1rem, 3vw, 1.4rem); font-weight: 600; color: #333; }
+        .version { text-align: center; font-size: 10px; color: #ccc; padding: 8px 0 4px 0; }
     </style>
 </head>
 <body>
@@ -93,16 +96,21 @@
                 <div id="eventList"><div class="empty-events">Select a date</div></div>
             </div>
 
-            <button class="add-event-btn" id="addEventBtn"><i class="bi bi-plus-lg"></i></button>
+            <!-- 予定追加ボタン（2種類） -->
+            <div class="add-btn-group">
+                <button class="btn-own" id="addOwnEventBtn"><i class="bi bi-person"></i> My Schedule</button>
+                <button class="btn-shared" id="addSharedEventBtn"><i class="bi bi-people"></i> With Friend</button>
+            </div>
         </div>
     </div>
 
     <!-- 予定追加モーダル -->
     <div class="modal-overlay" id="addEventModal">
         <div class="modal-box">
-            <h3>📝 New Event</h3>
+            <h3 id="modalTitle">📝 New Event</h3>
             <p style="font-size:13px;color:#888;" id="modalDate">Select a date</p>
-            <label>👤 Select Friend</label>
+            <input type="hidden" id="eventType" value="own" />
+            <label id="friendLabel">👤 Select Friend</label>
             <select id="friendSelect"><option value="">-- Select a friend --</option></select>
             <label>📌 Event Name</label>
             <input type="text" id="eventTitle" placeholder="e.g., Lunch, Meeting..." />
@@ -129,8 +137,16 @@
         let calMonth = new Date().getMonth();
         let selectedDate = null;
 
-        // ====== サンプル予定 ======
-        const sampleEvents = {};
+        // ====== サンプル予定（種別付き） ======
+        const sampleEvents = {
+            '2026-08-11': [
+                { time: '09:00', title: 'Morning Meeting', person: 'Myself', status: 'confirmed', type: 'own' },
+                { time: '14:00', title: 'Project Review', person: 'Myself', status: 'confirmed', type: 'own' }
+            ],
+            '2026-08-12': [
+                { time: '10:00', title: 'Meeting with Tanaka', person: 'Tanaka', status: 'pending', type: 'shared' }
+            ]
+        };
 
         function getEvents(dateStr) {
             return sampleEvents[dateStr] || [];
@@ -144,7 +160,7 @@
             const first = new Date(calYear, calMonth, 1).getDay();
             const last = new Date(calYear, calMonth + 1, 0).getDate();
             const today = new Date();
-            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
             let html = weekdays.map(w => `<div class="calendar-weekday">${w}</div>`).join('');
 
@@ -157,8 +173,9 @@
                 const ds = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const isToday = calYear === today.getFullYear() && calMonth === today.getMonth() && d === today.getDate();
                 const ev = getEvents(ds);
-                const hasPending = ev.some(e => e.status === 'pending');
-                const hasConfirmed = ev.some(e => e.status === 'confirmed');
+                const hasOwn = ev.some(e => e.type === 'own');
+                const hasPending = ev.some(e => e.type === 'shared' && e.status === 'pending');
+                const hasConfirmed = ev.some(e => e.type === 'shared' && e.status === 'confirmed');
                 const isSelected = selectedDate === ds;
 
                 let cls = 'calendar-day';
@@ -166,8 +183,13 @@
                 if (isSelected) cls += ' selected';
 
                 html += `<div class="${cls}" onclick="selectDate('${ds}')">${d}`;
-                if (hasPending || hasConfirmed) {
-                    html += `<div class="dot ${hasPending ? 'pending' : 'confirmed'}"></div>`;
+                // ドット表示（優先順位：own > pending > confirmed）
+                if (hasOwn) {
+                    html += `<div class="dot own"></div>`;
+                } else if (hasPending) {
+                    html += `<div class="dot pending"></div>`;
+                } else if (hasConfirmed) {
+                    html += `<div class="dot confirmed"></div>`;
                 }
                 html += `</div>`;
             }
@@ -197,14 +219,18 @@
                 container.innerHTML = `<div class="empty-events">📭 No events on this day</div>`;
                 return;
             }
-            container.innerHTML = ev.map(e => `
-                <div class="event-item">
-                    <span class="event-time ${e.status}">${e.time}</span>
-                    <span class="event-title">${e.title}</span>
-                    <span class="event-person">👤 ${e.person}</span>
-                    <span class="event-status ${e.status}">${e.status === 'confirmed' ? '✅ Confirmed' : '⏳ Pending'}</span>
-                </div>
-            `).join('');
+            container.innerHTML = ev.map(e => {
+                const statusClass = e.type === 'own' ? 'own' : e.status;
+                const statusLabel = e.type === 'own' ? '👤 My Schedule' : (e.status === 'confirmed' ? '✅ Confirmed' : '⏳ Pending');
+                return `
+                    <div class="event-item">
+                        <span class="event-time ${statusClass}">${e.time}</span>
+                        <span class="event-title">${e.title}</span>
+                        <span class="event-person">👤 ${e.person}</span>
+                        <span class="event-status ${statusClass}">${statusLabel}</span>
+                    </div>
+                `;
+            }).join('');
         }
 
         // ====== 月移動 ======
@@ -217,13 +243,42 @@
         }
 
         // ================================================================
-        // ★ 予定追加モーダル（ここが今回の追加ポイント）
+        // ★ 予定追加モーダル（自分の予定 / 友達共有）
         // ================================================================
 
-        // モーダルを開く関数（カレンダーの「+」ボタンから呼び出す）
-        function openAddEventModal(dateStr) {
-            const displayDate = dateStr || selectedDate || 'Select a date';
+        // モーダルを開く（種別指定）
+        function openAddEventModal(dateStr, type) {
+            if (!dateStr) {
+                alert('📅 Please select a date on the calendar first.');
+                return;
+            }
+
+            const displayDate = dateStr || 'Select a date';
             document.getElementById('modalDate').textContent = displayDate;
+            document.getElementById('modalTitle').textContent = type === 'own' ? '📝 My Schedule' : '📝 Event with Friend';
+            document.getElementById('eventType').value = type;
+
+            // 友達選択の表示/非表示
+            const friendLabel = document.getElementById('friendLabel');
+            const friendSelect = document.getElementById('friendSelect');
+            if (type === 'own') {
+                friendLabel.style.display = 'none';
+                friendSelect.style.display = 'none';
+                friendSelect.value = 'Myself';
+            } else {
+                friendLabel.style.display = 'block';
+                friendSelect.style.display = 'block';
+                // 友達リストを設定（サンプル）
+                const friends = ['Tanaka', 'Sato', 'Suzuki', 'Yamada'];
+                friendSelect.innerHTML = '<option value="">-- Select a friend --</option>';
+                friends.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f;
+                    opt.textContent = f;
+                    friendSelect.appendChild(opt);
+                });
+            }
+
             document.getElementById('addEventModal').style.display = 'flex';
             document.getElementById('confirmAddEventBtn').disabled = true;
             document.getElementById('addEventStatus').style.display = 'none';
@@ -232,7 +287,9 @@
             ['eventTitle', 'eventStart', 'eventEnd'].forEach(id => {
                 document.getElementById(id).addEventListener('input', checkAddEventForm);
             });
-            document.getElementById('friendSelect').addEventListener('change', checkAddEventForm);
+            if (type !== 'own') {
+                document.getElementById('friendSelect').addEventListener('change', checkAddEventForm);
+            }
         }
 
         // モーダルを閉じる
@@ -245,8 +302,11 @@
             const title = document.getElementById('eventTitle').value.trim();
             const start = document.getElementById('eventStart').value;
             const end = document.getElementById('eventEnd').value;
+            const type = document.getElementById('eventType').value;
             const friend = document.getElementById('friendSelect').value;
-            document.getElementById('confirmAddEventBtn').disabled = !(title && start && end && friend);
+            const isOwn = type === 'own';
+            const hasFriend = isOwn || friend;
+            document.getElementById('confirmAddEventBtn').disabled = !(title && start && end && hasFriend);
         }
 
         // 予定確定処理
@@ -254,13 +314,20 @@
             const title = document.getElementById('eventTitle').value.trim();
             const start = document.getElementById('eventStart').value;
             const end = document.getElementById('eventEnd').value;
-            const friend = document.getElementById('friendSelect').value;
+            const type = document.getElementById('eventType').value;
+            const friend = type === 'own' ? 'Myself' : document.getElementById('friendSelect').value;
             const status = document.getElementById('addEventStatus');
 
-            if (!title || !start || !end || !friend) {
+            if (!title || !start || !end) {
                 status.style.display = 'block';
                 status.style.color = '#e53935';
                 status.textContent = 'Please fill in all fields.';
+                return;
+            }
+            if (type !== 'own' && !friend) {
+                status.style.display = 'block';
+                status.style.color = '#e53935';
+                status.textContent = 'Please select a friend.';
                 return;
             }
             if (start >= end) {
@@ -270,19 +337,19 @@
                 return;
             }
 
-            // 予定を保存（デモ用）
             const dateStr = selectedDate || '2026-08-11';
             if (!sampleEvents[dateStr]) sampleEvents[dateStr] = [];
             sampleEvents[dateStr].push({
                 time: start,
                 title: title,
                 person: friend,
-                status: 'pending'
+                status: type === 'own' ? 'confirmed' : 'pending',
+                type: type
             });
 
             status.style.display = 'block';
             status.style.color = '#06C755';
-            status.textContent = '✅ Event added!';
+            status.textContent = type === 'own' ? '✅ My schedule added!' : '✅ Event request sent!';
 
             setTimeout(() => {
                 closeAddEventModal();
@@ -297,12 +364,12 @@
         });
 
         // ====== 「+」ボタン ======
-        document.getElementById('addEventBtn').addEventListener('click', function() {
-            if (!selectedDate) {
-                alert('📅 Please select a date on the calendar first.');
-                return;
-            }
-            openAddEventModal(selectedDate);
+        document.getElementById('addOwnEventBtn').addEventListener('click', function() {
+            openAddEventModal(selectedDate, 'own');
+        });
+
+        document.getElementById('addSharedEventBtn').addEventListener('click', function() {
+            openAddEventModal(selectedDate, 'shared');
         });
 
         // ====== 初期化 ======
@@ -317,7 +384,5 @@
         });
     </script>
     <div style="text-align:center;padding:4px 0 16px 0;font-size:10px;color:#ccc;"><span id="versionDisplay"></span></div>
-<script src="js/config.js"></script>
-<script>document.addEventListener("DOMContentLoaded", function(){ var el=document.getElementById("versionDisplay"); if(el) el.textContent = getFullVersion(); });</script>
 </body>
 </html>
