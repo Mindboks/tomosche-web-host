@@ -9,7 +9,22 @@
     <link rel="stylesheet" href="css/style.css">
     <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     <style>
-        /* friends.html 固有スタイルは style.css に統合済みのため、追加なし */
+        .friend-item { display:flex; align-items:center; padding:14px 0; border-bottom:1px solid #f0f4f8; }
+        .friend-item:last-child { border-bottom:none; }
+        .friend-avatar { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; color:#2e7d32; background:#e8f5e9; margin-right:14px; flex-shrink:0; }
+        .friend-info { flex:1; min-width:0; }
+        .friend-name { font-weight:600; color:#333; font-size:clamp(0.95rem,2.5vw,1.1rem); }
+        .friend-status { font-size:clamp(0.7rem,1.8vw,0.85rem); margin-top:2px; }
+        .friend-status.shared { color:#2e7d32; }
+        .friend-status.pending { color:#ff9800; }
+        .friend-delete { background:none; border:none; color:#ccc; font-size:20px; cursor:pointer; padding:8px; border-radius:50%; transition:all 0.2s; }
+        .friend-delete:hover { color:#e53935; background:rgba(229,57,53,0.08); }
+        .friend-delete:active { transform:scale(0.85); }
+        .empty-state { text-align:center; padding:48px 20px; color:#999; }
+        .empty-state i { font-size:56px; color:#ddd; display:block; margin-bottom:16px; }
+        .empty-state p { font-size:14px; margin-bottom:4px; }
+        .empty-state .sub { font-size:12px; color:#bbb; }
+        .empty-state .btn-add { display:inline-block; margin-top:16px; background:#06C755; color:white; padding:10px 32px; border-radius:999px; text-decoration:none; font-weight:600; }
     </style>
 </head>
 <body>
@@ -27,17 +42,19 @@
     <script src="js/app.js"></script>
     <script src="js/template.js"></script>
     <script>
-        const sampleFriends = [
-            { id:1, name:'Tanaka Ichiro', initial:'田', status:'shared' },
-            { id:2, name:'Sato Hanako', initial:'佐', status:'pending' },
-            { id:3, name:'Suzuki Makoto', initial:'鈴', status:'shared' }
-        ];
-        let friends = sampleFriends;
+        let friends = [];
 
         function renderFriendList() {
             const c = document.getElementById('friendList');
-            if (!friends||!friends.length) {
-                c.innerHTML = `<div class="empty-state"><i class="bi bi-people"></i><p>No friends yet</p><p class="sub">Invite friends from the Add page</p><a href="add.html" class="btn-add">Add Friends</a></div>`;
+            if (!friends || friends.length === 0) {
+                c.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-people"></i>
+                        <p>No friends yet</p>
+                        <p class="sub">Invite friends from the Add page</p>
+                        <a href="add.html" class="btn-add">Add Friends</a>
+                    </div>
+                `;
                 return;
             }
             c.innerHTML = friends.map(fr => `
@@ -45,7 +62,7 @@
                     <div class="friend-avatar">${fr.initial}</div>
                     <div class="friend-info">
                         <div class="friend-name">${fr.name}</div>
-                        <div class="friend-status ${fr.status}">${fr.status==='shared'?'✓ Calendar shared':'⏳ Pending approval'}</div>
+                        <div class="friend-status ${fr.status}">${fr.status === 'shared' ? '✓ Calendar shared' : '⏳ Pending approval'}</div>
                     </div>
                     <button class="friend-delete" onclick="deleteFriend(${fr.id})"><i class="bi bi-trash3"></i></button>
                 </div>
@@ -53,10 +70,10 @@
         }
 
         function deleteFriend(id) {
-            const fr = friends.find(f=>f.id===id);
+            const fr = friends.find(f => f.id === id);
             if (!fr) return;
             if (confirm(`Delete "${fr.name}"?`)) {
-                friends = friends.filter(f=>f.id!==id);
+                friends = friends.filter(f => f.id !== id);
                 renderFriendList();
             }
         }

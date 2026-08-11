@@ -19,30 +19,28 @@
     </style>
 </head>
 <body>
-    <div id="app">
-        <div class="container py-3">
-            <div class="d-flex align-items-center mb-2">
-                <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
-                <h1 class="page-title">Calendar</h1>
-            </div>
+    <div class="container py-3">
+        <div class="d-flex align-items-center mb-2">
+            <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
+            <h1 class="page-title">Calendar</h1>
+        </div>
 
-            <div class="cal-nav">
-                <button onclick="changeMonth(-1)"><i class="bi bi-chevron-left"></i></button>
-                <span id="calTitle">August 2026</span>
-                <button onclick="changeMonth(1)"><i class="bi bi-chevron-right"></i></button>
-            </div>
+        <div class="cal-nav">
+            <button onclick="changeMonth(-1)"><i class="bi bi-chevron-left"></i></button>
+            <span id="calTitle">August 2026</span>
+            <button onclick="changeMonth(1)"><i class="bi bi-chevron-right"></i></button>
+        </div>
 
-            <div class="calendar-grid" id="calGrid"></div>
+        <div class="calendar-grid" id="calGrid"></div>
 
-            <div class="event-list">
-                <div style="font-size:14px;font-weight:600;color:#666;margin-bottom:8px;">📋 Events for this day</div>
-                <div id="eventList"><div class="empty-events">Select a date</div></div>
-            </div>
+        <div class="event-list">
+            <div style="font-size:14px;font-weight:600;color:#666;margin-bottom:8px;">📋 Events for this day</div>
+            <div id="eventList"><div class="empty-events">Select a date</div></div>
+        </div>
 
-            <div class="add-btn-group">
-                <button class="btn-own" id="addOwnEventBtn"><i class="bi bi-person"></i> My Schedule</button>
-                <button class="btn-shared" id="addSharedEventBtn"><i class="bi bi-people"></i> With Friend</button>
-            </div>
+        <div class="add-btn-group">
+            <button class="btn-own" id="addOwnEventBtn"><i class="bi bi-person"></i> My Schedule</button>
+            <button class="btn-shared" id="addSharedEventBtn"><i class="bi bi-people"></i> With Friend</button>
         </div>
     </div>
 
@@ -56,15 +54,7 @@
         const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-        const sampleEvents = {
-            '2026-08-11': [
-                { time: '09:00', title: 'Morning Meeting', person: 'Myself', status: 'confirmed', type: 'own' },
-                { time: '14:00', title: 'Project Review', person: 'Myself', status: 'confirmed', type: 'own' }
-            ],
-            '2026-08-12': [
-                { time: '10:00', title: 'Meeting with Tanaka', person: 'Tanaka', status: 'pending', type: 'shared' }
-            ]
-        };
+        const sampleEvents = {};
 
         function getEvents(dateStr) { return sampleEvents[dateStr] || []; }
 
@@ -160,16 +150,13 @@
             openAddEventModal(selectedDate, 'shared');
         });
 
-        // カレンダーコンテンツを取得して template.js に渡す
-        const calendarContent = document.getElementById('app').innerHTML;
-
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date();
             selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
             renderCalendar();
             renderEvents(selectedDate);
-            // template.js でレンダリング（content に calendarContent を渡す）
-            renderPage('Calendar', calendarContent, 'calendar');
+            // template.js で共通部分をレンダリング（contentは空でOK）
+            renderPage('Calendar', '', 'calendar');
         });
     </script>
 </body>

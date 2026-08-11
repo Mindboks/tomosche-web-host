@@ -12,7 +12,6 @@ function renderPage(title, content, activeNav) {
 
     let navHtml = navItems.map(item => {
         const isActive = (item.id === activeNav);
-        // active: 薄緑, それ以外: イメージカラー
         const activeClass = isActive ? 'active-page' : '';
         return `<a href="${item.href}" class="nav-item ${activeClass}" data-nav="${item.id}">
             <i class="bi ${item.icon}"></i>
@@ -44,14 +43,13 @@ function renderPage(title, content, activeNav) {
             text-decoration: none; gap: 2px; background: none; border: none;
             padding: 4px 12px; cursor: pointer; flex: 1; max-width: 80px; white-space: nowrap;
             transition: all 0.2s;
-            color: #06C755;  /* イメージカラー */
+            color: #06C755;
         }
         .nav-item i { font-size: clamp(18px, 4vw, 20px); }
-        .nav-item:hover { color: #049a44; }  /* ホバーで濃く */
+        .nav-item:hover { color: #049a44; }
         .nav-item:active { transform: scale(0.92); }
-        /* 現在のページ：薄緑 */
         .nav-item.active-page {
-            color: #a5d6a7;  /* 薄緑 */
+            color: #a5d6a7;
             pointer-events: none;
             cursor: default;
         }
@@ -169,6 +167,7 @@ function renderPage(title, content, activeNav) {
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
     <script>
+        // プロフィール表示
         function updateProfileDisplay() {
             const nameEl = document.getElementById('userNameDisplay');
             if (!nameEl) return;
@@ -185,12 +184,14 @@ function renderPage(title, content, activeNav) {
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            // バージョン
             const vEl = document.getElementById('versionDisplay');
             if (vEl) vEl.textContent = getFullVersion();
 
+            // プロフィール
             updateProfileDisplay();
-            setTimeout(updateProfileDisplay, 1000);
-            setTimeout(updateProfileDisplay, 2000);
+            setTimeout(updateProfileDisplay, 500);
+            setTimeout(updateProfileDisplay, 1500);
 
             // Moreメニュー
             const moreBtn = document.getElementById('moreMenuBtn');
@@ -198,7 +199,8 @@ function renderPage(title, content, activeNav) {
             if (moreBtn && popup) {
                 moreBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
+                    const isVisible = popup.style.display === 'block';
+                    popup.style.display = isVisible ? 'none' : 'block';
                 });
                 document.addEventListener('click', function(e) {
                     if (popup.style.display === 'block') {

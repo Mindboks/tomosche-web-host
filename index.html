@@ -43,11 +43,22 @@
         .bottom-nav {
             position:fixed; bottom:0; left:0; right:0; background:#ffffff; display:flex; justify-content:space-around; padding:6px 0 14px 0; border-top:1px solid #f0f4f8; z-index:100; box-shadow:0 -2px 12px rgba(0,0,0,0.04); max-width:420px; margin:0 auto;
         }
-        .nav-item { display:flex; flex-direction:column; align-items:center; font-size:clamp(9px,1.8vw,10px); color:#999; text-decoration:none; gap:2px; background:none; border:none; padding:4px 12px; cursor:pointer; flex:1; max-width:80px; white-space:nowrap; }
+        .nav-item {
+            display:flex; flex-direction:column; align-items:center;
+            font-size:clamp(9px,1.8vw,10px);
+            text-decoration:none; gap:2px; background:none; border:none;
+            padding:4px 12px; cursor:pointer; flex:1; max-width:80px; white-space:nowrap;
+            transition: all 0.2s;
+            color: #06C755;
+        }
         .nav-item i { font-size:clamp(18px,4vw,20px); }
-        .nav-item.active { color:#06C755; }
-        .nav-item.active i { transform:translateY(-2px); }
+        .nav-item:hover { color: #049a44; }
         .nav-item:active { transform:scale(0.92); }
+        .nav-item.active-page {
+            color: #a5d6a7;
+            pointer-events: none;
+            cursor: default;
+        }
 
         .more-popup { display:none; position:fixed; bottom:76px; left:50%; transform:translateX(-50%); background:white; border-radius:20px; padding:20px; box-shadow:0 8px 40px rgba(0,0,0,0.12); z-index:999; border:1px solid #f0f4f8; width:92%; max-width:400px; }
         .more-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center; }
@@ -103,13 +114,15 @@
                 <span><i class="bi bi-clock-history"></i> Upcoming</span>
                 <a href="calendar.html" class="today-more">See All →</a>
             </div>
-            <div id="todayList"></div>
+            <div id="todayList">
+                <div style="text-align:center;color:#bbb;padding:16px 0;font-size:14px;">📭 No upcoming events</div>
+            </div>
         </div>
-        <div class="version" id="versionDisplay">Tomosche v1.0.0.2</div>
+        <div class="version" id="versionDisplay">Tomosche v1.0.0.3</div>
     </div>
 
     <div class="bottom-nav">
-        <a href="/" class="nav-item active"><i class="bi bi-house-fill"></i><span>Home</span></a>
+        <a href="/" class="nav-item active-page"><i class="bi bi-house-fill"></i><span>Home</span></a>
         <a href="friends.html" class="nav-item"><i class="bi bi-people-fill"></i><span>Friends</span></a>
         <a href="calendar.html" class="nav-item"><i class="bi bi-calendar-event-fill"></i><span>Calendar</span></a>
         <a href="add.html" class="nav-item"><i class="bi bi-person-plus-fill"></i><span>Add</span></a>
@@ -168,25 +181,13 @@
         addDiv.innerHTML = `<div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div><span class="avatar-name">Add</span>`;
         avatarsContainer.appendChild(addDiv);
 
-        // 今日の予定
-        const events = [
-            { time: '10:00', title: 'Meeting with Tanaka', person: 'Tanaka' },
-            { time: '14:00', title: 'Calendar setup with Sato', person: 'Sato' }
-        ];
-        const list = document.getElementById('todayList');
-        events.forEach(e => {
-            const div = document.createElement('div');
-            div.className = 'today-item';
-            div.innerHTML = `<span class="today-time">${e.time}</span><span class="today-title">${e.title}</span><span class="today-person">👤 ${e.person}</span>`;
-            list.appendChild(div);
-        });
-
         // Moreメニュー
         const moreBtn = document.getElementById('moreMenuBtn');
         const popup = document.getElementById('moreMenuPopup');
         moreBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            popup.style.display = (popup.style.display === 'none' || popup.style.display === '') ? 'block' : 'none';
+            const isVisible = popup.style.display === 'block';
+            popup.style.display = isVisible ? 'none' : 'block';
         });
         document.addEventListener('click', function(e) {
             if (popup.style.display === 'block') {
@@ -196,6 +197,7 @@
             }
         });
 
+        // ログアウト
         document.getElementById('logoutMoreBtn').addEventListener('click', function(e) {
             e.preventDefault();
             if (confirm('Logout?')) {
@@ -208,6 +210,7 @@
             }
         });
 
+        // フィードバック
         document.getElementById('feedbackMoreBtn').addEventListener('click', function(e) {
             e.preventDefault();
             document.getElementById('feedbackModal').style.display = 'flex';
@@ -242,6 +245,7 @@
             if (e.target === this) closeFeedbackModal();
         });
 
+        // 検索
         document.getElementById('globalSearch').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 const q = this.value.trim();
@@ -250,15 +254,19 @@
         });
 
         // LIFF初期化
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', function() {
             try {
-                await liff.init({ liffId: '2010384200-BS1cr2CR' });
-                if (!liff.isLoggedIn()) { liff.login(); return; }
-                const profile = await liff.getProfile();
-                console.log('Logged in:', profile.displayName);
-                document.getElementById('userNameDisplay').textContent = profile.displayName;
-                currentUser = { userId: profile.userId, displayName: profile.displayName };
-            } catch (e) { console.error('LIFF error:', e); }
+                liff.init({ liffId: '2010384200-BS1cr2CR' }).then(() => {
+                    if (!liff.isLoggedIn()) { liff.login(); return; }
+                    return liff.getProfile();
+                }).then(profile => {
+                    if (profile) {
+                        console.log('Logged in:', profile.displayName);
+                        document.getElementById('userNameDisplay').textContent = profile.displayName;
+                        window.currentUser = { userId: profile.userId, displayName: profile.displayName };
+                    }
+                }).catch(err => console.error('LIFF error:', err));
+            } catch(e) { console.error('LIFF error:', e); }
         });
     </script>
 </body>
