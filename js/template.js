@@ -1,5 +1,5 @@
 // ================================================================
-// Tomosche 共通テンプレート（部分挿入方式）
+// Tomosche 共通テンプレート（部分挿入方式 + イベント統合）
 // ================================================================
 
 function renderPage(title, content, activeNav) {
@@ -33,7 +33,7 @@ function renderPage(title, content, activeNav) {
         <div class="version" id="versionDisplay"></div>
     `;
 
-    const navHtmlFull = `
+    const navFullHtml = `
         <div class="bottom-nav">
             ${navHtml}
             <div class="nav-item" id="moreMenuBtn"><i class="bi bi-grid-fill"></i><span>More</span></div>
@@ -52,13 +52,13 @@ function renderPage(title, content, activeNav) {
 
         <div class="modal-overlay" id="feedbackModal">
             <div class="modal-box">
-                <h3>📝 Feedback</h3>
-                <p style="font-size:13px;color:#888;margin-bottom:16px;">Share your feedback, feature requests, or report issues.</p>
-                <label>Your Message</label>
+                <h3 id="feedbackModalTitle">📝 Feedback</h3>
+                <p style="font-size:13px;color:#888;margin-bottom:16px;" id="feedbackModalDesc">Share your feedback, feature requests, or report issues.</p>
+                <label id="feedbackMessageLabel">Your Message</label>
                 <textarea id="feedbackMessage" rows="4" placeholder="Write your feedback here..." style="width:100%;border:1px solid #ddd;border-radius:12px;padding:12px 14px;font-size:14px;outline:none;margin-top:4px;background:white;resize:vertical;"></textarea>
                 <div class="modal-actions">
-                    <button class="btn-cancel" onclick="closeFeedbackModal()">Cancel</button>
-                    <button class="btn-primary" onclick="submitFeedback()">Send</button>
+                    <button class="btn-cancel" onclick="closeFeedbackModal()" id="feedbackCancelBtn">Cancel</button>
+                    <button class="btn-primary" id="feedbackSendBtn">Send</button>
                 </div>
                 <div id="feedbackStatus" style="margin-top:12px;font-size:13px;text-align:center;display:none;"></div>
             </div>
@@ -67,13 +67,13 @@ function renderPage(title, content, activeNav) {
 
     const appContainer = document.querySelector('.app-container');
     if (!appContainer) {
-        console.error('renderPage(): ".app-container" 要素が見つかりません。HTML側で <div id="app"> を <div class="app-container"> に変更してください。');
+        console.error('renderPage(): ".app-container" 要素が見つかりません。');
         return;
     }
 
     appContainer.insertAdjacentHTML('afterbegin', headerHtml);
     appContainer.insertAdjacentHTML('beforeend', footerHtml);
-    document.body.insertAdjacentHTML('beforeend', navHtmlFull);
+    document.body.insertAdjacentHTML('beforeend', navFullHtml);
 
     const vEl = document.getElementById('versionDisplay');
     if (vEl) vEl.textContent = getFullVersion();
@@ -118,24 +118,99 @@ function closeFeedbackModal() {
     if (modal) modal.style.display = 'none';
 }
 
-function submitFeedback() {
+// ============================================================
+// ★ フィードバック送信（1日1回制限付き）
+// ============================================================
+async function submitFeedback() {
     const rawMessage = document.getElementById('feedbackMessage').value.trim();
     const status = document.getElementById('feedbackStatus');
+
     if (!rawMessage) {
         status.style.display = 'block';
         status.style.color = '#e53935';
         status.textContent = 'Please enter your feedback.';
         return;
     }
+
+    if (rawMessage.length < 5) {
+        status.style.display = 'block';
+        status.style.color = '#e53935';
+        status.textContent = 'Please provide more details (at least 5 characters).';
+        return;
+    }
+
     const safeMessage = escapeHtml(rawMessage);
-    status.style.display = 'block';
-    status.textContent = 'Sending...';
-    status.style.color = '#666';
-    setTimeout(() => {
+
+    try {
+        // Firebase初期化
+        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js');
+        const { getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js');
+
+        const firebaseConfig = {
+            apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
+            authDomain: 'tomoche.firebaseapp.com',
+            projectId: 'tomoche',
+            storageBucket: 'tomoche.firebasestorage.app',
+            messagingSenderId: '687415158427',
+            appId: '1:687415158427:web:1efc4417146176da74c83e'
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 現在のユーザーIDを取得
+        let userId = window.currentUser?.userId;
+        if (!userId) {
+            try {
+                const profile = await liff.getProfile();
+                userId = profile.userId;
+            } catch (e) {
+                console.error('Failed to get user ID:', e);
+                status.style.display = 'block';
+                status.style.color = '#e53935';
+                status.textContent = 'Please log in to send feedback.';
+                return;
+            }
+        }
+
+        // 今日の0時0分を取得
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // 過去24時間以内のフィードバックをチェック
+        const q = query(
+            collection(db, 'feedback'),
+            where('userId', '==', userId),
+            where('createdAt', '>=', today)
+        );
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+            status.style.display = 'block';
+            status.style.color = '#ff9800';
+            status.textContent = '⚠️ You have already sent feedback today. Please try again tomorrow.';
+            return;
+        }
+
+        // Firestoreに保存
+        await addDoc(collection(db, 'feedback'), {
+            userId: userId,
+            userName: window.currentUser?.displayName || 'Anonymous',
+            message: safeMessage,
+            createdAt: serverTimestamp()
+        });
+
+        status.style.display = 'block';
         status.style.color = '#06C755';
         status.textContent = '✅ Thank you for your feedback!';
         setTimeout(closeFeedbackModal, 1500);
-    }, 1000);
+
+    } catch (error) {
+        console.error('Feedback error:', error);
+        status.style.display = 'block';
+        status.style.color = '#e53935';
+        status.textContent = '❌ Failed to send. Please try again.';
+    }
 }
 
 let _headerFooterEventsBound = false;
@@ -176,13 +251,14 @@ function bindHeaderFooterEvents() {
         });
     }
 
+    // ★ フィードバックボタン（More内）
     const feedbackBtn = document.getElementById('feedbackMoreBtn');
-    const feedbackModal = document.getElementById('feedbackModal');
     if (feedbackBtn) {
         feedbackBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            if (feedbackModal) {
-                feedbackModal.style.display = 'flex';
+            const modal = document.getElementById('feedbackModal');
+            if (modal) {
+                modal.style.display = 'flex';
             }
             const msgEl = document.getElementById('feedbackMessage');
             const statusEl = document.getElementById('feedbackStatus');
@@ -192,6 +268,26 @@ function bindHeaderFooterEvents() {
         });
     }
 
+    // ★ フィードバックモーダルの「Send」ボタン
+    const sendBtn = document.getElementById('feedbackSendBtn');
+    if (sendBtn) {
+        sendBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            submitFeedback();
+        });
+    }
+
+    // ★ フィードバックモーダルの「Cancel」ボタン
+    const cancelBtn = document.getElementById('feedbackCancelBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeFeedbackModal();
+        });
+    }
+
+    // モーダル外クリックで閉じる
+    const feedbackModal = document.getElementById('feedbackModal');
     if (feedbackModal) {
         feedbackModal.addEventListener('click', function(e) {
             if (e.target === this) closeFeedbackModal();
