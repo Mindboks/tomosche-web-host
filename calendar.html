@@ -533,13 +533,13 @@
             if (selectedDate) renderEvents(selectedDate);
         }
 
+
         // ============================================================
-        // モーダル制御（プルダウン方式）
+        // モーダル制御（プルダウン方式 + 入力値保持）
         // ============================================================
         let rowCount = 1;
         const MAX_ROWS = 10;
 
-        // 時/分/AMPM のプルダウン生成
         function getHourOptions(selected) {
             let html = '';
             for (let i = 1; i <= 12; i++) {
@@ -558,32 +558,60 @@
             return html;
         }
 
-        function renderScheduleRows() {
+        function getCurrentRowData() {
+            const rows = [];
+            for (let i = 0; i < rowCount; i++) {
+                const hourEl = document.getElementById(`time_hour_${i}`);
+                const minuteEl = document.getElementById(`time_minute_${i}`);
+                const ampmEl = document.getElementById(`time_ampm_${i}`);
+                const titleEl = document.getElementById(`title_${i}`);
+                
+                if (hourEl && minuteEl && ampmEl && titleEl) {
+                    rows.push({
+                        hour: hourEl.value,
+                        minute: minuteEl.value,
+                        ampm: ampmEl.value,
+                        title: titleEl.value
+                    });
+                } else {
+                    rows.push({ hour: '09', minute: '00', ampm: 'AM', title: '' });
+                }
+            }
+            return rows;
+        }
+
+        function renderScheduleRowsWithData(dataArray) {
             const container = document.getElementById('scheduleRows');
             let html = '';
             for (let i = 0; i < rowCount; i++) {
+                const data = dataArray[i] || { hour: '09', minute: '00', ampm: 'AM', title: '' };
                 html += `
                     <div class="form-row" data-row="${i}">
                         <div class="time-group">
                             <select id="time_hour_${i}">
-                                ${getHourOptions('09')}
+                                ${getHourOptions(data.hour)}
                             </select>
                             <span class="time-separator">:</span>
                             <select id="time_minute_${i}">
-                                ${getMinuteOptions('00')}
+                                ${getMinuteOptions(data.minute)}
                             </select>
                             <select id="time_ampm_${i}">
-                                <option value="AM">AM</option>
-                                <option value="PM">PM</option>
+                                <option value="AM" ${data.ampm === 'AM' ? 'selected' : ''}>AM</option>
+                                <option value="PM" ${data.ampm === 'PM' ? 'selected' : ''}>PM</option>
                             </select>
                         </div>
-                        <input type="text" class="title-input" id="title_${i}" placeholder="Event title..." maxlength="100" />
+                        <input type="text" class="title-input" id="title_${i}" placeholder="Event title..." maxlength="100" value="${escapeHtml(data.title)}" />
                         ${rowCount > 1 ? `<button class="delete-row" onclick="removeRow(${i})"><i class="bi bi-x-circle"></i></button>` : ''}
                     </div>
                 `;
             }
             container.innerHTML = html;
             document.getElementById('addRowBtn').style.display = rowCount >= MAX_ROWS ? 'none' : 'block';
+        }
+
+        function renderScheduleRows() {
+            const currentData = getCurrentRowData();
+            renderScheduleRowsWithData(currentData);
         }
 
         function openScheduleModal(dateStr) {
@@ -600,7 +628,6 @@
             rowCount = 1;
             renderScheduleRows();
             
-            // デフォルト値を現在時刻に設定
             const now = new Date();
             let hour = now.getHours();
             const minute = String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0');
@@ -608,9 +635,12 @@
             hour = hour % 12;
             if (hour === 0) hour = 12;
             
-            document.getElementById(`time_hour_0`).value = String(hour).padStart(2, '0');
-            document.getElementById(`time_minute_0`).value = minute;
-            document.getElementById(`time_ampm_0`).value = ampm;
+            const hourEl = document.getElementById(`time_hour_0`);
+            const minuteEl = document.getElementById(`time_minute_0`);
+            const ampmEl = document.getElementById(`time_ampm_0`);
+            if (hourEl) hourEl.value = String(hour).padStart(2, '0');
+            if (minuteEl) minuteEl.value = minute;
+            if (ampmEl) ampmEl.value = ampm;
         }
 
         function closeScheduleModal() {
@@ -627,17 +657,23 @@
 
         function addRow() {
             if (rowCount < MAX_ROWS) {
+                const currentData = getCurrentRowData();
                 rowCount++;
-                renderScheduleRows();
+                currentData.push({ hour: '09', minute: '00', ampm: 'AM', title: '' });
+                renderScheduleRowsWithData(currentData);
             }
         }
 
         function removeRow(index) {
             if (rowCount > 1) {
+                const currentData = getCurrentRowData();
+                currentData.splice(index, 1);
                 rowCount--;
-                renderScheduleRows();
+                renderScheduleRowsWithData(currentData);
             }
         }
+
+
 
         // ============================================================
         // ✅ 保存処理
