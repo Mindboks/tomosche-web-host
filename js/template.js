@@ -133,14 +133,14 @@ async function submitFeedback() {
         return;
     }
 
-    if (rawMessage.length < 5) {
+    if (rawMessage.length < 50) {
         status.style.display = 'block';
         status.style.color = '#e53935';
         status.textContent = 'Please provide more details (at least 5 characters).';
         return;
     }
 
-    if (rawMessage.length > 2000) {
+    if (rawMessage.length > 500) {
         status.style.display = 'block';
         status.style.color = '#e53935';
         status.textContent = 'Message is too long (max 2000 characters).';

@@ -97,12 +97,12 @@ exports.submitFeedback = functions.https.onRequest(async (req, res) => {
         const userId = decodedToken.uid;
         const { message, userName } = req.body;
 
-        if (!message || message.length < 5) {
+        if (!message || message.length < 50) {
             res.status(400).json({ error: 'Message must be at least 5 characters' });
             return;
         }
 
-        if (message.length > 2000) {
+        if (message.length > 500) {
             res.status(400).json({ error: 'Message too long (max 2000 characters)' });
             return;
         }
