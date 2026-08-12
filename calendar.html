@@ -65,6 +65,151 @@
         .cal-nav { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
         .cal-nav button { background: none; border: none; font-size: 22px; color: #06C755; padding: 8px 12px; cursor: pointer; }
         .cal-nav span { font-size: clamp(1.1rem, 3vw, 1.4rem); font-weight: 600; color: #333; }
+
+        /* ✅ モーダルスタイル */
+        .schedule-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .schedule-modal-overlay.active {
+            display: flex;
+        }
+        .schedule-modal {
+            background: white;
+            border-radius: 24px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .schedule-modal h3 {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .schedule-modal .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .schedule-modal .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+        .schedule-modal .form-row input {
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 14px;
+            padding: 4px 0;
+        }
+        .schedule-modal .form-row .time-input {
+            width: 70px;
+            font-weight: 600;
+            color: #2196f3;
+        }
+        .schedule-modal .form-row .title-input {
+            flex: 1;
+            min-width: 80px;
+        }
+        .schedule-modal .form-row .delete-row {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+        .schedule-modal .form-row .delete-row:hover {
+            color: #e53935;
+        }
+        .schedule-modal .add-row-btn {
+            background: none;
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            color: #999;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .schedule-modal .add-row-btn:hover {
+            border-color: #2196f3;
+            color: #2196f3;
+        }
+        .schedule-modal .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .schedule-modal .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 999px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .schedule-modal .btn-cancel {
+            background: #f0f4f8;
+            color: #666;
+        }
+        .schedule-modal .btn-save {
+            background: #2196f3;
+            color: white;
+        }
+        .schedule-modal .btn-save:hover {
+            background: #1976d2;
+        }
+        .schedule-modal .btn-save:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .schedule-modal .char-count {
+            font-size: 11px;
+            color: #bbb;
+            text-align: right;
+            margin-top: 2px;
+        }
+        .schedule-modal .status-msg {
+            margin-top: 12px;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+        }
+        .schedule-modal .status-msg.success {
+            color: #06C755;
+        }
+        .schedule-modal .status-msg.error {
+            color: #e53935;
+        }
+        @media (max-width: 480px) {
+            .schedule-modal .form-row {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .schedule-modal .form-row .time-input {
+                width: 60px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -97,18 +242,124 @@
         </div>
     </div>
 
+    <!-- ✅ MySchedule モーダル -->
+    <div class="schedule-modal-overlay" id="scheduleModal">
+        <div class="schedule-modal">
+            <h3 id="modalTitle">📝 My Schedule</h3>
+            <div class="subtitle" id="modalSubtitle">Add your schedule for <span id="modalDateDisplay">2026-08-12</span></div>
+            
+            <div id="scheduleRows">
+                <!-- 動的に追加 -->
+            </div>
+            
+            <button class="add-row-btn" id="addRowBtn">
+                <i class="bi bi-plus-circle"></i> Add another schedule (max 10)
+            </button>
+            
+            <div class="status-msg" id="modalStatus"></div>
+            
+            <div class="modal-actions">
+                <button class="btn-cancel" id="modalCancelBtn">Cancel</button>
+                <button class="btn-save" id="modalSaveBtn">Save All</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let calYear = new Date().getFullYear();
         let calMonth = new Date().getMonth();
         let selectedDate = null;
+        let currentEvents = {};
         const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-        const sampleEvents = {};
+        // ============================================================
+        // Firestore から予定を読み込む
+        // ============================================================
+        async function loadEventsFromFirestore(dateStr) {
+            try {
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+                const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                
+                const auth = getAuth();
+                const user = auth.currentUser;
+                if (!user) return [];
 
-        function getEvents(dateStr) { return sampleEvents[dateStr] || []; }
+                const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+                const firebaseConfig = {
+                    apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
+                    authDomain: 'tomoche.firebaseapp.com',
+                    projectId: 'tomoche',
+                    storageBucket: 'tomoche.firebasestorage.app',
+                    messagingSenderId: '687415158427',
+                    appId: '1:687415158427:web:1efc4417146176da74c83e'
+                };
+                const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+                const db = getFirestore(app);
 
-        function renderCalendar() {
+                const q = query(
+                    collection(db, 'events'),
+                    where('userId', '==', user.uid),
+                    where('date', '==', dateStr)
+                );
+                const snapshot = await getDocs(q);
+                const events = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    events.push({
+                        id: doc.id,
+                        time: data.time || '12:00',
+                        title: data.title || 'Untitled',
+                        person: data.person || 'Me',
+                        note: data.note || '',
+                        status: data.status || 'own',
+                        type: data.type || 'own'
+                    });
+                });
+                return events;
+            } catch (error) {
+                console.error('Load events error:', error);
+                return [];
+            }
+        }
+
+        // ============================================================
+        // 予定を表示（Firestore から読み込み）
+        // ============================================================
+        async function renderEvents(dateStr) {
+            const container = document.getElementById('eventList');
+            if (!dateStr) {
+                container.innerHTML = `<div class="empty-events">Select a date</div>`;
+                return;
+            }
+
+            const events = await loadEventsFromFirestore(dateStr);
+            currentEvents[dateStr] = events;
+
+            if (!events || events.length === 0) {
+                container.innerHTML = `<div class="empty-events">📭 No events on this day</div>`;
+                return;
+            }
+
+            container.innerHTML = events.map(e => {
+                const safe = escapeEvent(e);
+                const statusClass = safe.type === 'own' ? 'own' : safe.status;
+                const statusLabel = safe.type === 'own' ? '👤 My Schedule' : (safe.status === 'confirmed' ? '✅ Confirmed' : '⏳ Pending');
+                return `
+                    <div class="event-item">
+                        <span class="event-time ${statusClass}">${safe.time}</span>
+                        <span class="event-title">${safe.title}</span>
+                        <span class="event-person">👤 ${safe.person}</span>
+                        <span class="event-status ${statusClass}">${statusLabel}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ============================================================
+        // カレンダー描画（ドット表示対応）
+        // ============================================================
+        async function renderCalendar() {
             const grid = document.getElementById('calGrid');
             document.getElementById('calTitle').textContent = `${monthNames[calMonth]} ${calYear}`;
 
@@ -126,11 +377,13 @@
             for (let d = 1; d <= last; d++) {
                 const ds = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const isToday = calYear === today.getFullYear() && calMonth === today.getMonth() && d === today.getDate();
-                const ev = getEvents(ds);
-                const hasOwn = ev.some(e => e.type === 'own');
-                const hasPending = ev.some(e => e.type === 'shared' && e.status === 'pending');
-                const hasConfirmed = ev.some(e => e.type === 'shared' && e.status === 'confirmed');
                 const isSelected = selectedDate === ds;
+
+                // Firestoreからイベントをチェック（キャッシュがあれば使用）
+                const events = currentEvents[ds] || await loadEventsFromFirestore(ds);
+                if (!currentEvents[ds]) currentEvents[ds] = events;
+                
+                const hasOwn = events && events.some(e => e.type === 'own');
 
                 let cls = 'calendar-day';
                 if (isToday) cls += ' today';
@@ -138,8 +391,6 @@
 
                 html += `<div class="${cls}" onclick="selectDate('${ds}')">${d}`;
                 if (hasOwn) html += `<div class="dot own"></div>`;
-                else if (hasPending) html += `<div class="dot pending"></div>`;
-                else if (hasConfirmed) html += `<div class="dot confirmed"></div>`;
                 html += `</div>`;
             }
 
@@ -153,34 +404,18 @@
             grid.innerHTML = html;
         }
 
-        function selectDate(ds) {
+        // ============================================================
+        // 日付選択
+        // ============================================================
+        async function selectDate(ds) {
             selectedDate = ds;
-            renderCalendar();
-            renderEvents(ds);
+            await renderCalendar();
+            await renderEvents(ds);
         }
 
-        function renderEvents(ds) {
-            const container = document.getElementById('eventList');
-            const ev = getEvents(ds);
-            if (!ev.length) {
-                container.innerHTML = `<div class="empty-events">📭 No events on this day</div>`;
-                return;
-            }
-            container.innerHTML = ev.map(e => {
-                const safe = escapeEvent(e);
-                const statusClass = safe.type === 'own' ? 'own' : safe.status;
-                const statusLabel = safe.type === 'own' ? '👤 My Schedule' : (safe.status === 'confirmed' ? '✅ Confirmed' : '⏳ Pending');
-                return `
-                    <div class="event-item">
-                        <span class="event-time ${statusClass}">${safe.time}</span>
-                        <span class="event-title">${safe.title}</span>
-                        <span class="event-person">👤 ${safe.person}</span>
-                        <span class="event-status ${statusClass}">${statusLabel}</span>
-                    </div>
-                `;
-            }).join('');
-        }
-
+        // ============================================================
+        // 月切り替え
+        // ============================================================
         function changeMonth(delta) {
             calMonth += delta;
             if (calMonth < 0) { calMonth = 11; calYear--; }
@@ -189,27 +424,178 @@
             if (selectedDate) renderEvents(selectedDate);
         }
 
-        function openAddEventModal(dateStr, type) {
-            if (!dateStr) { alert('📅 Please select a date on the calendar first.'); return; }
-            alert(`📝 ${type === 'own' ? 'My Schedule' : 'Event with Friend'} (${dateStr})\nThis feature will be fully implemented with Firebase.`);
+        // ============================================================
+        // MySchedule モーダル制御
+        // ============================================================
+        let rowCount = 1;
+        const MAX_ROWS = 10;
+
+        function openScheduleModal(dateStr) {
+            if (!dateStr) {
+                alert('📅 Please select a date on the calendar first.');
+                return;
+            }
+
+            document.getElementById('modalDateDisplay').textContent = dateStr;
+            document.getElementById('scheduleModal').classList.add('active');
+            document.getElementById('modalStatus').style.display = 'none';
+            
+            // 行をリセット
+            rowCount = 1;
+            renderScheduleRows();
         }
 
-        document.getElementById('addOwnEventBtn').addEventListener('click', function() {
-            openAddEventModal(selectedDate, 'own');
-        });
-        document.getElementById('addSharedEventBtn').addEventListener('click', function() {
-            openAddEventModal(selectedDate, 'shared');
-        });
+        function closeScheduleModal() {
+            document.getElementById('scheduleModal').classList.remove('active');
+        }
 
-        const today = new Date();
-        selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-        renderCalendar();
-        renderEvents(selectedDate);
+        function renderScheduleRows() {
+            const container = document.getElementById('scheduleRows');
+            let html = '';
+            for (let i = 0; i < rowCount; i++) {
+                html += `
+                    <div class="form-row" data-row="${i}">
+                        <input type="time" class="time-input" id="time_${i}" value="09:00" />
+                        <input type="text" class="title-input" id="title_${i}" placeholder="Event title..." maxlength="100" />
+                        ${rowCount > 1 ? `<button class="delete-row" onclick="removeRow(${i})"><i class="bi bi-x-circle"></i></button>` : ''}
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
 
+            // 追加ボタンの表示制御
+            document.getElementById('addRowBtn').style.display = rowCount >= MAX_ROWS ? 'none' : 'block';
+        }
+
+        function addRow() {
+            if (rowCount < MAX_ROWS) {
+                rowCount++;
+                renderScheduleRows();
+            }
+        }
+
+        function removeRow(index) {
+            if (rowCount > 1) {
+                rowCount--;
+                renderScheduleRows();
+            }
+        }
+
+        // ============================================================
+        // MySchedule 保存（Firestore）
+        // ============================================================
+        async function saveSchedules() {
+            const status = document.getElementById('modalStatus');
+            status.style.display = 'block';
+            status.className = 'status-msg';
+            status.textContent = '⏳ Saving...';
+
+            const saveBtn = document.getElementById('modalSaveBtn');
+            saveBtn.disabled = true;
+
+            try {
+                const dateStr = document.getElementById('modalDateDisplay').textContent;
+                
+                // 入力値を収集
+                const schedules = [];
+                let hasError = false;
+                
+                for (let i = 0; i < rowCount; i++) {
+                    const time = document.getElementById(`time_${i}`).value;
+                    const title = document.getElementById(`title_${i}`).value.trim();
+                    
+                    if (!title) {
+                        hasError = true;
+                        status.className = 'status-msg error';
+                        status.textContent = `⚠️ Please enter a title for row ${i + 1}.`;
+                        saveBtn.disabled = false;
+                        return;
+                    }
+                    
+                    schedules.push({ time, title });
+                }
+
+                // Firebase Auth から ID トークンを取得
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+                const auth = getAuth();
+                const user = auth.currentUser;
+
+                if (!user) {
+                    status.className = 'status-msg error';
+                    status.textContent = '❌ Please log in to save schedules.';
+                    saveBtn.disabled = false;
+                    return;
+                }
+
+                const idToken = await user.getIdToken();
+
+                // Cloud Functions に送信
+                const response = await fetch('https://us-central1-tomoche.cloudfunctions.net/saveMySchedule', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify({
+                        date: dateStr,
+                        schedules: schedules,
+                        userName: window.currentUser?.displayName || 'Me'
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                status.className = 'status-msg success';
+                status.textContent = `✅ ${schedules.length} schedule(s) saved successfully!`;
+
+                // イベントを再読み込み
+                currentEvents[dateStr] = await loadEventsFromFirestore(dateStr);
+                await renderCalendar();
+                await renderEvents(dateStr);
+
+                setTimeout(closeScheduleModal, 1500);
+
+            } catch (error) {
+                console.error('Save error:', error);
+                status.className = 'status-msg error';
+                status.textContent = `❌ Failed to save: ${error.message}`;
+            } finally {
+                saveBtn.disabled = false;
+            }
+        }
+
+        // ============================================================
+        // イベントリスナー
+        // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
+            // MySchedule ボタン
+            document.getElementById('addOwnEventBtn').addEventListener('click', function() {
+                openScheduleModal(selectedDate);
+            });
+
+            // モーダル閉じる
+            document.getElementById('modalCancelBtn').addEventListener('click', closeScheduleModal);
+            document.getElementById('addRowBtn').addEventListener('click', addRow);
+            document.getElementById('modalSaveBtn').addEventListener('click', saveSchedules);
+
+            // モーダル外クリックで閉じる
+            document.getElementById('scheduleModal').addEventListener('click', function(e) {
+                if (e.target === this) closeScheduleModal();
+            });
+
+            // テンプレート描画
             if (typeof renderPage === 'function') {
                 renderPage('Calendar', '', 'calendar');
             }
+
+            // 初期表示
+            const today = new Date();
+            selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+            renderCalendar();
+            renderEvents(selectedDate);
         });
     </script>
 </body>

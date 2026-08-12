@@ -12,7 +12,6 @@ service cloud.firestore {
     
     // ============================================================
     // 友達関係（friendships）
-    // 関係者のみ読み取り可能 / 作成は本人のみ
     // ============================================================
     match /friendships/{friendshipId} {
       allow read: if request.auth != null && 
@@ -45,7 +44,7 @@ service cloud.firestore {
     }
     
     // ============================================================
-    // 予定データ（events）
+    // ✅ 予定データ（events）- 新規追加
     // ============================================================
     match /events/{eventId} {
       allow read: if request.auth != null && 
@@ -84,23 +83,17 @@ service cloud.firestore {
     
     // ============================================================
     // フィードバック（feedback）
-    // 本人のみ投稿可能・1日1件までのチェックに使うクエリを許可
-    // 投稿後の編集・削除は不可（改ざん防止のため）
     // ============================================================
     match /feedback/{feedbackId} {
-      // 本人の投稿のみ読み取り可能（当日分の重複チェック用クエリに対応）
       allow read: if request.auth != null &&
         request.auth.uid == resource.data.userId;
 
-      // 作成は本人のみ、フィールド構成とメッセージ長を検証
       allow create: if request.auth != null &&
         request.auth.uid == request.resource.data.userId &&
         request.resource.data.keys().hasOnly(['userId', 'userName', 'message', 'createdAt']) &&
         request.resource.data.message is string &&
-        request.resource.data.message.size() > 50 &&
-        request.resource.data.message.size() <= 500;
-
-      // update / delete は許可しない（投稿後の改ざん防止）
+        request.resource.data.message.size() > 0 &&
+        request.resource.data.message.size() <= 2000;
     }
   }
 }
