@@ -66,7 +66,7 @@
         .cal-nav button { background: none; border: none; font-size: 22px; color: #06C755; padding: 8px 12px; cursor: pointer; }
         .cal-nav span { font-size: clamp(1.1rem, 3vw, 1.4rem); font-weight: 600; color: #333; }
 
-        /* ✅ モーダルスタイル */
+        /* ✅ モーダルスタイル（修正版） */
         .schedule-modal-overlay {
             display: none;
             position: fixed;
@@ -104,11 +104,11 @@
         }
         .schedule-modal .form-row {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 10px;
             align-items: center;
             background: #f8f9fa;
-            padding: 10px 12px;
+            padding: 8px 12px;
             border-radius: 12px;
             border: 1px solid #e9ecef;
         }
@@ -117,16 +117,21 @@
             background: transparent;
             outline: none;
             font-size: 14px;
-            padding: 4px 0;
+            padding: 6px 0;
         }
+        /* ✅ 時間入力の幅を広げる */
         .schedule-modal .form-row .time-input {
-            width: 70px;
+            width: 85px;
+            min-width: 85px;
             font-weight: 600;
             color: #2196f3;
+            font-size: 14px;
+            padding: 6px 4px;
         }
         .schedule-modal .form-row .title-input {
             flex: 1;
-            min-width: 80px;
+            min-width: 60px;
+            font-size: 14px;
         }
         .schedule-modal .form-row .delete-row {
             background: none;
@@ -135,6 +140,7 @@
             font-size: 18px;
             cursor: pointer;
             padding: 0 4px;
+            flex-shrink: 0;
         }
         .schedule-modal .form-row .delete-row:hover {
             color: #e53935;
@@ -183,12 +189,6 @@
             opacity: 0.6;
             cursor: not-allowed;
         }
-        .schedule-modal .char-count {
-            font-size: 11px;
-            color: #bbb;
-            text-align: right;
-            margin-top: 2px;
-        }
         .schedule-modal .status-msg {
             margin-top: 12px;
             font-size: 13px;
@@ -204,10 +204,11 @@
         @media (max-width: 480px) {
             .schedule-modal .form-row {
                 flex-wrap: wrap;
-                gap: 6px;
+                gap: 4px;
             }
             .schedule-modal .form-row .time-input {
-                width: 60px;
+                width: 75px;
+                min-width: 75px;
             }
         }
     </style>
@@ -245,12 +246,10 @@
     <!-- ✅ MySchedule モーダル -->
     <div class="schedule-modal-overlay" id="scheduleModal">
         <div class="schedule-modal">
-            <h3 id="modalTitle">📝 My Schedule</h3>
-            <div class="subtitle" id="modalSubtitle">Add your schedule for <span id="modalDateDisplay">2026-08-12</span></div>
+            <h3>📝 My Schedule</h3>
+            <div class="subtitle">Add your schedule for <span id="modalDateDisplay">2026-08-12</span></div>
             
-            <div id="scheduleRows">
-                <!-- 動的に追加 -->
-            </div>
+            <div id="scheduleRows"></div>
             
             <button class="add-row-btn" id="addRowBtn">
                 <i class="bi bi-plus-circle"></i> Add another schedule (max 10)
@@ -357,7 +356,7 @@
         }
 
         // ============================================================
-        // カレンダー描画（ドット表示対応）
+        // カレンダー描画（Firestore から読み込んでドット表示）
         // ============================================================
         async function renderCalendar() {
             const grid = document.getElementById('calGrid');
@@ -379,11 +378,13 @@
                 const isToday = calYear === today.getFullYear() && calMonth === today.getMonth() && d === today.getDate();
                 const isSelected = selectedDate === ds;
 
-                // Firestoreからイベントをチェック（キャッシュがあれば使用）
+                // ✅ Firestoreからイベントをチェック
                 const events = currentEvents[ds] || await loadEventsFromFirestore(ds);
                 if (!currentEvents[ds]) currentEvents[ds] = events;
                 
                 const hasOwn = events && events.some(e => e.type === 'own');
+                const hasPending = events && events.some(e => e.type === 'shared' && e.status === 'pending');
+                const hasConfirmed = events && events.some(e => e.type === 'shared' && e.status === 'confirmed');
 
                 let cls = 'calendar-day';
                 if (isToday) cls += ' today';
@@ -391,6 +392,8 @@
 
                 html += `<div class="${cls}" onclick="selectDate('${ds}')">${d}`;
                 if (hasOwn) html += `<div class="dot own"></div>`;
+                else if (hasPending) html += `<div class="dot pending"></div>`;
+                else if (hasConfirmed) html += `<div class="dot confirmed"></div>`;
                 html += `</div>`;
             }
 
@@ -439,6 +442,7 @@
             document.getElementById('modalDateDisplay').textContent = dateStr;
             document.getElementById('scheduleModal').classList.add('active');
             document.getElementById('modalStatus').style.display = 'none';
+            document.getElementById('modalStatus').className = 'status-msg';
             
             // 行をリセット
             rowCount = 1;
@@ -463,7 +467,6 @@
             }
             container.innerHTML = html;
 
-            // 追加ボタンの表示制御
             document.getElementById('addRowBtn').style.display = rowCount >= MAX_ROWS ? 'none' : 'block';
         }
 
@@ -496,7 +499,6 @@
             try {
                 const dateStr = document.getElementById('modalDateDisplay').textContent;
                 
-                // 入力値を収集
                 const schedules = [];
                 let hasError = false;
                 
@@ -515,7 +517,6 @@
                     schedules.push({ time, title });
                 }
 
-                // Firebase Auth から ID トークンを取得
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
                 const auth = getAuth();
                 const user = auth.currentUser;
@@ -529,7 +530,6 @@
 
                 const idToken = await user.getIdToken();
 
-                // Cloud Functions に送信
                 const response = await fetch('https://us-central1-tomoche.cloudfunctions.net/saveMySchedule', {
                     method: 'POST',
                     headers: {
@@ -551,7 +551,7 @@
                 status.className = 'status-msg success';
                 status.textContent = `✅ ${schedules.length} schedule(s) saved successfully!`;
 
-                // イベントを再読み込み
+                // ✅ イベントを再読み込みしてカレンダーを更新
                 currentEvents[dateStr] = await loadEventsFromFirestore(dateStr);
                 await renderCalendar();
                 await renderEvents(dateStr);
@@ -571,27 +571,22 @@
         // イベントリスナー
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            // MySchedule ボタン
             document.getElementById('addOwnEventBtn').addEventListener('click', function() {
                 openScheduleModal(selectedDate);
             });
 
-            // モーダル閉じる
             document.getElementById('modalCancelBtn').addEventListener('click', closeScheduleModal);
             document.getElementById('addRowBtn').addEventListener('click', addRow);
             document.getElementById('modalSaveBtn').addEventListener('click', saveSchedules);
 
-            // モーダル外クリックで閉じる
             document.getElementById('scheduleModal').addEventListener('click', function(e) {
                 if (e.target === this) closeScheduleModal();
             });
 
-            // テンプレート描画
             if (typeof renderPage === 'function') {
                 renderPage('Calendar', '', 'calendar');
             }
 
-            // 初期表示
             const today = new Date();
             selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
             renderCalendar();

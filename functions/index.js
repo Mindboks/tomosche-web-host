@@ -251,3 +251,93 @@ exports.saveMySchedule = functions.https.onRequest(async (req, res) => {
         }
     });
 });
+// ================================================================
+// ✅ MySchedule 保存（Cloud Functions）
+// ================================================================
+exports.saveMySchedule = functions.https.onRequest(async (req, res) => {
+    cors(req, res, async () => {
+        if (req.method !== 'POST') {
+            res.status(405).json({ error: 'Method Not Allowed' });
+            return;
+        }
+
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+
+        const idToken = authHeader.split('Bearer ')[1];
+        let decodedToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(idToken);
+        } catch (error) {
+            console.error('Token verification failed:', error);
+            res.status(401).json({ error: 'Invalid token' });
+            return;
+        }
+
+        const userId = decodedToken.uid;
+        const { date, schedules, userName } = req.body;
+
+        if (!date) {
+            res.status(400).json({ error: 'Date is required' });
+            return;
+        }
+
+        if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
+            res.status(400).json({ error: 'Schedules array is required' });
+            return;
+        }
+
+        if (schedules.length > 10) {
+            res.status(400).json({ error: 'Maximum 10 schedules allowed' });
+            return;
+        }
+
+        try {
+            const eventsRef = admin.firestore().collection('events');
+            const batch = admin.firestore().batch();
+
+            // 既存の予定を削除（上書き）
+            const existingSnapshot = await eventsRef
+                .where('userId', '==', userId)
+                .where('date', '==', date)
+                .get();
+
+            existingSnapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+
+            // 新しい予定を追加
+            for (const schedule of schedules) {
+                if (!schedule.title || schedule.title.trim() === '') {
+                    continue;
+                }
+                const docRef = eventsRef.doc();
+                batch.set(docRef, {
+                    userId: userId,
+                    date: date,
+                    time: schedule.time || '12:00',
+                    title: schedule.title.trim(),
+                    person: userName || 'Me',
+                    type: 'own',
+                    status: 'own',
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+            }
+
+            await batch.commit();
+
+            res.status(200).json({ 
+                success: true, 
+                count: schedules.length 
+            });
+
+        } catch (error) {
+            console.error('Save schedule error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    });
+});
