@@ -119,9 +119,10 @@ function closeFeedbackModal() {
 }
 
 // ============================================================
-// ★ フィードバック送信（1日1回制限付き）
+// ★ フィードバック送信（1日1回制限付き） - 完全実装
 // ============================================================
 async function submitFeedback() {
+    console.log('🔍 submitFeedback が呼び出されました');
     const rawMessage = document.getElementById('feedbackMessage').value.trim();
     const status = document.getElementById('feedbackStatus');
 
@@ -271,10 +272,14 @@ function bindHeaderFooterEvents() {
     // ★ フィードバックモーダルの「Send」ボタン
     const sendBtn = document.getElementById('feedbackSendBtn');
     if (sendBtn) {
+        console.log('✅ Sendボタンが見つかりました');
         sendBtn.addEventListener('click', function(e) {
             e.preventDefault();
+            console.log('✅ Sendボタンがクリックされました');
             submitFeedback();
         });
+    } else {
+        console.warn('⚠️ Sendボタンが見つかりません');
     }
 
     // ★ フィードバックモーダルの「Cancel」ボタン
