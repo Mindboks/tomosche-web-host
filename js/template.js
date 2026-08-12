@@ -119,14 +119,15 @@ function closeFeedbackModal() {
 }
 
 // ============================================================
-// ★ フィードバック送信（1日1回制限付き） - 完全実装
+// ★ フィードバック送信（デバッグ強化版）
 // ============================================================
 async function submitFeedback() {
-    console.log('🔍 submitFeedback が呼び出されました');
+    console.log('🔍 submitFeedback 開始');
     const rawMessage = document.getElementById('feedbackMessage').value.trim();
     const status = document.getElementById('feedbackStatus');
 
     if (!rawMessage) {
+        console.warn('⚠️ メッセージが空です');
         status.style.display = 'block';
         status.style.color = '#e53935';
         status.textContent = 'Please enter your feedback.';
@@ -134,6 +135,7 @@ async function submitFeedback() {
     }
 
     if (rawMessage.length < 5) {
+        console.warn('⚠️ メッセージが短すぎます');
         status.style.display = 'block';
         status.style.color = '#e53935';
         status.textContent = 'Please provide more details (at least 5 characters).';
@@ -141,11 +143,15 @@ async function submitFeedback() {
     }
 
     const safeMessage = escapeHtml(rawMessage);
+    console.log('📝 メッセージ:', safeMessage);
 
     try {
+        console.log('⏳ Firebase初期化開始');
         // Firebase初期化
         const { initializeApp } = await import('https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js');
         const { getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js');
+
+        console.log('✅ Firebase SDK 読み込み完了');
 
         const firebaseConfig = {
             apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
@@ -158,15 +164,20 @@ async function submitFeedback() {
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        console.log('✅ Firebase 初期化完了');
 
         // 現在のユーザーIDを取得
         let userId = window.currentUser?.userId;
+        console.log('👤 window.currentUser:', window.currentUser);
+
         if (!userId) {
+            console.log('⏳ LIFFからプロフィール取得を試行');
             try {
                 const profile = await liff.getProfile();
                 userId = profile.userId;
+                console.log('✅ LIFFプロフィール取得成功:', userId);
             } catch (e) {
-                console.error('Failed to get user ID:', e);
+                console.error('❌ LIFFプロフィール取得失敗:', e);
                 status.style.display = 'block';
                 status.style.color = '#e53935';
                 status.textContent = 'Please log in to send feedback.';
@@ -177,16 +188,20 @@ async function submitFeedback() {
         // 今日の0時0分を取得
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        console.log('📅 今日の日付:', today);
 
         // 過去24時間以内のフィードバックをチェック
+        console.log('⏳ フィードバック履歴をチェック中...');
         const q = query(
             collection(db, 'feedback'),
             where('userId', '==', userId),
             where('createdAt', '>=', today)
         );
         const snapshot = await getDocs(q);
+        console.log('📊 チェック結果:', snapshot.size, '件');
 
         if (!snapshot.empty) {
+            console.warn('⚠️ 本日すでに送信済み');
             status.style.display = 'block';
             status.style.color = '#ff9800';
             status.textContent = '⚠️ You have already sent feedback today. Please try again tomorrow.';
@@ -194,12 +209,14 @@ async function submitFeedback() {
         }
 
         // Firestoreに保存
+        console.log('⏳ Firestoreに保存中...');
         await addDoc(collection(db, 'feedback'), {
             userId: userId,
             userName: window.currentUser?.displayName || 'Anonymous',
             message: safeMessage,
             createdAt: serverTimestamp()
         });
+        console.log('✅ Firestore保存完了');
 
         status.style.display = 'block';
         status.style.color = '#06C755';
@@ -207,7 +224,11 @@ async function submitFeedback() {
         setTimeout(closeFeedbackModal, 1500);
 
     } catch (error) {
-        console.error('Feedback error:', error);
+        console.error('❌ エラー詳細:', error);
+        console.error('❌ エラー名:', error.name);
+        console.error('❌ エラーメッセージ:', error.message);
+        if (error.code) console.error('❌ エラーコード:', error.code);
+        if (error.stack) console.error('❌ スタックトレース:', error.stack);
         status.style.display = 'block';
         status.style.color = '#e53935';
         status.textContent = '❌ Failed to send. Please try again.';
