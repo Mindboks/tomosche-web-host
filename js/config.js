@@ -1,7 +1,7 @@
 // ================================================================
-// Tomosche 設定 v1.0.0.6
+// Tomosche 設定 v1.0.0.9
 // ================================================================
-const APP_VERSION = '1.0.0.6';
+const APP_VERSION = '1.0.0.9';
 const APP_NAME = 'Tomosche';
 const APP_URL = 'https://tomosche.com';
 
