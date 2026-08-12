@@ -111,17 +111,8 @@
             padding: 8px 12px;
             border-radius: 12px;
             border: 1px solid #e9ecef;
+            flex-wrap: wrap;
         }
-        .schedule-modal .form-row input {
-            border: none;
-            background: transparent;
-            outline: none;
-            font-size: 14px;
-            padding: 6px 0;
-        }
-
-
-        /* ✅ 時間入力 - AM/PM プルダウン対応 幅広め */
         .schedule-modal .form-row .time-group {
             display: flex;
             align-items: center;
@@ -129,32 +120,10 @@
             background: white;
             border: 1px solid #e9ecef;
             border-radius: 8px;
-            padding: 4px 10px;
+            padding: 4px 8px;
             min-width: 160px;
             flex-shrink: 0;
         }
-
-        .schedule-modal .form-row .time-group input {
-            width: 32px;
-            min-width: 32px;
-            max-width: 32px;
-            border: none;
-            background: transparent;
-            text-align: center;
-            font-size: 16px;
-            font-weight: 600;
-            color: #2196f3;
-            font-family: 'Courier New', monospace;
-            padding: 6px 0;
-            outline: none;
-        }
-
-        .schedule-modal .form-row .time-group .time-separator {
-            font-weight: 600;
-            color: #999;
-            font-size: 16px;
-        }
-
         .schedule-modal .form-row .time-group select {
             border: none;
             background: transparent;
@@ -162,15 +131,20 @@
             font-weight: 600;
             color: #2196f3;
             cursor: pointer;
-            padding: 6px 2px;
+            padding: 4px 2px;
             outline: none;
             font-family: inherit;
+            appearance: auto;
+            min-width: 44px;
         }
-
         .schedule-modal .form-row .time-group select:focus {
             outline: none;
         }
-
+        .schedule-modal .form-row .time-group .time-separator {
+            font-weight: 600;
+            color: #999;
+            font-size: 16px;
+        }
         .schedule-modal .form-row .title-input {
             flex: 1;
             min-width: 80px;
@@ -182,11 +156,9 @@
             outline: none;
             transition: border-color 0.2s;
         }
-
         .schedule-modal .form-row .title-input:focus {
             border-color: #2196f3;
         }
-
         .schedule-modal .form-row .delete-row {
             background: none;
             border: none;
@@ -196,11 +168,9 @@
             padding: 0 6px;
             flex-shrink: 0;
         }
-
         .schedule-modal .form-row .delete-row:hover {
             color: #e53935;
         }
-
         .schedule-modal .add-row-btn {
             background: none;
             border: 2px dashed #ddd;
@@ -212,18 +182,15 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-
         .schedule-modal .add-row-btn:hover {
             border-color: #2196f3;
             color: #2196f3;
         }
-
         .schedule-modal .modal-actions {
             display: flex;
             gap: 12px;
             margin-top: 20px;
         }
-
         .schedule-modal .modal-actions button {
             flex: 1;
             padding: 12px;
@@ -233,39 +200,49 @@
             cursor: pointer;
             font-size: 15px;
         }
-
         .schedule-modal .btn-cancel {
             background: #f0f4f8;
             color: #666;
         }
-
         .schedule-modal .btn-save {
             background: #2196f3;
             color: white;
         }
-
         .schedule-modal .btn-save:hover {
             background: #1976d2;
         }
-
         .schedule-modal .btn-save:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
-
         .schedule-modal .status-msg {
             margin-top: 12px;
             font-size: 13px;
             text-align: center;
             display: none;
         }
-
         .schedule-modal .status-msg.success {
             color: #06C755;
         }
-
         .schedule-modal .status-msg.error {
             color: #e53935;
+        }
+
+        /* ✅ イベント削除ボタン */
+        .event-delete-btn {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .event-delete-btn:hover {
+            color: #e53935;
+            background: rgba(229, 57, 53, 0.08);
         }
 
         @media (max-width: 480px) {
@@ -276,15 +253,11 @@
             .schedule-modal .form-row .time-group {
                 min-width: 140px;
             }
-            .schedule-modal .form-row .time-group input {
-                width: 28px;
-                min-width: 28px;
-                max-width: 28px;
-                font-size: 14px;
+            .schedule-modal .form-row .time-group select {
+                font-size: 13px;
+                min-width: 38px;
             }
         }
-
-
     </style>
 </head>
 <body>
@@ -317,9 +290,7 @@
         </div>
     </div>
 
-    <!-- ============================================================
-        MySchedule モーダル（修正版）
-        ============================================================ -->
+    <!-- MySchedule モーダル -->
     <div class="schedule-modal-overlay" id="scheduleModal">
         <div class="schedule-modal">
             <h3>📝 My Schedule</h3>
@@ -340,9 +311,6 @@
         </div>
     </div>
 
-
-
-
     <script>
         // ============================================================
         // 変数宣言
@@ -357,14 +325,6 @@
         // ============================================================
         // 時間フォーマット関数
         // ============================================================
-        function formatTimeForSave(timeStr) {
-            if (!timeStr) return '12:00';
-            const parts = timeStr.split(':');
-            const hour = parseInt(parts[0], 10);
-            const minute = parts[1] || '00';
-            return `${String(hour).padStart(2, '0')}:${minute}`;
-        }
-
         function formatTimeDisplay(timeStr) {
             if (!timeStr) return '12:00 PM';
             const parts = timeStr.split(':');
@@ -427,6 +387,48 @@
         }
 
         // ============================================================
+        // ✅ イベント削除（Firestore）
+        // ============================================================
+        async function deleteEvent(eventId, dateStr) {
+            if (!confirm('Delete this event?')) return;
+
+            try {
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+                const { getFirestore, doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                
+                const auth = getAuth();
+                const user = auth.currentUser;
+                if (!user) {
+                    alert('Please log in to delete events.');
+                    return;
+                }
+
+                const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+                const firebaseConfig = {
+                    apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
+                    authDomain: 'tomoche.firebaseapp.com',
+                    projectId: 'tomoche',
+                    storageBucket: 'tomoche.firebasestorage.app',
+                    messagingSenderId: '687415158427',
+                    appId: '1:687415158427:web:1efc4417146176da74c83e'
+                };
+                const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+
+                await deleteDoc(doc(db, 'events', eventId));
+                
+                // 再読み込み
+                currentEvents[dateStr] = await loadEventsFromFirestore(dateStr);
+                await renderCalendar();
+                await renderEvents(dateStr);
+
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('Failed to delete event. Please try again.');
+            }
+        }
+
+        // ============================================================
         // レンダリング関数
         // ============================================================
         async function renderEvents(dateStr) {
@@ -438,6 +440,16 @@
 
             const events = await loadEventsFromFirestore(dateStr);
             currentEvents[dateStr] = events;
+
+            // ✅ 過去の日付は表示しない
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const selectedDateObj = new Date(dateStr + 'T00:00:00');
+            
+            if (selectedDateObj < today) {
+                container.innerHTML = `<div class="empty-events">📅 Past events are hidden</div>`;
+                return;
+            }
 
             if (!events || events.length === 0) {
                 container.innerHTML = `<div class="empty-events">📭 No events on this day</div>`;
@@ -455,6 +467,9 @@
                         <span class="event-title">${safe.title}</span>
                         <span class="event-person">👤 ${safe.person}</span>
                         <span class="event-status ${statusClass}">${statusLabel}</span>
+                        <button class="event-delete-btn" onclick="deleteEvent('${e.id}', '${dateStr}')" title="Delete">
+                            <i class="bi bi-trash3"></i>
+                        </button>
                     </div>
                 `;
             }).join('');
@@ -519,10 +534,57 @@
         }
 
         // ============================================================
-        // モーダル制御
+        // モーダル制御（プルダウン方式）
         // ============================================================
         let rowCount = 1;
         const MAX_ROWS = 10;
+
+        // 時/分/AMPM のプルダウン生成
+        function getHourOptions(selected) {
+            let html = '';
+            for (let i = 1; i <= 12; i++) {
+                const val = String(i).padStart(2, '0');
+                html += `<option value="${val}" ${val === selected ? 'selected' : ''}>${val}</option>`;
+            }
+            return html;
+        }
+
+        function getMinuteOptions(selected) {
+            let html = '';
+            for (let i = 0; i < 60; i += 5) {
+                const val = String(i).padStart(2, '0');
+                html += `<option value="${val}" ${val === selected ? 'selected' : ''}>${val}</option>`;
+            }
+            return html;
+        }
+
+        function renderScheduleRows() {
+            const container = document.getElementById('scheduleRows');
+            let html = '';
+            for (let i = 0; i < rowCount; i++) {
+                html += `
+                    <div class="form-row" data-row="${i}">
+                        <div class="time-group">
+                            <select id="time_hour_${i}">
+                                ${getHourOptions('09')}
+                            </select>
+                            <span class="time-separator">:</span>
+                            <select id="time_minute_${i}">
+                                ${getMinuteOptions('00')}
+                            </select>
+                            <select id="time_ampm_${i}">
+                                <option value="AM">AM</option>
+                                <option value="PM">PM</option>
+                            </select>
+                        </div>
+                        <input type="text" class="title-input" id="title_${i}" placeholder="Event title..." maxlength="100" />
+                        ${rowCount > 1 ? `<button class="delete-row" onclick="removeRow(${i})"><i class="bi bi-x-circle"></i></button>` : ''}
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+            document.getElementById('addRowBtn').style.display = rowCount >= MAX_ROWS ? 'none' : 'block';
+        }
 
         function openScheduleModal(dateStr) {
             if (!dateStr) {
@@ -538,9 +600,10 @@
             rowCount = 1;
             renderScheduleRows();
             
+            // デフォルト値を現在時刻に設定
             const now = new Date();
             let hour = now.getHours();
-            const minute = String(now.getMinutes()).padStart(2, '0');
+            const minute = String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0');
             const ampm = hour >= 12 ? 'PM' : 'AM';
             hour = hour % 12;
             if (hour === 0) hour = 12;
@@ -552,51 +615,6 @@
 
         function closeScheduleModal() {
             document.getElementById('scheduleModal').classList.remove('active');
-        }
-
-        function renderScheduleRows() {
-            const container = document.getElementById('scheduleRows');
-            let html = '';
-            for (let i = 0; i < rowCount; i++) {
-                html += `
-                    <div class="form-row" data-row="${i}">
-                        <div style="display:flex;align-items:center;gap:4px;">
-                            <input type="text" class="time-input" id="time_hour_${i}" value="09" maxlength="2" placeholder="HH" style="width:32px;text-align:center;border:1px solid #e9ecef;border-radius:6px;padding:4px 2px;font-size:14px;font-weight:600;color:#2196f3;" />
-                            <span style="font-weight:600;color:#999;">:</span>
-                            <input type="text" class="time-input" id="time_minute_${i}" value="00" maxlength="2" placeholder="MM" style="width:32px;text-align:center;border:1px solid #e9ecef;border-radius:6px;padding:4px 2px;font-size:14px;font-weight:600;color:#2196f3;" />
-                            <select id="time_ampm_${i}" style="border:1px solid #e9ecef;border-radius:6px;padding:4px 4px;font-size:14px;font-weight:600;color:#2196f3;background:white;cursor:pointer;">
-                                <option value="AM">AM</option>
-                                <option value="PM">PM</option>
-                            </select>
-                        </div>
-                        <input type="text" class="title-input" id="title_${i}" placeholder="Event title..." maxlength="100" />
-                        ${rowCount > 1 ? `<button class="delete-row" onclick="removeRow(${i})"><i class="bi bi-x-circle"></i></button>` : ''}
-                    </div>
-                `;
-            }
-            container.innerHTML = html;
-
-            for (let i = 0; i < rowCount; i++) {
-                const hourInput = document.getElementById(`time_hour_${i}`);
-                const minuteInput = document.getElementById(`time_minute_${i}`);
-                
-                hourInput.addEventListener('input', function() {
-                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2);
-                    const val = parseInt(this.value, 10);
-                    if (val > 12) this.value = '12';
-                    if (this.value.length === 2) {
-                        minuteInput.focus();
-                    }
-                });
-                
-                minuteInput.addEventListener('input', function() {
-                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2);
-                    const val = parseInt(this.value, 10);
-                    if (val > 59) this.value = '59';
-                });
-            }
-
-            document.getElementById('addRowBtn').style.display = rowCount >= MAX_ROWS ? 'none' : 'block';
         }
 
         function formatTimeForSave(hour, minute, ampm) {
@@ -622,7 +640,7 @@
         }
 
         // ============================================================
-        // ✅ 保存処理（1回だけ）
+        // ✅ 保存処理
         // ============================================================
         async function saveSchedules() {
             const status = document.getElementById('modalStatus');
