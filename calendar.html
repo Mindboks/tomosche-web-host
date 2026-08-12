@@ -66,7 +66,7 @@
         .cal-nav button { background: none; border: none; font-size: 22px; color: #06C755; padding: 8px 12px; cursor: pointer; }
         .cal-nav span { font-size: clamp(1.1rem, 3vw, 1.4rem); font-weight: 600; color: #333; }
 
-        /* ✅ モーダルスタイル（修正版） */
+        /* ✅ モーダルスタイル */
         .schedule-modal-overlay {
             display: none;
             position: fixed;
@@ -104,7 +104,7 @@
         }
         .schedule-modal .form-row {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             margin-bottom: 10px;
             align-items: center;
             background: #f8f9fa;
@@ -119,14 +119,16 @@
             font-size: 14px;
             padding: 6px 0;
         }
-        /* ✅ 時間入力の幅を広げる */
+        /* ✅ 時間入力 - AM/PM 対応 幅広め */
         .schedule-modal .form-row .time-input {
-            width: 85px;
-            min-width: 85px;
+            width: 110px;
+            min-width: 110px;
+            max-width: 110px;
             font-weight: 600;
             color: #2196f3;
             font-size: 14px;
             padding: 6px 4px;
+            font-family: 'Courier New', monospace;
         }
         .schedule-modal .form-row .title-input {
             flex: 1;
@@ -204,11 +206,11 @@
         @media (max-width: 480px) {
             .schedule-modal .form-row {
                 flex-wrap: wrap;
-                gap: 4px;
+                gap: 6px;
             }
             .schedule-modal .form-row .time-input {
-                width: 75px;
-                min-width: 75px;
+                width: 100px;
+                min-width: 100px;
             }
         }
     </style>
@@ -273,6 +275,32 @@
         const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
         // ============================================================
+        // ✅ 時間を AM/PM 形式に変換（保存用）
+        // ============================================================
+        function formatTimeForSave(timeStr) {
+            // timeStr は "09:00" 形式
+            if (!timeStr) return '12:00';
+            const parts = timeStr.split(':');
+            const hour = parseInt(parts[0], 10);
+            const minute = parts[1] || '00';
+            return `${String(hour).padStart(2, '0')}:${minute}`;
+        }
+
+        // ============================================================
+        // ✅ 表示用に AM/PM 形式にフォーマット
+        // ============================================================
+        function formatTimeDisplay(timeStr) {
+            if (!timeStr) return '12:00 PM';
+            const parts = timeStr.split(':');
+            let hour = parseInt(parts[0], 10);
+            const minute = parts[1] || '00';
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            hour = hour % 12;
+            if (hour === 0) hour = 12;
+            return `${hour}:${minute} ${ampm}`;
+        }
+
+        // ============================================================
         // Firestore から予定を読み込む
         // ============================================================
         async function loadEventsFromFirestore(dateStr) {
@@ -323,7 +351,7 @@
         }
 
         // ============================================================
-        // 予定を表示（Firestore から読み込み）
+        // 予定を表示（AM/PM 形式で表示）
         // ============================================================
         async function renderEvents(dateStr) {
             const container = document.getElementById('eventList');
@@ -344,9 +372,11 @@
                 const safe = escapeEvent(e);
                 const statusClass = safe.type === 'own' ? 'own' : safe.status;
                 const statusLabel = safe.type === 'own' ? '👤 My Schedule' : (safe.status === 'confirmed' ? '✅ Confirmed' : '⏳ Pending');
+                // ✅ AM/PM 形式で表示
+                const displayTime = formatTimeDisplay(safe.time);
                 return `
                     <div class="event-item">
-                        <span class="event-time ${statusClass}">${safe.time}</span>
+                        <span class="event-time ${statusClass}">${displayTime}</span>
                         <span class="event-title">${safe.title}</span>
                         <span class="event-person">👤 ${safe.person}</span>
                         <span class="event-status ${statusClass}">${statusLabel}</span>
@@ -356,7 +386,7 @@
         }
 
         // ============================================================
-        // カレンダー描画（Firestore から読み込んでドット表示）
+        // カレンダー描画
         // ============================================================
         async function renderCalendar() {
             const grid = document.getElementById('calGrid');
@@ -378,13 +408,10 @@
                 const isToday = calYear === today.getFullYear() && calMonth === today.getMonth() && d === today.getDate();
                 const isSelected = selectedDate === ds;
 
-                // ✅ Firestoreからイベントをチェック
                 const events = currentEvents[ds] || await loadEventsFromFirestore(ds);
                 if (!currentEvents[ds]) currentEvents[ds] = events;
                 
                 const hasOwn = events && events.some(e => e.type === 'own');
-                const hasPending = events && events.some(e => e.type === 'shared' && e.status === 'pending');
-                const hasConfirmed = events && events.some(e => e.type === 'shared' && e.status === 'confirmed');
 
                 let cls = 'calendar-day';
                 if (isToday) cls += ' today';
@@ -392,8 +419,6 @@
 
                 html += `<div class="${cls}" onclick="selectDate('${ds}')">${d}`;
                 if (hasOwn) html += `<div class="dot own"></div>`;
-                else if (hasPending) html += `<div class="dot pending"></div>`;
-                else if (hasConfirmed) html += `<div class="dot confirmed"></div>`;
                 html += `</div>`;
             }
 
@@ -444,7 +469,6 @@
             document.getElementById('modalStatus').style.display = 'none';
             document.getElementById('modalStatus').className = 'status-msg';
             
-            // 行をリセット
             rowCount = 1;
             renderScheduleRows();
         }
@@ -485,7 +509,7 @@
         }
 
         // ============================================================
-        // MySchedule 保存（Firestore）
+        // MySchedule 保存
         // ============================================================
         async function saveSchedules() {
             const status = document.getElementById('modalStatus');
@@ -500,21 +524,22 @@
                 const dateStr = document.getElementById('modalDateDisplay').textContent;
                 
                 const schedules = [];
-                let hasError = false;
                 
                 for (let i = 0; i < rowCount; i++) {
                     const time = document.getElementById(`time_${i}`).value;
                     const title = document.getElementById(`title_${i}`).value.trim();
                     
                     if (!title) {
-                        hasError = true;
                         status.className = 'status-msg error';
                         status.textContent = `⚠️ Please enter a title for row ${i + 1}.`;
                         saveBtn.disabled = false;
                         return;
                     }
                     
-                    schedules.push({ time, title });
+                    schedules.push({ 
+                        time: formatTimeForSave(time), 
+                        title: title 
+                    });
                 }
 
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
@@ -551,7 +576,6 @@
                 status.className = 'status-msg success';
                 status.textContent = `✅ ${schedules.length} schedule(s) saved successfully!`;
 
-                // ✅ イベントを再読み込みしてカレンダーを更新
                 currentEvents[dateStr] = await loadEventsFromFirestore(dateStr);
                 await renderCalendar();
                 await renderEvents(dateStr);
