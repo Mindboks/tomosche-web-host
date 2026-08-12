@@ -1,11 +1,5 @@
 // ================================================================
 // 認証ガード（全ページ共通・LIFF初期化はここに一元化）
-// このファイルは <head> 内、他のアプリスクリプトより前に読み込むこと。
-//
-// 重要：LINEログインの失敗（要リダイレクト）と、
-// Firebase連携の失敗（リダイレクトしない）を分けて扱う。
-// この2つを同じtry-catchに入れてしまうと、Firebase連携が失敗するたびに
-// '/' へリダイレクト→再度失敗→再度リダイレクト…という無限ループになる。
 // ================================================================
 
 window.currentUser = null;
@@ -13,7 +7,7 @@ window.firebaseUser = null;
 
 const VERIFY_LINE_TOKEN_URL = 'https://us-central1-tomoche.cloudfunctions.net/verifyLineTokenV2';
 
-// 認証確認が終わるまで画面を隠す（未ログイン状態のコンテンツがちらつくのを防ぐ）
+// 認証確認が終わるまで画面を隠す
 document.documentElement.style.visibility = 'hidden';
 
 console.log('🔐 auth-guard.js 読み込み開始');
@@ -23,7 +17,6 @@ async function requireAuth() {
 
     // ---------------------------------------------------------
     // ステップ1：LINEログイン確認
-    // ここが失敗した場合のみ '/' へリダイレクトする。
     // ---------------------------------------------------------
     try {
         console.log('⏳ LIFF初期化中...');
@@ -50,17 +43,14 @@ async function requireAuth() {
         return false;
     }
 
-    // LINEログインまでは成功。ここで画面を表示してよい。
+    // LINEログイン成功。画面を表示。
     document.documentElement.style.visibility = 'visible';
 
     // ---------------------------------------------------------
-    // ステップ2：Firebase連携（LINEのIDトークン → Firebaseカスタムトークン）
-    // ここが失敗しても絶対にリダイレクトしない。
-    // 失敗してもLINEログインの状態でアプリの表示は続行できる
-    // （Firestore等を使う機能だけ動かない状態になるだけ）。
+    // ステップ2：Firebase連携（トークン期限切れを自動リトライ）
     // ---------------------------------------------------------
     try {
-        const idToken = liff.getIDToken();
+        let idToken = liff.getIDToken();
         console.log('📝 IDトークン:', idToken ? `取得済み（長さ: ${idToken.length}）` : 'null');
 
         if (!idToken) {
@@ -72,12 +62,39 @@ async function requireAuth() {
         }
 
         console.log('⏳ Cloud Functions に送信中...');
-        const res = await fetch(VERIFY_LINE_TOKEN_URL, {
+        let res = await fetch(VERIFY_LINE_TOKEN_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken })
         });
         console.log('📡 Cloud Functions 応答:', res.status);
+
+        // ✅ トークン期限切れの場合（401）は再試行
+        if (res.status === 401) {
+            const errorText = await res.text().catch(() => '');
+            if (errorText.includes('expired')) {
+                console.log('🔄 トークン期限切れのため再取得します...');
+                
+                // LIFFを再初期化して新しいトークンを取得
+                await liff.init({ liffId: '2010384200-BS1cr2CR' });
+                idToken = liff.getIDToken();
+                console.log('📝 新しいIDトークンを取得:', idToken ? `長さ: ${idToken.length}` : 'null');
+                
+                if (idToken) {
+                    // 再送信
+                    res = await fetch(VERIFY_LINE_TOKEN_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ idToken })
+                    });
+                    console.log('📡 再送信後の応答:', res.status);
+                } else {
+                    throw new Error('新しいIDトークンの取得に失敗しました');
+                }
+            } else {
+                throw new Error(`verifyLineTokenV2 failed: ${res.status} ${errorText}`);
+            }
+        }
 
         if (!res.ok) {
             const text = await res.text().catch(() => '');
@@ -114,14 +131,23 @@ async function requireAuth() {
 
         window.firebaseUser = userCredential.user;
         console.log('✅ Firebase Auth サインイン成功:', userCredential.user.uid);
+        
     } catch (err) {
         // ★ ここで絶対にリダイレクトしない。ログだけ出して処理を終える。
         console.error('❌ Firebase連携エラー（LINEログイン自体は成功しています）:', err);
+        
+        // ✅ トークン期限切れの場合はページをリロード
+        if (err.message && err.message.includes('expired')) {
+            console.log('🔄 トークン期限切れのためページをリロードします...');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        }
     }
 
     console.log('✅ 認証完了、画面を表示');
     return true;
 }
 
-// ★ スクリプト読み込み時に自動実行し、Promiseをグローバルに保持。
+// ★ スクリプト読み込み時に自動実行
 window.liffReadyPromise = requireAuth();
