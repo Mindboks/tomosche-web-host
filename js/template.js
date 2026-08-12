@@ -119,7 +119,7 @@ function closeFeedbackModal() {
 }
 
 // ============================================================
-// ★ フィードバック送信（デバッグ強化版）
+// ✅ フィードバック送信（Cloud Functions 経由）
 // ============================================================
 async function submitFeedback() {
     console.log('🔍 submitFeedback 開始');
@@ -127,7 +127,6 @@ async function submitFeedback() {
     const status = document.getElementById('feedbackStatus');
 
     if (!rawMessage) {
-        console.warn('⚠️ メッセージが空です');
         status.style.display = 'block';
         status.style.color = '#e53935';
         status.textContent = 'Please enter your feedback.';
@@ -135,90 +134,53 @@ async function submitFeedback() {
     }
 
     if (rawMessage.length < 5) {
-        console.warn('⚠️ メッセージが短すぎます');
         status.style.display = 'block';
         status.style.color = '#e53935';
         status.textContent = 'Please provide more details (at least 5 characters).';
         return;
     }
 
+    if (rawMessage.length > 2000) {
+        status.style.display = 'block';
+        status.style.color = '#e53935';
+        status.textContent = 'Message is too long (max 2000 characters).';
+        return;
+    }
+
     const safeMessage = escapeHtml(rawMessage);
-    console.log('📝 メッセージ:', safeMessage);
 
     try {
-        console.log('⏳ Firebase初期化開始');
-        // Firebase初期化
-        const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-        const { getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+        // ✅ Firebase Auth から ID トークンを取得（Config は不要）
+        const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+        const auth = getAuth();
+        const user = auth.currentUser;
 
-        console.log('✅ Firebase SDK 読み込み完了');
-
-        const firebaseConfig = {
-            apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
-            authDomain: 'tomoche.firebaseapp.com',
-            projectId: 'tomoche',
-            storageBucket: 'tomoche.firebasestorage.app',
-            messagingSenderId: '687415158427',
-            appId: '1:687415158427:web:1efc4417146176da74c83e'
-        };
-
-        // auth-guard.js側で既にサインイン済みのアプリインスタンスがあれば、それを再利用する
-        // （バージョンを揃えないと別インスタンス扱いになり、ログイン状態が引き継がれない）
-        const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        console.log('✅ Firebase 初期化完了');
-
-        // 現在のユーザーIDを取得
-        let userId = window.currentUser?.userId;
-        console.log('👤 window.currentUser:', window.currentUser);
-
-        if (!userId) {
-            console.log('⏳ LIFFからプロフィール取得を試行');
-            try {
-                const profile = await liff.getProfile();
-                userId = profile.userId;
-                console.log('✅ LIFFプロフィール取得成功:', userId);
-            } catch (e) {
-                console.error('❌ LIFFプロフィール取得失敗:', e);
-                status.style.display = 'block';
-                status.style.color = '#e53935';
-                status.textContent = 'Please log in to send feedback.';
-                return;
-            }
-        }
-
-        // 今日の0時0分を取得
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        console.log('📅 今日の日付:', today);
-
-        // 過去24時間以内のフィードバックをチェック
-        console.log('⏳ フィードバック履歴をチェック中...');
-        const q = query(
-            collection(db, 'feedback'),
-            where('userId', '==', userId),
-            where('createdAt', '>=', today)
-        );
-        const snapshot = await getDocs(q);
-        console.log('📊 チェック結果:', snapshot.size, '件');
-
-        if (!snapshot.empty) {
-            console.warn('⚠️ 本日すでに送信済み');
+        if (!user) {
             status.style.display = 'block';
-            status.style.color = '#ff9800';
-            status.textContent = '⚠️ You have already sent feedback today. Please try again tomorrow.';
+            status.style.color = '#e53935';
+            status.textContent = 'Please log in to send feedback.';
             return;
         }
 
-        // Firestoreに保存
-        console.log('⏳ Firestoreに保存中...');
-        await addDoc(collection(db, 'feedback'), {
-            userId: userId,
-            userName: window.currentUser?.displayName || 'Anonymous',
-            message: safeMessage,
-            createdAt: serverTimestamp()
+        const idToken = await user.getIdToken();
+
+        // ✅ Cloud Function に送信
+        const response = await fetch('https://us-central1-tomoche.cloudfunctions.net/submitFeedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify({
+                message: safeMessage,
+                userName: window.currentUser?.displayName || 'Anonymous'
+            })
         });
-        console.log('✅ Firestore保存完了');
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP ${response.status}`);
+        }
 
         status.style.display = 'block';
         status.style.color = '#06C755';
@@ -227,10 +189,6 @@ async function submitFeedback() {
 
     } catch (error) {
         console.error('❌ エラー詳細:', error);
-        console.error('❌ エラー名:', error.name);
-        console.error('❌ エラーメッセージ:', error.message);
-        if (error.code) console.error('❌ エラーコード:', error.code);
-        if (error.stack) console.error('❌ スタックトレース:', error.stack);
         status.style.display = 'block';
         status.style.color = '#e53935';
         status.textContent = '❌ Failed to send. Please try again.';
