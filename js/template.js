@@ -148,8 +148,8 @@ async function submitFeedback() {
     try {
         console.log('⏳ Firebase初期化開始');
         // Firebase初期化
-        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js');
-        const { getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js');
+        const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+        const { getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
 
         console.log('✅ Firebase SDK 読み込み完了');
 
@@ -162,7 +162,9 @@ async function submitFeedback() {
             appId: '1:687415158427:web:1efc4417146176da74c83e'
         };
 
-        const app = initializeApp(firebaseConfig);
+        // auth-guard.js側で既にサインイン済みのアプリインスタンスがあれば、それを再利用する
+        // （バージョンを揃えないと別インスタンス扱いになり、ログイン状態が引き継がれない）
+        const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
         const db = getFirestore(app);
         console.log('✅ Firebase 初期化完了');
 
