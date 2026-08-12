@@ -83,14 +83,24 @@ service cloud.firestore {
     }
     
     // ============================================================
-    // ★ フィードバック（feedback）- 追加
+    // フィードバック（feedback）
+    // 本人のみ投稿可能・1日1件までのチェックに使うクエリを許可
+    // 投稿後の編集・削除は不可（改ざん防止のため）
     // ============================================================
     match /feedback/{feedbackId} {
-      allow read: if request.auth != null && 
+      // 本人の投稿のみ読み取り可能（当日分の重複チェック用クエリに対応）
+      allow read: if request.auth != null &&
         request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null;
-      allow delete: if request.auth != null && 
-        request.auth.uid == resource.data.userId;
+
+      // 作成は本人のみ、フィールド構成とメッセージ長を検証
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.userId &&
+        request.resource.data.keys().hasOnly(['userId', 'userName', 'message', 'createdAt']) &&
+        request.resource.data.message is string &&
+        request.resource.data.message.size() > 0 &&
+        request.resource.data.message.size() <= 2000;
+
+      // update / delete は許可しない（投稿後の改ざん防止）
     }
   }
 }
