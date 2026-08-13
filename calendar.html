@@ -443,7 +443,7 @@
 
 
         // ============================================================
-        // Firestore から予定を読み込む（重複防止版）
+        // Firestore から予定を読み込む（共有相手情報含む）
         // ============================================================
         async function loadEventsFromFirestore(dateStr) {
             try {
@@ -462,7 +462,7 @@
 
                 const db = getFirestore(app);
 
-                // ✅ 自分の予定（userId == user.uid）
+                // 自分の予定（userId == user.uid）
                 const myQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid),
@@ -470,7 +470,7 @@
                 );
                 const mySnapshot = await getDocs(myQuery);
                 const events = [];
-                const eventIds = new Set(); // 重複防止用
+                const eventIds = new Set();
 
                 mySnapshot.forEach(doc => {
                     const data = doc.data();
@@ -484,12 +484,13 @@
                             person: data.person || 'Me',
                             note: data.note || '',
                             status: data.status || 'own',
-                            type: data.type || 'own'
+                            type: data.type || 'own',
+                            sharedWith: data.sharedWith || null  // ← 追加
                         });
                     }
                 });
 
-                // ✅ 友達から共有された予定（sharedWith == user.uid）
+                // 友達から共有された予定（sharedWith == user.uid）
                 const sharedQuery = query(
                     collection(db, 'events'),
                     where('sharedWith', '==', user.uid),
@@ -508,7 +509,9 @@
                             person: data.person || 'Friend',
                             note: data.note || '',
                             status: data.status || 'confirmed',
-                            type: 'shared'
+                            type: 'shared',
+                            sharedWith: data.sharedWith || null,
+                            fromUserId: data.userId || null  // ← 共有元のユーザーID
                         });
                     }
                 });
@@ -521,19 +524,16 @@
         }
 
         // ============================================================
-        // イベント削除（Sharedイベント対応）
+        // イベント削除（Shared削除権限対応）
         // ============================================================
         async function deleteEvent(eventId, dateStr) {
-            // 確認ダイアログ
-            if (!confirm('Delete this event?')) return;
-
             try {
                 if (window.liffReadyPromise) {
                     await window.liffReadyPromise;
                 }
 
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const { getFirestore, doc, deleteDoc, getDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getFirestore, doc, deleteDoc, getDoc, collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
                 
                 const app = getApp();
@@ -545,37 +545,44 @@
                 }
 
                 const db = getFirestore(app);
-
-                // イベント情報を取得（Sharedかどうか確認）
                 const eventRef = doc(db, 'events', eventId);
                 const eventSnap = await getDoc(eventRef);
-                const eventData = eventSnap.data();
-
-                if (eventData && eventData.type === 'shared') {
-                    // Sharedイベントは削除リクエストとして処理
-                    if (confirm('This is a shared event. Send a cancellation request to your friend?')) {
-                        // friendEvents に削除リクエストを作成
-                        const friendEventsRef = collection(db, 'friendEvents');
-                        await addDoc(friendEventsRef, {
-                            fromUserId: user.uid,
-                            toUserId: eventData.sharedWith || eventData.userId,
-                            date: eventData.date,
-                            time: eventData.time,
-                            title: `[CANCEL] ${eventData.title}`,
-                            note: 'This event has been cancelled by the participant.',
-                            status: 'cancelled',
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString()
-                        });
-                        alert('✅ Cancellation request sent to your friend.');
-                    }
+                
+                if (!eventSnap.exists) {
+                    alert('Event not found.');
                     return;
                 }
+                
+                const eventData = eventSnap.data();
 
-                // 自分のイベントは直接削除
+                // Sharedイベントの削除権限チェック
+                if (eventData.type === 'shared') {
+                    // 承諾者（sharedWith == user.uid）のみ削除可能
+                    if (eventData.sharedWith !== user.uid) {
+                        // 削除リクエストを送信
+                        if (confirm('This event was created by your friend. Send a cancellation request?')) {
+                            await addDoc(collection(db, 'friendEvents'), {
+                                fromUserId: user.uid,
+                                toUserId: eventData.userId,
+                                date: eventData.date,
+                                time: eventData.time,
+                                title: `[CANCEL] ${eventData.title}`,
+                                note: `${user.displayName || 'Someone'} wants to cancel this shared event.`,
+                                status: 'cancelled',
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            });
+                            alert('✅ Cancellation request sent to your friend.');
+                        }
+                        return;
+                    }
+                }
+
+                // 自分のイベントまたは削除権限があるSharedイベントは直接削除
+                if (!confirm(`Delete "${eventData.title}"?`)) return;
+                
                 await deleteDoc(eventRef);
                 
-                // 再読み込み
                 currentEvents[dateStr] = await loadEventsFromFirestore(dateStr);
                 await renderCalendar();
                 await renderEvents(dateStr);
@@ -589,7 +596,7 @@
 
                 
         // ============================================================
-        // レンダリング関数（修正版 - Shared削除ボタン追加）
+        // レンダリング関数（修正版 - アイコン表示）
         // ============================================================
         async function renderEvents(dateStr) {
             const container = document.getElementById('eventList');
@@ -623,26 +630,47 @@
                 const statusClass = isShared ? 'confirmed' : 'own';
                 const statusLabel = isShared ? '👤 Shared' : '👤 My Schedule';
                 
+                // ✅ アイコン表示（Sharedの場合は相手の頭文字、それ以外は自分の頭文字）
+                let displayIcon = '👤';
+                let displayPerson = safe.person;
+                if (isShared) {
+                    // Sharedイベントの場合は相手の頭文字を表示
+                    const name = safe.person || 'Friend';
+                    displayIcon = name.charAt(0).toUpperCase();
+                } else {
+                    // 自分のイベント
+                    const currentUser = window.currentUser;
+                    if (currentUser && currentUser.displayName) {
+                        displayIcon = currentUser.displayName.charAt(0).toUpperCase();
+                        displayPerson = currentUser.displayName;
+                    }
+                }
+                
                 let displayTitle = safe.title;
                 if (isShared) {
                     const match = displayTitle.match(/^\[With\s+(.+?)\]\s*(.*)$/);
                     if (match) {
                         displayTitle = `${match[2] || match[1]} (${match[1]})`;
+                        displayPerson = match[1];
+                        displayIcon = match[1].charAt(0).toUpperCase();
                     }
                 }
                 
                 const displayTime = formatTimeDisplay(safe.time);
                 
-                // ✅ Sharedイベントにも削除ボタンを追加（削除リクエスト送信）
+                // ✅ 削除ボタン（Sharedの場合は承諾者（受信者）のみ削除可能）
+                const showDelete = !isShared || (isShared && e.sharedWith === window.currentUser?.userId);
+                
                 return `
                     <div class="event-item">
                         <span class="event-time ${statusClass}">${displayTime}</span>
                         <span class="event-title" style="white-space:normal;word-break:break-word;">${displayTitle}</span>
-                        <span class="event-person">👤 ${safe.person}</span>
+                        <span class="event-person" style="display:flex;align-items:center;gap:4px;">
+                            <span style="display:inline-block;width:28px;height:28px;border-radius:50%;background:#e8f5e9;text-align:center;line-height:28px;font-weight:600;font-size:12px;color:#2e7d32;">${displayIcon}</span>
+                            ${displayPerson}
+                        </span>
                         <span class="event-status ${statusClass}">${statusLabel}</span>
-                        <button class="event-delete-btn" onclick="deleteEvent('${e.id}', '${dateStr}')" title="Delete">
-                            <i class="bi bi-trash3"></i>
-                        </button>
+                        ${showDelete ? `<button class="event-delete-btn" onclick="deleteEvent('${e.id}', '${dateStr}')" title="Delete"><i class="bi bi-trash3"></i></button>` : ''}
                     </div>
                 `;
             }).join('');
