@@ -74,7 +74,7 @@
             `Today・${monthNames[now.getMonth()]} ${now.getDate()}  ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
         // ============================================================
-        // ✅ 友達一覧を Firestore から読み込む（Firestore v9 対応）
+        // ✅ 友達一覧を Firestore から読み込む（Firestore v9 正しい構文）
         // ============================================================
         async function loadFriends() {
             const container = document.getElementById('avatars');
@@ -113,10 +113,10 @@
                 const friends = [];
                 for (const docSnap of snapshot.docs) {
                     const data = docSnap.data();
-                    // ✅ Firestore v9 の正しい書き方
+                    // ✅ Firestore v9 の正しい書き方（exists はプロパティ、exists() はメソッドではない）
                     const friendRef = doc(db, 'users', data.friendId);
                     const friendSnap = await getDoc(friendRef);
-                    if (friendSnap.exists()) {
+                    if (friendSnap.exists) {  // ← exists() ではなく exists
                         const friendData = friendSnap.data();
                         friends.push({
                             id: data.friendId,
@@ -140,7 +140,6 @@
                 `).join('');
                 container.innerHTML += `<a href="add.html" class="avatar-item"><div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div><span class="avatar-name">Add</span></a>`;
 
-                // ✅ 更新フラグをクリア
                 localStorage.removeItem('tomosche_friends_updated');
 
             } catch (error) {
@@ -157,19 +156,13 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
-            // ✅ 友達追加後に更新（localStorage フラグをチェック）
-            const needsUpdate = localStorage.getItem('tomosche_friends_updated') === 'true';
-            
             loadFriends();
-
-            // ✅ 5秒ごとに自動更新（友達追加を検出）
             setInterval(() => {
                 const shouldUpdate = localStorage.getItem('tomosche_friends_updated') === 'true';
                 if (shouldUpdate) {
                     loadFriends();
                 }
             }, 3000);
-
             if (typeof renderPage === 'function') {
                 renderPage('Tomosche', '', 'home');
             }

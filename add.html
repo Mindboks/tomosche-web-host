@@ -46,40 +46,42 @@
     <script src="js/app.js"></script>
     <script src="js/template.js"></script>
     <script>
+        let qrGenerated = false;
+
         document.addEventListener('DOMContentLoaded', function() {
+            generateQRCode();
             displayMyUserId();
-
-            // ✅ QRコードに自分のIDを含める
-            const userId = window.currentUser?.userId || '';
-            const url = `https://tomosche.com/add.html?friendId=${userId}`;
-            
-            try {
-                new QRCode(document.getElementById('qrcode'), {
-                    text: url,
-                    width: 200,
-                    height: 200
-                });
-            } catch(e) {
-                console.error('QR生成エラー:', e);
-            }
-
-            document.getElementById('sendBtn').addEventListener('click', function() {
-                if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
-                    liff.sendMessages([{ type: 'text', text: `🌱 Tomosche に招待します！\n${url}` }])
-                        .then(() => liff.closeWindow()).catch(() => alert('送信に失敗しました'));
-                } else {
-                    alert('LINEにログインしてください');
-                }
-            });
-
             setTimeout(() => {
                 sendAutoFriendRequest();
-            }, 1500);
-
+            }, 2000);
             if (typeof renderPage === 'function') {
                 renderPage('Add Friends', '', 'add');
             }
         });
+
+        // ✅ QRコード生成（auth-guard完了後に実行）
+        async function generateQRCode() {
+            try {
+                if (window.liffReadyPromise) {
+                    await window.liffReadyPromise;
+                }
+                const userId = window.currentUser?.userId || '';
+                const url = `https://tomosche.com/add.html?friendId=${userId}`;
+                console.log('📱 QR Code URL:', url);
+                try {
+                    new QRCode(document.getElementById('qrcode'), {
+                        text: url,
+                        width: 200,
+                        height: 200
+                    });
+                    qrGenerated = true;
+                } catch(e) {
+                    console.error('QR生成エラー:', e);
+                }
+            } catch (e) {
+                console.error('QR生成待機エラー:', e);
+            }
+        }
 
         async function displayMyUserId() {
             try {
@@ -97,6 +99,20 @@
             }
         }
 
+        document.getElementById('sendBtn').addEventListener('click', function() {
+            const userId = window.currentUser?.userId || '';
+            const url = `https://tomosche.com/add.html?friendId=${userId}`;
+            if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+                liff.sendMessages([{ type: 'text', text: `🌱 Tomosche に招待します！\n${url}` }])
+                    .then(() => liff.closeWindow()).catch(() => alert('送信に失敗しました'));
+            } else {
+                alert('LINEにログインしてください');
+            }
+        });
+
+        // ============================================================
+        // ✅ 自動友達リクエスト送信（QRコード読み込み時）
+        // ============================================================
         async function sendAutoFriendRequest() {
             try {
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
@@ -145,7 +161,7 @@
                     return;
                 }
 
-                // 友達のユーザー情報を取得（名前表示用）
+                // 友達のユーザー情報を取得
                 const friendRef = doc(db, 'users', friendId);
                 const friendSnap = await getDoc(friendRef);
                 const friendName = friendSnap.exists ? friendSnap.data().displayName : 'Friend';
@@ -174,8 +190,6 @@
                 });
 
                 showStatus(`✅ ${friendName} added successfully! 🎉`, 'success');
-
-                // ✅ Home画面の友達一覧を更新（localStorageにフラグを保存）
                 localStorage.setItem('tomosche_friends_updated', 'true');
 
             } catch (error) {
