@@ -310,6 +310,10 @@
             </div>
         </div>
     </div>
+   
+    
+
+
     <!-- With Friend モーダル -->
     <div class="schedule-modal-overlay" id="friendEventModal">
         <div class="schedule-modal">
@@ -324,23 +328,29 @@
             </div>
             
             <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
-                <div style="flex:1;min-width:120px;">
+                <div style="flex:0 0 160px;min-width:140px;">
                     <label style="font-size:13px;font-weight:600;color:#666;display:block;margin-bottom:4px;">Date</label>
-                    <input type="date" id="friendEventDate" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:12px;font-size:14px;outline:none;" />
+                    <input type="date" id="friendEventDate" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:12px;font-size:14px;outline:none;" />
                 </div>
-                <div style="flex:1;min-width:120px;">
+                <div style="flex:1;min-width:180px;">
                     <label style="font-size:13px;font-weight:600;color:#666;display:block;margin-bottom:4px;">Time</label>
-                    <div style="display:flex;gap:6px;align-items:center;">
-                        <select id="friendEventHour" style="flex:1;padding:10px 8px;border:1px solid #ddd;border-radius:12px;font-size:14px;outline:none;background:white;">
-                            ${Array.from({length:12}, (_,i) => `<option value="${String(i+1).padStart(2,'0')}">${String(i+1).padStart(2,'0')}</option>`).join('')}
+                    <div style="display:flex;gap:4px;align-items:center;">
+                        <select id="friendEventHour" style="flex:1;padding:10px 4px;border:1px solid #ddd;border-radius:12px;font-size:14px;outline:none;background:white;text-align:center;">
+                            <option value="01">01</option><option value="02">02</option><option value="03">03</option>
+                            <option value="04">04</option><option value="05">05</option><option value="06">06</option>
+                            <option value="07">07</option><option value="08">08</option><option value="09" selected>09</option>
+                            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
                         </select>
-                        <span style="font-weight:600;color:#999;">:</span>
-                        <select id="friendEventMinute" style="flex:1;padding:10px 8px;border:1px solid #ddd;border-radius:12px;font-size:14px;outline:none;background:white;">
-                            ${Array.from({length:12}, (_,i) => `<option value="${String(i*5).padStart(2,'0')}">${String(i*5).padStart(2,'0')}</option>`).join('')}
+                        <span style="font-weight:600;color:#999;font-size:16px;">:</span>
+                        <select id="friendEventMinute" style="flex:1;padding:10px 4px;border:1px solid #ddd;border-radius:12px;font-size:14px;outline:none;background:white;text-align:center;">
+                            <option value="00">00</option><option value="05">05</option><option value="10">10</option>
+                            <option value="15">15</option><option value="20">20</option><option value="25">25</option>
+                            <option value="30" selected>30</option><option value="35">35</option><option value="40">40</option>
+                            <option value="45">45</option><option value="50">50</option><option value="55">55</option>
                         </select>
-                        <select id="friendEventAmpm" style="flex:1;padding:10px 8px;border:1px solid #ddd;border-radius:12px;font-size:14px;outline:none;background:white;">
+                        <select id="friendEventAmpm" style="flex:0 0 60px;padding:10px 4px;border:1px solid #ddd;border-radius:12px;font-size:14px;outline:none;background:white;text-align:center;">
                             <option value="AM">AM</option>
-                            <option value="PM">PM</option>
+                            <option value="PM" selected>PM</option>
                         </select>
                     </div>
                 </div>
@@ -365,6 +375,9 @@
         </div>
     </div>
     
+
+
+
     <script>
         // ============================================================
         // 変数宣言
@@ -941,7 +954,7 @@
                     return;
                 }
 
-                // 時間を24時間形式に変換
+                // ✅ 時間を24時間形式に変換（1回だけ）
                 let h = parseInt(hour, 10);
                 if (ampm === 'PM' && h < 12) h += 12;
                 if (ampm === 'AM' && h === 12) h = 0;
@@ -1000,6 +1013,8 @@
                 sendBtn.disabled = false;
             }
         }
+
+
         // ============================================================
         // イベントリスナー
         // ============================================================
