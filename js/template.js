@@ -84,14 +84,23 @@ function renderPage(title, content, activeNav) {
 
 async function updateProfileDisplay() {
     const nameEl = document.getElementById('userNameDisplay');
+    const iconEl = document.getElementById('profileIcon');
+    
     if (!nameEl) return;
 
     try {
         if (window.liffReadyPromise) {
             await window.liffReadyPromise;
         }
+        
         if (window.currentUser && window.currentUser.displayName) {
             nameEl.textContent = window.currentUser.displayName;
+            
+            // ✅ プロフィール画像を表示
+            if (window.currentUser.pictureUrl && iconEl) {
+                // 既存のアイコンを画像に置き換え
+                iconEl.innerHTML = `<img src="${window.currentUser.pictureUrl}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #06C755;" />`;
+            }
         } else {
             nameEl.textContent = 'Guest';
         }
