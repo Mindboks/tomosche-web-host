@@ -16,18 +16,18 @@
         .send-btn { background: #06C755; color: white; border: none; padding: 14px; border-radius: 999px; font-size: 16px; font-weight: 600; width: 100%; margin-top: 16px; cursor: pointer; }
         .send-btn:hover { background: #049a44; }
         .qr-note { font-size: 12px; color: #aaa; margin-top: 16px; }
+        .status-msg { margin-top: 16px; padding: 12px; border-radius: 12px; text-align: center; display: none; font-weight: 600; }
+        .status-msg.success { display: block; background: #e8f5e9; color: #2e7d32; }
+        .status-msg.error { display: block; background: #ffebee; color: #c62828; }
+        .status-msg.info { display: block; background: #e3f2fd; color: #1565c0; }
         .friend-requests { margin-top: 20px; background: white; border-radius: 16px; padding: 16px; border: 1px solid #f0f4f8; }
         .friend-request-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
         .friend-request-item:last-child { border-bottom: none; }
-        .request-actions { display: flex; gap: 8px; }
-        .request-actions button { border: none; border-radius: 999px; padding: 4px 16px; font-size: 12px; font-weight: 600; cursor: pointer; }
-        .btn-accept { background: #06C755; color: white; }
-        .btn-accept:hover { background: #049a44; }
-        .btn-reject { background: #f0f4f8; color: #666; }
-        .btn-reject:hover { background: #e53935; color: white; }
-        .request-status { font-size: 12px; color: #ff9800; }
-        .request-status.accepted { color: #06C755; }
-        .request-status.rejected { color: #e53935; }
+        .request-status { font-size: 12px; padding: 2px 12px; border-radius: 999px; }
+        .request-status.pending { background: #fff3e0; color: #e65100; }
+        .request-status.accepted { background: #e8f5e9; color: #2e7d32; }
+        .request-status.rejected { background: #ffebee; color: #c62828; }
+        .my-id { font-size: 12px; color: #888; margin-top: 8px; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -43,12 +43,22 @@
                 <div id="qrcode"></div>
                 <button class="send-btn" id="sendBtn"><i class="bi bi-line me-2"></i>Send via LINE</button>
                 <div class="qr-note">When scanned, your friend will be automatically added</div>
+                <div class="my-id">Your ID: <span id="myUserId">Loading...</span></div>
             </div>
 
-            <!-- ✅ 友達リクエスト一覧 -->
+            <!-- ステータスメッセージ -->
+            <div class="status-msg" id="statusMsg"></div>
+
+            <!-- 友達リクエスト一覧 -->
             <div class="friend-requests" id="friendRequests">
                 <h6 style="font-weight:600;margin-bottom:12px;">📩 Friend Requests</h6>
                 <div id="requestList"><div style="text-align:center;color:#bbb;padding:12px 0;font-size:13px;">No pending requests</div></div>
+            </div>
+
+            <!-- 友達一覧 -->
+            <div class="friend-requests" id="myFriends" style="margin-top:12px;">
+                <h6 style="font-weight:600;margin-bottom:12px;">👥 My Friends</h6>
+                <div id="friendsList"><div style="text-align:center;color:#bbb;padding:12px 0;font-size:13px;">No friends yet</div></div>
             </div>
         </div>
     </div>
@@ -72,6 +82,11 @@
                 console.error('QR生成エラー:', e);
             }
 
+            // 自分のユーザーIDを表示
+            if (window.currentUser) {
+                document.getElementById('myUserId').textContent = window.currentUser.userId || 'Unknown';
+            }
+
             // LINEで送信
             document.getElementById('sendBtn').addEventListener('click', function() {
                 if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
@@ -82,12 +97,107 @@
                 }
             });
 
+            // ✅ ページ読み込み時に自動で友達リクエストを送信（QRコード経由で来た場合）
+            setTimeout(() => {
+                sendAutoFriendRequest();
+            }, 1500);
+
             // ✅ 友達リクエストを読み込む
             loadFriendRequests();
+            loadMyFriends();
 
-            // ✅ 友達リクエストを監視（5秒ごと）
-            setInterval(loadFriendRequests, 5000);
+            // ✅ 定期的に更新（5秒ごと）
+            setInterval(() => {
+                loadFriendRequests();
+                loadMyFriends();
+            }, 5000);
+
+            // ✅ テンプレート描画（バージョン情報＋フッターメニュー）
+            if (typeof renderPage === 'function') {
+                renderPage('Add Friends', '', 'add');
+            }
         });
+
+        // ============================================================
+        // ✅ 自動友達リクエスト送信（QRコード読み込み時）
+        // ============================================================
+        async function sendAutoFriendRequest() {
+            try {
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+                const { getFirestore, collection, query, where, getDocs, addDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                
+                const auth = getAuth();
+                const user = auth.currentUser;
+                if (!user) {
+                    showStatus('Please log in to add friends.', 'error');
+                    return;
+                }
+
+                const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+                const firebaseConfig = {
+                    apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
+                    authDomain: 'tomoche.firebaseapp.com',
+                    projectId: 'tomoche',
+                    storageBucket: 'tomoche.firebasestorage.app',
+                    messagingSenderId: '687415158427',
+                    appId: '1:687415158427:web:1efc4417146176da74c83e'
+                };
+                const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+
+                // URLパラメータから友達IDを取得（?friendId=xxx）
+                const urlParams = new URLSearchParams(window.location.search);
+                const friendId = urlParams.get('friendId');
+
+                if (!friendId) {
+                    console.log('No friendId in URL. Showing QR code only.');
+                    return;
+                }
+
+                if (friendId === user.uid) {
+                    showStatus('You cannot add yourself.', 'error');
+                    return;
+                }
+
+                // 既に友達かチェック
+                const existingFriendship = await getDocs(query(
+                    collection(db, 'friendships'),
+                    where('userId', '==', user.uid),
+                    where('friendId', '==', friendId)
+                ));
+                if (!existingFriendship.empty) {
+                    showStatus('Already friends! 🎉', 'info');
+                    return;
+                }
+
+                // 既にリクエストが存在するかチェック
+                const existingRequest = await getDocs(query(
+                    collection(db, 'friendRequests'),
+                    where('fromUserId', '==', user.uid),
+                    where('toUserId', '==', friendId),
+                    where('status', '==', 'pending')
+                ));
+                if (!existingRequest.empty) {
+                    showStatus('Friend request already sent!', 'info');
+                    return;
+                }
+
+                await addDoc(collection(db, 'friendRequests'), {
+                    fromUserId: user.uid,
+                    toUserId: friendId,
+                    status: 'pending',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                });
+
+                showStatus('✅ Friend request sent successfully!', 'success');
+                loadFriendRequests();
+
+            } catch (error) {
+                console.error('Send friend request error:', error);
+                showStatus('Failed to send friend request. Please try again.', 'error');
+            }
+        }
 
         // ============================================================
         // ✅ 友達リクエスト一覧を読み込む
@@ -113,7 +223,6 @@
                 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
                 const db = getFirestore(app);
 
-                // 自分宛の保留中のリクエストを取得
                 const q = query(
                     collection(db, 'friendRequests'),
                     where('toUserId', '==', user.uid),
@@ -128,20 +237,19 @@
                 }
 
                 let html = '';
-                for (const doc of snapshot.docs) {
-                    const data = doc.data();
-                    // 送信者のユーザー情報を取得
+                for (const docSnap of snapshot.docs) {
+                    const data = docSnap.data();
                     const userRef = await db.collection('users').doc(data.fromUserId).get();
                     const userName = userRef.exists ? userRef.data().displayName : 'Unknown User';
                     html += `
-                        <div class="friend-request-item" data-id="${doc.id}">
+                        <div class="friend-request-item" data-id="${docSnap.id}">
                             <div>
                                 <strong>${escapeHtml(userName)}</strong>
                                 <span style="font-size:12px;color:#888;margin-left:8px;">wants to add you</span>
                             </div>
-                            <div class="request-actions">
-                                <button class="btn-accept" onclick="handleRequest('${doc.id}', 'accepted')">Accept</button>
-                                <button class="btn-reject" onclick="handleRequest('${doc.id}', 'rejected')">Decline</button>
+                            <div style="display:flex;gap:8px;">
+                                <button class="btn btn-success btn-sm" onclick="handleRequest('${docSnap.id}', 'accepted')">Accept</button>
+                                <button class="btn btn-secondary btn-sm" onclick="handleRequest('${docSnap.id}', 'rejected')">Decline</button>
                             </div>
                         </div>
                     `;
@@ -159,7 +267,7 @@
         async function handleRequest(requestId, status) {
             try {
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const { getFirestore, doc, updateDoc, collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getFirestore, doc, updateDoc, collection, addDoc, getDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 
                 const auth = getAuth();
                 const user = auth.currentUser;
@@ -180,19 +288,16 @@
                 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
                 const db = getFirestore(app);
 
-                // リクエストを更新
                 const requestRef = doc(db, 'friendRequests', requestId);
+                const requestDoc = await getDoc(requestRef);
+                const data = requestDoc.data();
+
                 await updateDoc(requestRef, {
                     status: status,
                     updatedAt: new Date().toISOString()
                 });
 
                 if (status === 'accepted') {
-                    // リクエストデータを取得
-                    const requestDoc = await requestRef.get();
-                    const data = requestDoc.data();
-                    
-                    // friendships に双方のレコードを作成
                     await addDoc(collection(db, 'friendships'), {
                         userId: data.fromUserId,
                         friendId: user.uid,
@@ -205,19 +310,86 @@
                         status: 'shared',
                         createdAt: new Date().toISOString()
                     });
-
                     alert('✅ Friend request accepted!');
                 } else {
                     alert('❌ Friend request declined.');
                 }
 
-                // リクエスト一覧を再読み込み
                 loadFriendRequests();
+                loadMyFriends();
 
             } catch (error) {
                 console.error('Handle request error:', error);
                 alert('Failed to process request. Please try again.');
             }
+        }
+
+        // ============================================================
+        // ✅ 友達一覧を読み込む
+        // ============================================================
+        async function loadMyFriends() {
+            try {
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+                const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                
+                const auth = getAuth();
+                const user = auth.currentUser;
+                if (!user) return;
+
+                const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+                const firebaseConfig = {
+                    apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
+                    authDomain: 'tomoche.firebaseapp.com',
+                    projectId: 'tomoche',
+                    storageBucket: 'tomoche.firebasestorage.app',
+                    messagingSenderId: '687415158427',
+                    appId: '1:687415158427:web:1efc4417146176da74c83e'
+                };
+                const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+
+                const q = query(
+                    collection(db, 'friendships'),
+                    where('userId', '==', user.uid)
+                );
+                const snapshot = await getDocs(q);
+                const container = document.getElementById('friendsList');
+
+                if (snapshot.empty) {
+                    container.innerHTML = `<div style="text-align:center;color:#bbb;padding:12px 0;font-size:13px;">No friends yet</div>`;
+                    return;
+                }
+
+                let html = '';
+                for (const docSnap of snapshot.docs) {
+                    const data = docSnap.data();
+                    const userRef = await db.collection('users').doc(data.friendId).get();
+                    if (userRef.exists) {
+                        const friendData = userRef.data();
+                        html += `
+                            <div class="friend-request-item">
+                                <div>
+                                    <strong>${escapeHtml(friendData.displayName || 'Friend')}</strong>
+                                    <span class="request-status accepted" style="margin-left:8px;">✅ Friend</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                container.innerHTML = html || `<div style="text-align:center;color:#bbb;padding:12px 0;font-size:13px;">No friends yet</div>`;
+
+            } catch (error) {
+                console.error('Load friends error:', error);
+            }
+        }
+
+        // ============================================================
+        // ✅ ステータスメッセージ表示
+        // ============================================================
+        function showStatus(message, type) {
+            const el = document.getElementById('statusMsg');
+            el.textContent = message;
+            el.className = 'status-msg ' + type;
         }
     </script>
 </body>
