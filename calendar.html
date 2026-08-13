@@ -439,7 +439,8 @@
         }
 
         // ============================================================
-        // Firestore から予定を読み込む
+        // Firestore から予定を読み込む（修正版）
+        // 自分の予定（userId）＋ 共有された予定（sharedWith）を取得
         // ============================================================
         async function loadEventsFromFirestore(dateStr) {
             try {
@@ -458,14 +459,15 @@
 
                 const db = getFirestore(app);
 
-                const q = query(
+                // ✅ 自分の予定（userId == user.uid）を取得
+                const myQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid),
                     where('date', '==', dateStr)
                 );
-                const snapshot = await getDocs(q);
+                const mySnapshot = await getDocs(myQuery);
                 const events = [];
-                snapshot.forEach(doc => {
+                mySnapshot.forEach(doc => {
                     const data = doc.data();
                     events.push({
                         id: doc.id,
@@ -477,6 +479,27 @@
                         type: data.type || 'own'
                     });
                 });
+
+                // ✅ 友達から共有された予定（sharedWith == user.uid）を取得
+                const sharedQuery = query(
+                    collection(db, 'events'),
+                    where('sharedWith', '==', user.uid),
+                    where('date', '==', dateStr)
+                );
+                const sharedSnapshot = await getDocs(sharedQuery);
+                sharedSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    events.push({
+                        id: doc.id,
+                        time: data.time || '12:00',
+                        title: data.title || 'Untitled',
+                        person: data.person || 'Friend',
+                        note: data.note || '',
+                        status: data.status || 'confirmed',
+                        type: 'shared'  // ← 共有イベントとしてマーク
+                    });
+                });
+
                 return events;
             } catch (error) {
                 console.error('Load events error:', error);
@@ -549,26 +572,25 @@
                 return;
             }
 
-            // ✅ イベントを日時でソート
             events.sort((a, b) => a.time.localeCompare(b.time));
 
             container.innerHTML = events.map(e => {
                 const safe = escapeEvent(e);
                 
-                // ✅ ステータス判定（shared の場合は友達イベント）
+                // ✅ 共有イベントかどうか判定
                 const isShared = safe.type === 'shared';
                 const statusClass = isShared ? 'confirmed' : 'own';
-                const statusLabel = isShared ? '👤 Friend' : '👤 My Schedule';
+                const statusLabel = isShared ? '👤 Shared' : '👤 My Schedule';
                 
-                // ✅ タイトルから "[With xxx]" を削除してユーザー名のみ表示
                 let displayTitle = safe.title;
-                // パターン: "[With 名前] タイトル" → "タイトル (名前)"
-                const match = displayTitle.match(/^\[With\s+(.+?)\]\s*(.*)$/);
-                if (match) {
-                    displayTitle = `${match[2] || match[1]} (${match[1]})`;
+                // 共有イベントのタイトルを整形
+                if (isShared) {
+                    // すでに "[With xxx]" 形式なら整形
+                    const match = displayTitle.match(/^\[With\s+(.+?)\]\s*(.*)$/);
+                    if (match) {
+                        displayTitle = `${match[2] || match[1]} (${match[1]})`;
+                    }
                 }
-                // または "[With 名前]" だけの場合
-                displayTitle = displayTitle.replace(/^\[With\s+([^\]]+)\]\s*/, '$1: ');
                 
                 const displayTime = formatTimeDisplay(safe.time);
                 
@@ -588,7 +610,7 @@
 
 
         // ============================================================
-        // カレンダー描画（修正版 - 友達イベントをオレンジ色に）
+        // カレンダー描画（修正版）
         // ============================================================
         async function renderCalendar() {
             const grid = document.getElementById('calGrid');
@@ -627,7 +649,7 @@
                 if (hasOwn) {
                     html += `<div class="dot own"></div>`;
                 } else if (hasShared) {
-                    html += `<div class="dot shared" style="background:#ff9800;"></div>`;
+                    html += `<div class="dot shared"></div>`;
                 }
                 html += `</div>`;
             }

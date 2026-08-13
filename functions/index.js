@@ -1,6 +1,5 @@
 // ================================================================
 // Tomosche Cloud Functions
-// LINE ID Token 検証 + Firebase カスタムトークン発行 + フィードバック + 友達追加
 // ================================================================
 
 const functions = require('firebase-functions');
@@ -11,7 +10,7 @@ const cors = require('cors')({ origin: true });
 admin.initializeApp();
 
 // ================================================================
-// LINE ID Token を検証し、Firebase カスタムトークンを発行
+// LINE ID Token 検証
 // ================================================================
 exports.verifyLineTokenV2 = functions.https.onRequest((req, res) => {
     cors(req, res, async () => {
@@ -68,7 +67,7 @@ exports.verifyLineTokenV2 = functions.https.onRequest((req, res) => {
 });
 
 // ================================================================
-// フィードバック送信（Cloud Functions経由）
+// フィードバック送信
 // ================================================================
 exports.submitFeedback = functions.https.onRequest(async (req, res) => {
     cors(req, res, async () => {
@@ -96,7 +95,6 @@ exports.submitFeedback = functions.https.onRequest(async (req, res) => {
         const userId = decodedToken.uid;
         const { message, userName } = req.body;
 
-        // 50文字以上500文字以内
         if (!message || message.length < 50) {
             res.status(400).json({ error: 'Message must be at least 50 characters' });
             return;
@@ -146,7 +144,7 @@ exports.submitFeedback = functions.https.onRequest(async (req, res) => {
 });
 
 // ================================================================
-// ヘルスチェック（デプロイ確認用）
+// ヘルスチェック
 // ================================================================
 exports.healthCheck = functions.https.onRequest((req, res) => {
     res.status(200).json({
@@ -157,7 +155,7 @@ exports.healthCheck = functions.https.onRequest((req, res) => {
 });
 
 // ================================================================
-// MySchedule 保存（Cloud Functions）
+// MySchedule 保存
 // ================================================================
 exports.saveMySchedule = functions.https.onRequest(async (req, res) => {
     cors(req, res, async () => {
@@ -246,9 +244,7 @@ exports.saveMySchedule = functions.https.onRequest(async (req, res) => {
 });
 
 // ================================================================
-// ★ 新規：友達追加（QRコード経由・双方向のfriendshipを作成）
-// クライアントからは他人のFirestoreデータを直接読み書きできないため、
-// Admin SDK権限を持つこの関数を経由して処理する。
+// 友達追加
 // ================================================================
 exports.addFriendV2 = functions.https.onRequest(async (req, res) => {
     cors(req, res, async () => {
@@ -289,7 +285,6 @@ exports.addFriendV2 = functions.https.onRequest(async (req, res) => {
         try {
             const db = admin.firestore();
 
-            // 相手が実在するユーザーか確認（Admin SDKなので他人のドキュメントも読める）
             const friendUserSnap = await db.collection('users').doc(friendId).get();
             if (!friendUserSnap.exists) {
                 res.status(404).json({ error: 'Friend not found. Ask them to open Tomosche at least once first.' });
@@ -297,11 +292,9 @@ exports.addFriendV2 = functions.https.onRequest(async (req, res) => {
             }
             const friendName = friendUserSnap.data().displayName || 'Friend';
 
-            // 自分の表示名も取得（相手側のfriendshipレコードに埋め込むため）
             const myUserSnap = await db.collection('users').doc(myUid).get();
             const myName = myUserSnap.exists ? (myUserSnap.data().displayName || 'Friend') : 'Friend';
 
-            // 既に友達かどうかチェック（二重登録防止）
             const existing = await db.collection('friendships')
                 .where('userId', '==', myUid)
                 .where('friendId', '==', friendId)
@@ -316,8 +309,6 @@ exports.addFriendV2 = functions.https.onRequest(async (req, res) => {
             const now = admin.firestore.FieldValue.serverTimestamp();
             const batch = db.batch();
 
-            // 自分側のfriendshipレコード（friendNameを埋め込むので、
-            // クライアント側は他人のusersコレクションを読みに行かなくてよい）
             const myFriendshipRef = db.collection('friendships').doc();
             batch.set(myFriendshipRef, {
                 userId: myUid,
@@ -327,7 +318,6 @@ exports.addFriendV2 = functions.https.onRequest(async (req, res) => {
                 createdAt: now
             });
 
-            // 相手側のfriendshipレコード
             const theirFriendshipRef = db.collection('friendships').doc();
             batch.set(theirFriendshipRef, {
                 userId: friendId,
@@ -347,95 +337,9 @@ exports.addFriendV2 = functions.https.onRequest(async (req, res) => {
         }
     });
 });
+
 // ================================================================
-// ✅ 友達に予定リクエストを送信
-// ================================================================
-exports.sendFriendEvent = functions.https.onRequest(async (req, res) => {
-    cors(req, res, async () => {
-        if (req.method !== 'POST') {
-            res.status(405).json({ error: 'Method Not Allowed' });
-            return;
-        }
-
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            res.status(401).json({ error: 'Unauthorized' });
-            return;
-        }
-
-        const idToken = authHeader.split('Bearer ')[1];
-        let decodedToken;
-        try {
-            decodedToken = await admin.auth().verifyIdToken(idToken);
-        } catch (error) {
-            console.error('Token verification failed:', error);
-            res.status(401).json({ error: 'Invalid token' });
-            return;
-        }
-
-        const myUserId = decodedToken.uid;
-        const { friendId, date, time, title, note } = req.body;
-
-        if (!friendId || !date || !time || !title) {
-            res.status(400).json({ error: 'friendId, date, time, title are required' });
-            return;
-        }
-
-        try {
-            const db = admin.firestore();
-
-            // 友達関係を確認
-            const friendship = await db.collection('friendships')
-                .where('userId', '==', myUserId)
-                .where('friendId', '==', friendId)
-                .where('status', '==', 'shared')
-                .limit(1)
-                .get();
-
-            if (friendship.empty) {
-                res.status(403).json({ error: 'Not friends with this user' });
-                return;
-            }
-
-            // 友達の情報を取得
-            const friendRef = db.collection('users').doc(friendId);
-            const friendSnap = await friendRef.get();
-            const friendName = friendSnap.exists ? friendSnap.data().displayName : 'Friend';
-
-            // 自分の情報を取得
-            const myRef = db.collection('users').doc(myUserId);
-            const mySnap = await myRef.get();
-            const myName = mySnap.exists ? mySnap.data().displayName : 'Me';
-
-            // イベントリクエストを作成
-            const eventRef = db.collection('friendEvents').doc();
-            await eventRef.set({
-                fromUserId: myUserId,
-                fromUserName: myName,
-                toUserId: friendId,
-                toUserName: friendName,
-                date: date,
-                time: time,
-                title: title,
-                note: note || '',
-                status: 'pending',  // pending | confirmed | rejected | cancelled
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-
-            res.status(200).json({
-                success: true,
-                message: `Event request sent to ${friendName}!`
-            });
-
-        } catch (error) {
-            console.error('Send friend event error:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    });
-});
-// ================================================================
-// ✅ 友達に予定リクエストを送信（With Friend）
+// ✅ 友達に予定リクエストを送信（1つだけ）
 // ================================================================
 exports.sendFriendEvent = functions.https.onRequest(async (req, res) => {
     cors(req, res, async () => {
@@ -471,7 +375,6 @@ exports.sendFriendEvent = functions.https.onRequest(async (req, res) => {
         try {
             const db = admin.firestore();
 
-            // 友達関係を確認
             const friendship = await db.collection('friendships')
                 .where('userId', '==', myUserId)
                 .where('friendId', '==', friendId)
@@ -484,17 +387,14 @@ exports.sendFriendEvent = functions.https.onRequest(async (req, res) => {
                 return;
             }
 
-            // 友達の情報を取得
             const friendRef = db.collection('users').doc(friendId);
             const friendSnap = await friendRef.get();
             const friendName = friendSnap.exists ? friendSnap.data().displayName : 'Friend';
 
-            // 自分の情報を取得
             const myRef = db.collection('users').doc(myUserId);
             const mySnap = await myRef.get();
             const myName = mySnap.exists ? mySnap.data().displayName : 'Me';
 
-            // イベントリクエストを作成
             const eventRef = db.collection('friendEvents').doc();
             await eventRef.set({
                 fromUserId: myUserId,
