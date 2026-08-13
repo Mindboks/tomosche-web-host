@@ -311,6 +311,7 @@
         </div>
     </div>
 
+    
     <script>
         // ============================================================
         // 変数宣言
@@ -337,7 +338,7 @@
         }
 
         // ============================================================
-        // Firestore 読み込み
+        // Firestore から予定を読み込む（修正版）
         // ============================================================
         async function loadEventsFromFirestore(dateStr) {
             try {
@@ -348,14 +349,16 @@
 
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
                 const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
                 
                 // ✅ 既存のアプリを取得（新しく作成しない）
-                const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-                const app = getApp();  // ← 既存のアプリを取得
+                const app = getApp();
                 const auth = getAuth(app);
                 const user = auth.currentUser;
                 if (!user) return [];
+
                 const db = getFirestore(app);
+
                 const q = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid),
@@ -385,35 +388,30 @@
         // ============================================================
         // ✅ イベント削除（Firestore）
         // ============================================================
+        // ✅ 修正後
         async function deleteEvent(eventId, dateStr) {
             if (!confirm('Delete this event?')) return;
 
             try {
+                if (window.liffReadyPromise) {
+                    await window.liffReadyPromise;
+                }
+
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
                 const { getFirestore, doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
                 
-                const auth = getAuth();
+                const app = getApp();
+                const auth = getAuth(app);
                 const user = auth.currentUser;
                 if (!user) {
                     alert('Please log in to delete events.');
                     return;
                 }
 
-                const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-                const firebaseConfig = {
-                    apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
-                    authDomain: 'tomoche.firebaseapp.com',
-                    projectId: 'tomoche',
-                    storageBucket: 'tomoche.firebasestorage.app',
-                    messagingSenderId: '687415158427',
-                    appId: '1:687415158427:web:1efc4417146176da74c83e'
-                };
-                const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
                 const db = getFirestore(app);
-
                 await deleteDoc(doc(db, 'events', eventId));
                 
-                // 再読み込み
                 currentEvents[dateStr] = await loadEventsFromFirestore(dateStr);
                 await renderCalendar();
                 await renderEvents(dateStr);
@@ -674,6 +672,7 @@
         // ============================================================
         // ✅ 保存処理
         // ============================================================
+        // ✅ 修正後
         async function saveSchedules() {
             const status = document.getElementById('modalStatus');
             status.style.display = 'block';
@@ -684,6 +683,10 @@
             saveBtn.disabled = true;
 
             try {
+                if (window.liffReadyPromise) {
+                    await window.liffReadyPromise;
+                }
+
                 const dateStr = document.getElementById('modalDateDisplay').textContent;
                 
                 const schedules = [];
@@ -706,7 +709,10 @@
                 }
 
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const auth = getAuth();
+                const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+                
+                const app = getApp();
+                const auth = getAuth(app);
                 const user = auth.currentUser;
 
                 if (!user) {
@@ -757,7 +763,9 @@
         // ============================================================
         // イベントリスナー
         // ============================================================
+        // ✅ 修正後
         document.addEventListener('DOMContentLoaded', function() {
+            // MySchedule ボタン
             document.getElementById('addOwnEventBtn').addEventListener('click', function() {
                 openScheduleModal(selectedDate);
             });
@@ -774,10 +782,13 @@
                 renderPage('Calendar', '', 'calendar');
             }
 
-            const today = new Date();
-            selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-            renderCalendar();
-            renderEvents(selectedDate);
+            // ✅ 少し遅延させてからカレンダーを読み込む
+            setTimeout(async () => {
+                const today = new Date();
+                selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+                await renderCalendar();
+                await renderEvents(selectedDate);
+            }, 500);
         });
     </script>
 </body>
