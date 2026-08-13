@@ -75,7 +75,7 @@
             `Today・${monthNames[now.getMonth()]} ${now.getDate()}  ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
         // ============================================================
-        // ✅ 友達一覧を Firestore からリアルタイムで読み込む
+        // ✅ 友達一覧を Firestore から読み込む（即時反映版）
         // ============================================================
         function renderFriendsList(friends, container) {
             console.log('🎨 レンダリング開始:', friends.length, '人');
@@ -92,12 +92,21 @@
             container.innerHTML += `<a href="add.html" class="avatar-item"><div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div><span class="avatar-name">Add</span></a>`;
         }
 
+        // ✅ auth-guard.js の完了を待ってから実行する version
         async function loadFriends() {
             const container = document.getElementById('avatars');
             console.log('🔍 loadFriends 開始');
+            
             try {
+                // ✅ auth-guard.js の完了を確実に待つ
+                if (window.liffReadyPromise) {
+                    console.log('⏳ LIFF認証完了を待機中...');
+                    await window.liffReadyPromise;
+                    console.log('✅ LIFF認証完了');
+                }
+
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const { getFirestore, collection, query, where, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
 
                 const firebaseConfig = {
@@ -111,7 +120,8 @@
                 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
                 const auth = getAuth(app);
                 const user = auth.currentUser;
-                console.log('👤 ユーザー:', user ? user.uid : '未ログイン');
+                
+                console.log('👤 auth.currentUser:', user ? user.uid : 'null');
 
                 if (!user) {
                     container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>Please log in to see friends</div>`;
@@ -119,37 +129,34 @@
                 }
 
                 const db = getFirestore(app);
+                
+                // getDocs で一度だけ取得（onSnapshot は一旦停止）
                 const q = query(collection(db, 'friendships'), where('userId', '==', user.uid));
+                console.log('⏳ Firestore から友達データを取得中...');
+                
+                const snapshot = await getDocs(q);
+                console.log('📦 取得結果:', snapshot.size, '件');
 
-                console.log('⏳ Firestore 監視開始...');
-                onSnapshot(q, (snapshot) => {
-                    console.log('📦 更新検知! 件数:', snapshot.size);
-                    
-                    if (snapshot.empty) {
-                        console.log('ℹ️ 友達データなし');
-                        renderFriendsList([], container);
-                        return;
-                    }
+                if (snapshot.empty) {
+                    console.log('ℹ️ 友達データなし');
+                    renderFriendsList([], container);
+                    return;
+                }
 
-                    const friends = [];
-                    snapshot.forEach(docSnap => {
-                        const data = docSnap.data();
-                        console.log('📄 ドキュメント:', docSnap.id, data);
-                        const name = data.friendName || 'Friend';
-                        friends.push({
-                            id: data.friendId,
-                            name: name,
-                            initial: name.charAt(0).toUpperCase()
-                        });
+                const friends = [];
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    console.log('📄 ドキュメント:', docSnap.id, data);
+                    const name = data.friendName || 'Friend';
+                    friends.push({
+                        id: data.friendId,
+                        name: name,
+                        initial: name.charAt(0).toUpperCase()
                     });
-                    
-                    console.log('👥 友達リスト:', friends);
-                    renderFriendsList(friends, container);
-                    
-                }, (error) => {
-                    console.error('❌ onSnapshot エラー:', error);
-                    container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>Error: ${error.message}</div>`;
                 });
+                
+                console.log('👥 友達リスト:', friends);
+                renderFriendsList(friends, container);
 
             } catch (error) {
                 console.error('❌ loadFriends エラー:', error);
@@ -165,7 +172,11 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
-            loadFriends();
+            // 少し遅延させて確実に auth-guard が完了してから実行
+            setTimeout(() => {
+                loadFriends();
+            }, 500);
+            
             if (typeof renderPage === 'function') {
                 renderPage('Tomosche', '', 'home');
             }
