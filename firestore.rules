@@ -44,7 +44,7 @@ service cloud.firestore {
     }
     
     // ============================================================
-    // ✅ 予定データ（events）- 新規追加
+    // 予定データ（events）
     // ============================================================
     match /events/{eventId} {
       allow read: if request.auth != null && 
