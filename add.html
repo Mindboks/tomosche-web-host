@@ -48,12 +48,16 @@
     <script>
         let qrGenerated = false;
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             generateQRCode();
             displayMyUserId();
-            setTimeout(() => {
-                sendAutoFriendRequest();
-            }, 2000);
+
+            // ★ 固定2秒待ちではなく、認証完了（Firebaseサインインまで）を確実に待つ
+            if (window.liffReadyPromise) {
+                await window.liffReadyPromise;
+            }
+            sendAutoFriendRequest();
+
             if (typeof renderPage === 'function') {
                 renderPage('Add Friends', '', 'add');
             }
@@ -112,20 +116,15 @@
 
         // ============================================================
         // ✅ 自動友達リクエスト送信（QRコード読み込み時）
+        // クライアントから直接Firestoreに書き込むのではなく、
+        // Admin SDK権限を持つ addFriendV2 経由で処理する
+        // （他人のfriendships/usersへの直接書き込み・読み取りはルール上できないため）
         // ============================================================
         async function sendAutoFriendRequest() {
             try {
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
-                
-                const auth = getAuth();
-                const user = auth.currentUser;
-                if (!user) {
-                    showStatus('Please log in to add friends.', 'error');
-                    return;
-                }
-
                 const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+
                 const firebaseConfig = {
                     apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
                     authDomain: 'tomoche.firebaseapp.com',
@@ -135,7 +134,13 @@
                     appId: '1:687415158427:web:1efc4417146176da74c83e'
                 };
                 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-                const db = getFirestore(app);
+                const auth = getAuth(app);
+                const user = auth.currentUser;
+
+                if (!user) {
+                    showStatus('Please log in to add friends.', 'error');
+                    return;
+                }
 
                 const urlParams = new URLSearchParams(window.location.search);
                 const friendId = urlParams.get('friendId');
@@ -150,47 +155,29 @@
                     return;
                 }
 
-                // 既に友達かチェック
-                const existingFriendship = await getDocs(query(
-                    collection(db, 'friendships'),
-                    where('userId', '==', user.uid),
-                    where('friendId', '==', friendId)
-                ));
-                if (!existingFriendship.empty) {
-                    showStatus('Already friends! 🎉', 'info');
-                    return;
+                const idToken = await user.getIdToken();
+                const res = await fetch('https://us-central1-tomoche.cloudfunctions.net/addFriendV2', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify({ friendId })
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.error || `HTTP ${res.status}`);
                 }
 
-                // 友達のユーザー情報を取得
-                const friendRef = doc(db, 'users', friendId);
-                const friendSnap = await getDoc(friendRef);
-                const friendName = friendSnap.exists ? friendSnap.data().displayName : 'Friend';
+                const data = await res.json();
 
-                // 友達リクエストを作成（自動承認）
-                await addDoc(collection(db, 'friendRequests'), {
-                    fromUserId: user.uid,
-                    toUserId: friendId,
-                    status: 'accepted',
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                });
-
-                // friendships に双方のレコードを作成
-                await addDoc(collection(db, 'friendships'), {
-                    userId: user.uid,
-                    friendId: friendId,
-                    status: 'shared',
-                    createdAt: new Date().toISOString()
-                });
-                await addDoc(collection(db, 'friendships'), {
-                    userId: friendId,
-                    friendId: user.uid,
-                    status: 'shared',
-                    createdAt: new Date().toISOString()
-                });
-
-                showStatus(`✅ ${friendName} added successfully! 🎉`, 'success');
-                localStorage.setItem('tomosche_friends_updated', 'true');
+                if (data.alreadyFriends) {
+                    showStatus('Already friends! 🎉', 'info');
+                } else {
+                    showStatus(`✅ ${data.friendName} added successfully! 🎉`, 'success');
+                    localStorage.setItem('tomosche_friends_updated', 'true');
+                }
 
             } catch (error) {
                 console.error('Send friend request error:', error);

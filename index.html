@@ -74,21 +74,17 @@
             `Today・${monthNames[now.getMonth()]} ${now.getDate()}  ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
         // ============================================================
-        // ✅ 友達一覧を Firestore から読み込む（Firestore v9 正しい構文）
+        // ✅ 友達一覧を Firestore から読み込む
+        // friendships ドキュメントに埋め込まれた friendName を使うので、
+        // 他人の users コレクションを読みに行く必要がない
+        // （読みに行こうとしてもセキュリティルール上できない）
         // ============================================================
         async function loadFriends() {
             const container = document.getElementById('avatars');
             try {
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const { getFirestore, collection, query, where, getDocs, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 
-                const auth = getAuth();
-                const user = auth.currentUser;
-                if (!user) {
-                    container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>Please log in to see friends</div>`;
-                    return;
-                }
-
                 const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
                 const firebaseConfig = {
                     apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
@@ -99,38 +95,34 @@
                     appId: '1:687415158427:web:1efc4417146176da74c83e'
                 };
                 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const user = auth.currentUser;
+
+                if (!user) {
+                    container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>Please log in to see friends</div>`;
+                    return;
+                }
+
                 const db = getFirestore(app);
 
-                // friendships から友達を取得
+                // friendships から友達を取得（自分のレコードのみ・friendNameが埋め込み済み）
                 const q = query(collection(db, 'friendships'), where('userId', '==', user.uid));
                 const snapshot = await getDocs(q);
-                
+
                 if (snapshot.empty) {
                     container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>No friends added yet</div>`;
                     return;
                 }
 
-                const friends = [];
-                for (const docSnap of snapshot.docs) {
+                const friends = snapshot.docs.map(docSnap => {
                     const data = docSnap.data();
-                    // ✅ Firestore v9 の正しい書き方（exists はプロパティ、exists() はメソッドではない）
-                    const friendRef = doc(db, 'users', data.friendId);
-                    const friendSnap = await getDoc(friendRef);
-                    if (friendSnap.exists) {  // ← exists() ではなく exists
-                        const friendData = friendSnap.data();
-                        friends.push({
-                            id: data.friendId,
-                            name: friendData.displayName || 'Friend',
-                            initial: (friendData.displayName || 'F')[0].toUpperCase(),
-                            status: data.status || 'pending'
-                        });
-                    }
-                }
-
-                if (friends.length === 0) {
-                    container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>No friends added yet</div>`;
-                    return;
-                }
+                    const name = data.friendName || 'Friend';
+                    return {
+                        id: data.friendId,
+                        name: name,
+                        initial: name.charAt(0).toUpperCase()
+                    };
+                });
 
                 container.innerHTML = friends.map(fr => `
                     <div class="avatar-item" onclick="alert('Friend: ${escapeHtml(fr.name)}')">

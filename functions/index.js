@@ -1,6 +1,6 @@
 // ================================================================
 // Tomosche Cloud Functions
-// LINE ID Token 検証 + Firebase カスタムトークン発行 + フィードバック
+// LINE ID Token 検証 + Firebase カスタムトークン発行 + フィードバック + 友達追加
 // ================================================================
 
 const functions = require('firebase-functions');
@@ -68,7 +68,7 @@ exports.verifyLineTokenV2 = functions.https.onRequest((req, res) => {
 });
 
 // ================================================================
-// ✅ 新規：フィードバック送信（Cloud Functions経由）
+// フィードバック送信（Cloud Functions経由）
 // ================================================================
 exports.submitFeedback = functions.https.onRequest(async (req, res) => {
     cors(req, res, async () => {
@@ -77,7 +77,6 @@ exports.submitFeedback = functions.https.onRequest(async (req, res) => {
             return;
         }
 
-        // Firebase Auth トークンを検証
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             res.status(401).json({ error: 'Unauthorized' });
@@ -97,28 +96,26 @@ exports.submitFeedback = functions.https.onRequest(async (req, res) => {
         const userId = decodedToken.uid;
         const { message, userName } = req.body;
 
+        // 50文字以上500文字以内
         if (!message || message.length < 50) {
-            res.status(400).json({ error: 'Message must be at least 5 characters' });
+            res.status(400).json({ error: 'Message must be at least 50 characters' });
             return;
         }
 
         if (message.length > 500) {
-            res.status(400).json({ error: 'Message too long (max 2000 characters)' });
+            res.status(400).json({ error: 'Message too long (max 500 characters)' });
             return;
         }
 
         try {
-            // 今日の0時0分を取得
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            // 過去24時間以内のフィードバックをチェック
             const feedbackRef = admin.firestore().collection('feedback');
             const snapshot = await feedbackRef
                 .where('createdAt', '>=', today)
                 .get();
 
-            // メモリ上で userId をフィルタリング（インデックス不要）
             let alreadySent = false;
             snapshot.forEach(doc => {
                 const data = doc.data();
@@ -132,7 +129,6 @@ exports.submitFeedback = functions.https.onRequest(async (req, res) => {
                 return;
             }
 
-            // Firestoreに保存
             await feedbackRef.add({
                 userId: userId,
                 userName: userName || 'Anonymous',
@@ -161,7 +157,7 @@ exports.healthCheck = functions.https.onRequest((req, res) => {
 });
 
 // ================================================================
-// ✅ MySchedule 保存（Cloud Functions）
+// MySchedule 保存（Cloud Functions）
 // ================================================================
 exports.saveMySchedule = functions.https.onRequest(async (req, res) => {
     cors(req, res, async () => {
@@ -170,7 +166,6 @@ exports.saveMySchedule = functions.https.onRequest(async (req, res) => {
             return;
         }
 
-        // Firebase Auth トークンを検証
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             res.status(401).json({ error: 'Unauthorized' });
@@ -209,7 +204,6 @@ exports.saveMySchedule = functions.https.onRequest(async (req, res) => {
             const eventsRef = admin.firestore().collection('events');
             const batch = admin.firestore().batch();
 
-            // 既存の予定を削除（上書き）
             const existingSnapshot = await eventsRef
                 .where('userId', '==', userId)
                 .where('date', '==', date)
@@ -219,7 +213,6 @@ exports.saveMySchedule = functions.https.onRequest(async (req, res) => {
                 batch.delete(doc.ref);
             });
 
-            // 新しい予定を追加
             for (const schedule of schedules) {
                 if (!schedule.title || schedule.title.trim() === '') {
                     continue;
@@ -240,9 +233,9 @@ exports.saveMySchedule = functions.https.onRequest(async (req, res) => {
 
             await batch.commit();
 
-            res.status(200).json({ 
-                success: true, 
-                count: schedules.length 
+            res.status(200).json({
+                success: true,
+                count: schedules.length
             });
 
         } catch (error) {
@@ -251,10 +244,13 @@ exports.saveMySchedule = functions.https.onRequest(async (req, res) => {
         }
     });
 });
+
 // ================================================================
-// ✅ MySchedule 保存（Cloud Functions）
+// ★ 新規：友達追加（QRコード経由・双方向のfriendshipを作成）
+// クライアントからは他人のFirestoreデータを直接読み書きできないため、
+// Admin SDK権限を持つこの関数を経由して処理する。
 // ================================================================
-exports.saveMySchedule = functions.https.onRequest(async (req, res) => {
+exports.addFriendV2 = functions.https.onRequest(async (req, res) => {
     cors(req, res, async () => {
         if (req.method !== 'POST') {
             res.status(405).json({ error: 'Method Not Allowed' });
@@ -277,66 +273,76 @@ exports.saveMySchedule = functions.https.onRequest(async (req, res) => {
             return;
         }
 
-        const userId = decodedToken.uid;
-        const { date, schedules, userName } = req.body;
+        const myUid = decodedToken.uid;
+        const { friendId } = req.body || {};
 
-        if (!date) {
-            res.status(400).json({ error: 'Date is required' });
+        if (!friendId || typeof friendId !== 'string') {
+            res.status(400).json({ error: 'friendId is required' });
             return;
         }
 
-        if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
-            res.status(400).json({ error: 'Schedules array is required' });
-            return;
-        }
-
-        if (schedules.length > 10) {
-            res.status(400).json({ error: 'Maximum 10 schedules allowed' });
+        if (friendId === myUid) {
+            res.status(400).json({ error: 'You cannot add yourself.' });
             return;
         }
 
         try {
-            const eventsRef = admin.firestore().collection('events');
-            const batch = admin.firestore().batch();
+            const db = admin.firestore();
 
-            // 既存の予定を削除（上書き）
-            const existingSnapshot = await eventsRef
-                .where('userId', '==', userId)
-                .where('date', '==', date)
+            // 相手が実在するユーザーか確認（Admin SDKなので他人のドキュメントも読める）
+            const friendUserSnap = await db.collection('users').doc(friendId).get();
+            if (!friendUserSnap.exists) {
+                res.status(404).json({ error: 'Friend not found. Ask them to open Tomosche at least once first.' });
+                return;
+            }
+            const friendName = friendUserSnap.data().displayName || 'Friend';
+
+            // 自分の表示名も取得（相手側のfriendshipレコードに埋め込むため）
+            const myUserSnap = await db.collection('users').doc(myUid).get();
+            const myName = myUserSnap.exists ? (myUserSnap.data().displayName || 'Friend') : 'Friend';
+
+            // 既に友達かどうかチェック（二重登録防止）
+            const existing = await db.collection('friendships')
+                .where('userId', '==', myUid)
+                .where('friendId', '==', friendId)
+                .limit(1)
                 .get();
 
-            existingSnapshot.forEach(doc => {
-                batch.delete(doc.ref);
+            if (!existing.empty) {
+                res.status(200).json({ success: true, alreadyFriends: true, friendName });
+                return;
+            }
+
+            const now = admin.firestore.FieldValue.serverTimestamp();
+            const batch = db.batch();
+
+            // 自分側のfriendshipレコード（friendNameを埋め込むので、
+            // クライアント側は他人のusersコレクションを読みに行かなくてよい）
+            const myFriendshipRef = db.collection('friendships').doc();
+            batch.set(myFriendshipRef, {
+                userId: myUid,
+                friendId: friendId,
+                friendName: friendName,
+                status: 'shared',
+                createdAt: now
             });
 
-            // 新しい予定を追加
-            for (const schedule of schedules) {
-                if (!schedule.title || schedule.title.trim() === '') {
-                    continue;
-                }
-                const docRef = eventsRef.doc();
-                batch.set(docRef, {
-                    userId: userId,
-                    date: date,
-                    time: schedule.time || '12:00',
-                    title: schedule.title.trim(),
-                    person: userName || 'Me',
-                    type: 'own',
-                    status: 'own',
-                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                });
-            }
+            // 相手側のfriendshipレコード
+            const theirFriendshipRef = db.collection('friendships').doc();
+            batch.set(theirFriendshipRef, {
+                userId: friendId,
+                friendId: myUid,
+                friendName: myName,
+                status: 'shared',
+                createdAt: now
+            });
 
             await batch.commit();
 
-            res.status(200).json({ 
-                success: true, 
-                count: schedules.length 
-            });
+            res.status(200).json({ success: true, alreadyFriends: false, friendName });
 
         } catch (error) {
-            console.error('Save schedule error:', error);
+            console.error('Add friend error:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
     });
