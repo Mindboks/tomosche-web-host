@@ -341,25 +341,21 @@
         // ============================================================
         async function loadEventsFromFirestore(dateStr) {
             try {
+                // ✅ auth-guard.js の完了を待つ
+                if (window.liffReadyPromise) {
+                    await window.liffReadyPromise;
+                }
+
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
                 const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 
-                const auth = getAuth();
+                // ✅ 既存のアプリを取得（新しく作成しない）
+                const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+                const app = getApp();  // ← 既存のアプリを取得
+                const auth = getAuth(app);
                 const user = auth.currentUser;
                 if (!user) return [];
-
-                const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-                const firebaseConfig = {
-                    apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
-                    authDomain: 'tomoche.firebaseapp.com',
-                    projectId: 'tomoche',
-                    storageBucket: 'tomoche.firebasestorage.app',
-                    messagingSenderId: '687415158427',
-                    appId: '1:687415158427:web:1efc4417146176da74c83e'
-                };
-                const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
                 const db = getFirestore(app);
-
                 const q = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid),

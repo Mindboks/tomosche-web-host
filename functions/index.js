@@ -347,3 +347,90 @@ exports.addFriendV2 = functions.https.onRequest(async (req, res) => {
         }
     });
 });
+// ================================================================
+// ✅ 友達に予定リクエストを送信
+// ================================================================
+exports.sendFriendEvent = functions.https.onRequest(async (req, res) => {
+    cors(req, res, async () => {
+        if (req.method !== 'POST') {
+            res.status(405).json({ error: 'Method Not Allowed' });
+            return;
+        }
+
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+
+        const idToken = authHeader.split('Bearer ')[1];
+        let decodedToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(idToken);
+        } catch (error) {
+            console.error('Token verification failed:', error);
+            res.status(401).json({ error: 'Invalid token' });
+            return;
+        }
+
+        const myUserId = decodedToken.uid;
+        const { friendId, date, time, title, note } = req.body;
+
+        if (!friendId || !date || !time || !title) {
+            res.status(400).json({ error: 'friendId, date, time, title are required' });
+            return;
+        }
+
+        try {
+            const db = admin.firestore();
+
+            // 友達関係を確認
+            const friendship = await db.collection('friendships')
+                .where('userId', '==', myUserId)
+                .where('friendId', '==', friendId)
+                .where('status', '==', 'shared')
+                .limit(1)
+                .get();
+
+            if (friendship.empty) {
+                res.status(403).json({ error: 'Not friends with this user' });
+                return;
+            }
+
+            // 友達の情報を取得
+            const friendRef = db.collection('users').doc(friendId);
+            const friendSnap = await friendRef.get();
+            const friendName = friendSnap.exists ? friendSnap.data().displayName : 'Friend';
+
+            // 自分の情報を取得
+            const myRef = db.collection('users').doc(myUserId);
+            const mySnap = await myRef.get();
+            const myName = mySnap.exists ? mySnap.data().displayName : 'Me';
+
+            // イベントリクエストを作成
+            const eventRef = db.collection('friendEvents').doc();
+            await eventRef.set({
+                fromUserId: myUserId,
+                fromUserName: myName,
+                toUserId: friendId,
+                toUserName: friendName,
+                date: date,
+                time: time,
+                title: title,
+                note: note || '',
+                status: 'pending',  // pending | confirmed | rejected | cancelled
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            res.status(200).json({
+                success: true,
+                message: `Event request sent to ${friendName}!`
+            });
+
+        } catch (error) {
+            console.error('Send friend event error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    });
+});
