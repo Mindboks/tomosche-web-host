@@ -14,13 +14,15 @@
     <script src="js/escape.js"></script>
     <script src="js/template.js"></script>
     <style>
-        .add-btn-group { display: flex; gap: 12px; margin-top: 16px; }
-        .add-btn-group button { flex: 1; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
+        .add-btn-group { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+        .add-btn-group button { flex: 1; padding: 12px; border-radius: 999px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; min-width: 80px; }
         .add-btn-group button:active { transform: scale(0.95); }
         .btn-own { background: #2196f3; color: white; }
         .btn-own:hover { background: #1976d2; }
         .btn-shared { background: #06C755; color: white; }
         .btn-shared:hover { background: #049a44; }
+        .btn-requests { background: #ff9800; color: white; }
+        .btn-requests:hover { background: #e68900; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: #f0f4f8; border-radius: 16px; overflow: hidden; margin-top: 12px; max-width: 100% !important; }
         .calendar-day { background: white; aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: clamp(12px, 2.2vw, 14px); font-weight: 500; color: #333; cursor: pointer; position: relative; min-height: 32px; min-width: 32px; transition: all 0.15s ease; }
         .calendar-day.other-month { color: #ccc; }
@@ -66,7 +68,7 @@
         .cal-nav button { background: none; border: none; font-size: 22px; color: #06C755; padding: 8px 12px; cursor: pointer; }
         .cal-nav span { font-size: clamp(1.1rem, 3vw, 1.4rem); font-weight: 600; color: #333; }
 
-        /* ✅ モーダルスタイル */
+        /* モーダルスタイル */
         .schedule-modal-overlay {
             display: none;
             position: fixed;
@@ -228,7 +230,7 @@
             color: #e53935;
         }
 
-        /* ✅ イベント削除ボタン */
+        /* イベント削除ボタン */
         .event-delete-btn {
             background: none;
             border: none;
@@ -245,6 +247,25 @@
             background: rgba(229, 57, 53, 0.08);
         }
 
+        .request-badge {
+            background: red;
+            color: white;
+            border-radius: 50%;
+            padding: 0px 6px;
+            font-size: 11px;
+            margin-left: 4px;
+            display: none;
+        }
+
+        .request-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+            border: 1px solid #e9ecef;
+        }
+        .request-item:last-child { margin-bottom: 0; }
+
         @media (max-width: 480px) {
             .schedule-modal .form-row {
                 flex-wrap: wrap;
@@ -256,6 +277,11 @@
             .schedule-modal .form-row .time-group select {
                 font-size: 13px;
                 min-width: 38px;
+            }
+            .add-btn-group button {
+                font-size: 12px;
+                padding: 10px 8px;
+                min-width: 60px;
             }
         }
     </style>
@@ -282,9 +308,14 @@
                     <div id="eventList"><div class="empty-events">Select a date</div></div>
                 </div>
 
+                <!-- ボタングループ（1つだけ） -->
                 <div class="add-btn-group">
                     <button class="btn-own" id="addOwnEventBtn"><i class="bi bi-person"></i> My Schedule</button>
                     <button class="btn-shared" id="addSharedEventBtn"><i class="bi bi-people"></i> With Friend</button>
+                    <button class="btn-requests" id="viewRequestsBtn">
+                        <i class="bi bi-inbox"></i> Requests
+                        <span class="request-badge" id="requestBadge">0</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -295,38 +326,27 @@
         <div class="schedule-modal">
             <h3>📝 My Schedule</h3>
             <div class="subtitle">Add your schedule for <span id="modalDateDisplay">2026-08-12</span></div>
-            
             <div id="scheduleRows"></div>
-            
-            <button class="add-row-btn" id="addRowBtn">
-                <i class="bi bi-plus-circle"></i> Add another schedule (max 10)
-            </button>
-            
+            <button class="add-row-btn" id="addRowBtn"><i class="bi bi-plus-circle"></i> Add another schedule (max 10)</button>
             <div class="status-msg" id="modalStatus"></div>
-            
             <div class="modal-actions">
                 <button class="btn-cancel" id="modalCancelBtn">Cancel</button>
                 <button class="btn-save" id="modalSaveBtn">Save All</button>
             </div>
         </div>
     </div>
-   
-    
-
 
     <!-- With Friend モーダル -->
     <div class="schedule-modal-overlay" id="friendEventModal">
         <div class="schedule-modal">
             <h3>📅 Schedule with Friend</h3>
             <div class="subtitle">Send an event request to your friend</div>
-            
             <div style="margin-bottom:12px;">
                 <label style="font-size:13px;font-weight:600;color:#666;display:block;margin-bottom:4px;">Select Friend</label>
                 <select id="friendSelect" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:12px;font-size:14px;outline:none;background:white;">
                     <option value="">Loading friends...</option>
                 </select>
             </div>
-            
             <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
                 <div style="flex:0 0 160px;min-width:140px;">
                     <label style="font-size:13px;font-weight:600;color:#666;display:block;margin-bottom:4px;">Date</label>
@@ -355,28 +375,35 @@
                     </div>
                 </div>
             </div>
-            
             <div style="margin-bottom:12px;">
                 <label style="font-size:13px;font-weight:600;color:#666;display:block;margin-bottom:4px;">Event Title</label>
                 <input type="text" id="friendEventTitle" placeholder="What are you planning?" maxlength="100" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:12px;font-size:14px;outline:none;" />
             </div>
-            
             <div style="margin-bottom:16px;">
                 <label style="font-size:13px;font-weight:600;color:#666;display:block;margin-bottom:4px;">Note (optional)</label>
                 <input type="text" id="friendEventNote" placeholder="Any details for your friend..." maxlength="200" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:12px;font-size:14px;outline:none;" />
             </div>
-            
             <div class="status-msg" id="friendEventStatus"></div>
-            
             <div class="modal-actions">
                 <button class="btn-cancel" id="friendEventCancelBtn">Cancel</button>
                 <button class="btn-save" id="friendEventSendBtn" style="background:#06C755;">Send Request</button>
             </div>
         </div>
     </div>
-    
 
-
+    <!-- 友達からのイベント申請一覧モーダル -->
+    <div class="schedule-modal-overlay" id="friendRequestsModal">
+        <div class="schedule-modal">
+            <h3>📩 Friend Event Requests</h3>
+            <div class="subtitle">Event requests from your friends</div>
+            <div id="friendRequestList" style="margin-top:12px;">
+                <div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">Loading requests...</div>
+            </div>
+            <div class="modal-actions" style="margin-top:16px;">
+                <button class="btn-cancel" id="friendRequestsCloseBtn" style="width:100%;">Close</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ============================================================
@@ -404,11 +431,10 @@
         }
 
         // ============================================================
-        // Firestore から予定を読み込む（修正版）
+        // Firestore から予定を読み込む
         // ============================================================
         async function loadEventsFromFirestore(dateStr) {
             try {
-                // ✅ auth-guard.js の完了を待つ
                 if (window.liffReadyPromise) {
                     await window.liffReadyPromise;
                 }
@@ -417,7 +443,6 @@
                 const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
                 
-                // ✅ 既存のアプリを取得（新しく作成しない）
                 const app = getApp();
                 const auth = getAuth(app);
                 const user = auth.currentUser;
@@ -452,9 +477,8 @@
         }
 
         // ============================================================
-        // ✅ イベント削除（Firestore）
+        // イベント削除
         // ============================================================
-        // ✅ 修正後
         async function deleteEvent(eventId, dateStr) {
             if (!confirm('Delete this event?')) return;
 
@@ -501,7 +525,6 @@
             const events = await loadEventsFromFirestore(dateStr);
             currentEvents[dateStr] = events;
 
-            // ✅ 過去の日付は表示しない
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const selectedDateObj = new Date(dateStr + 'T00:00:00');
@@ -593,9 +616,8 @@
             if (selectedDate) renderEvents(selectedDate);
         }
 
-
         // ============================================================
-        // モーダル制御（プルダウン方式 + 入力値保持）
+        // モーダル制御（MySchedule）
         // ============================================================
         let rowCount = 1;
         const MAX_ROWS = 10;
@@ -648,13 +670,9 @@
                 html += `
                     <div class="form-row" data-row="${i}">
                         <div class="time-group">
-                            <select id="time_hour_${i}">
-                                ${getHourOptions(data.hour)}
-                            </select>
+                            <select id="time_hour_${i}">${getHourOptions(data.hour)}</select>
                             <span class="time-separator">:</span>
-                            <select id="time_minute_${i}">
-                                ${getMinuteOptions(data.minute)}
-                            </select>
+                            <select id="time_minute_${i}">${getMinuteOptions(data.minute)}</select>
                             <select id="time_ampm_${i}">
                                 <option value="AM" ${data.ampm === 'AM' ? 'selected' : ''}>AM</option>
                                 <option value="PM" ${data.ampm === 'PM' ? 'selected' : ''}>PM</option>
@@ -733,12 +751,9 @@
             }
         }
 
-
-
         // ============================================================
-        // ✅ 保存処理
+        // 保存処理（MySchedule）
         // ============================================================
-        // ✅ 修正後
         async function saveSchedules() {
             const status = document.getElementById('modalStatus');
             status.style.display = 'block';
@@ -826,13 +841,11 @@
             }
         }
 
-
         // ============================================================
         // With Friend 機能
         // ============================================================
         let friendList = [];
 
-        // 友達一覧を読み込む
         async function loadFriendList() {
             try {
                 if (window.liffReadyPromise) {
@@ -869,7 +882,6 @@
             }
         }
 
-        // 友達セレクトボックスを更新
         function updateFriendSelect(friends) {
             const select = document.getElementById('friendSelect');
             if (!select) return;
@@ -884,17 +896,14 @@
             ).join('');
         }
 
-        // With Friend モーダルを開く
         async function openFriendEventModal() {
             if (!selectedDate) {
                 alert('📅 Please select a date on the calendar first.');
                 return;
             }
 
-            // 日付をセット
             document.getElementById('friendEventDate').value = selectedDate;
             
-            // デフォルト時間を設定
             const now = new Date();
             let hour = now.getHours();
             const minute = String(Math.floor(now.getMinutes() / 5) * 5).padStart(2, '0');
@@ -905,11 +914,9 @@
             document.getElementById('friendEventMinute').value = minute;
             document.getElementById('friendEventAmpm').value = ampm;
 
-            // 友達リストを読み込む
             const friends = await loadFriendList();
             updateFriendSelect(friends);
             
-            // モーダルを表示
             document.getElementById('friendEventModal').classList.add('active');
             document.getElementById('friendEventStatus').style.display = 'none';
             document.getElementById('friendEventStatus').className = 'status-msg';
@@ -921,7 +928,6 @@
             document.getElementById('friendEventModal').classList.remove('active');
         }
 
-        // With Friend リクエスト送信
         async function sendFriendEvent() {
             const status = document.getElementById('friendEventStatus');
             status.style.display = 'block';
@@ -954,7 +960,6 @@
                     return;
                 }
 
-                // ✅ 時間を24時間形式に変換（1回だけ）
                 let h = parseInt(hour, 10);
                 if (ampm === 'PM' && h < 12) h += 12;
                 if (ampm === 'AM' && h === 12) h = 0;
@@ -1014,48 +1019,242 @@
             }
         }
 
+        // ============================================================
+        // 友達からのイベント申請一覧を取得
+        // ============================================================
+        let pendingRequests = [];
+
+        async function loadFriendRequests() {
+            try {
+                if (window.liffReadyPromise) {
+                    await window.liffReadyPromise;
+                }
+
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+                const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+                
+                const app = getApp();
+                const auth = getAuth(app);
+                const user = auth.currentUser;
+                if (!user) return [];
+
+                const db = getFirestore(app);
+
+                const q = query(
+                    collection(db, 'friendEvents'),
+                    where('toUserId', '==', user.uid),
+                    where('status', '==', 'pending')
+                );
+                const snapshot = await getDocs(q);
+                
+                const requests = [];
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    requests.push({
+                        id: docSnap.id,
+                        fromUserId: data.fromUserId,
+                        fromUserName: data.fromUserName || 'Friend',
+                        date: data.date,
+                        time: data.time,
+                        title: data.title,
+                        note: data.note || '',
+                        status: data.status,
+                        createdAt: data.createdAt
+                    });
+                });
+                
+                pendingRequests = requests;
+                updateRequestBadge(requests.length);
+                return requests;
+            } catch (error) {
+                console.error('Load friend requests error:', error);
+                return [];
+            }
+        }
+
+        function updateRequestBadge(count) {
+            const badge = document.getElementById('requestBadge');
+            if (count > 0) {
+                badge.style.display = 'inline';
+                badge.textContent = count;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        async function openFriendRequestsModal() {
+            const modal = document.getElementById('friendRequestsModal');
+            const container = document.getElementById('friendRequestList');
+            
+            modal.classList.add('active');
+            container.innerHTML = '<div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">Loading requests...</div>';
+
+            const requests = await loadFriendRequests();
+            
+            if (requests.length === 0) {
+                container.innerHTML = `<div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">📭 No pending requests</div>`;
+                return;
+            }
+
+            container.innerHTML = requests.map(req => {
+                const displayTime = formatTimeDisplay(req.time);
+                return `
+                    <div class="request-item">
+                        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
+                            <div style="flex:1;">
+                                <div style="font-weight:600;font-size:15px;">${escapeHtml(req.title)}</div>
+                                <div style="font-size:13px;color:#666;">📅 ${escapeHtml(req.date)} ${displayTime}</div>
+                                <div style="font-size:12px;color:#888;">👤 From: ${escapeHtml(req.fromUserName)}</div>
+                                ${req.note ? `<div style="font-size:12px;color:#999;margin-top:4px;">📝 ${escapeHtml(req.note)}</div>` : ''}
+                            </div>
+                            <div style="display:flex;gap:8px;flex-shrink:0;">
+                                <button class="btn btn-success btn-sm" onclick="handleFriendRequest('${req.id}', 'confirmed')" style="padding:6px 16px;border:none;border-radius:999px;background:#06C755;color:white;font-weight:600;cursor:pointer;">Accept</button>
+                                <button class="btn btn-danger btn-sm" onclick="handleFriendRequest('${req.id}', 'rejected')" style="padding:6px 16px;border:none;border-radius:999px;background:#e53935;color:white;font-weight:600;cursor:pointer;">Decline</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function closeFriendRequestsModal() {
+            document.getElementById('friendRequestsModal').classList.remove('active');
+        }
+
+        // ============================================================
+        // 友達からのイベント申請を処理（承諾/拒否）
+        // ============================================================
+        async function handleFriendRequest(requestId, status) {
+            if (status === 'rejected') {
+                if (!confirm('Decline this event request?')) return;
+            } else {
+                if (!confirm('Accept this event request?')) return;
+            }
+
+            try {
+                if (window.liffReadyPromise) {
+                    await window.liffReadyPromise;
+                }
+
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+                const { getFirestore, doc, updateDoc, getDoc, collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+                
+                const app = getApp();
+                const auth = getAuth(app);
+                const user = auth.currentUser;
+                if (!user) {
+                    alert('Please log in.');
+                    return;
+                }
+
+                const db = getFirestore(app);
+
+                const requestRef = doc(db, 'friendEvents', requestId);
+                const requestSnap = await getDoc(requestRef);
+                const requestData = requestSnap.data();
+
+                await updateDoc(requestRef, {
+                    status: status,
+                    updatedAt: new Date().toISOString()
+                });
+
+                if (status === 'confirmed') {
+                    const eventsRef = collection(db, 'events');
+
+                    // 自分のカレンダーに追加
+                    await addDoc(eventsRef, {
+                        userId: user.uid,
+                        date: requestData.date,
+                        time: requestData.time,
+                        title: `[With ${requestData.fromUserName}] ${requestData.title}`,
+                        person: requestData.fromUserName,
+                        type: 'shared',
+                        status: 'confirmed',
+                        sharedWith: requestData.fromUserId,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+
+                    // 友達のカレンダーに追加
+                    await addDoc(eventsRef, {
+                        userId: requestData.fromUserId,
+                        date: requestData.date,
+                        time: requestData.time,
+                        title: `[With ${user.displayName || 'Me'}] ${requestData.title}`,
+                        person: user.displayName || 'Me',
+                        type: 'shared',
+                        status: 'confirmed',
+                        sharedWith: user.uid,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+
+                    alert('✅ Event confirmed! Added to both calendars.');
+                } else {
+                    alert('❌ Event declined.');
+                }
+
+                await loadFriendRequests();
+                openFriendRequestsModal();
+
+                if (selectedDate) {
+                    await renderCalendar();
+                    await renderEvents(selectedDate);
+                }
+
+            } catch (error) {
+                console.error('Handle friend request error:', error);
+                alert('Failed to process request. Please try again.');
+            }
+        }
 
         // ============================================================
         // イベントリスナー
         // ============================================================
-        // ✅ 修正後
         document.addEventListener('DOMContentLoaded', function() {
-            // MySchedule ボタン
+            // MySchedule
             document.getElementById('addOwnEventBtn').addEventListener('click', function() {
                 openScheduleModal(selectedDate);
             });
-
             document.getElementById('modalCancelBtn').addEventListener('click', closeScheduleModal);
             document.getElementById('addRowBtn').addEventListener('click', addRow);
             document.getElementById('modalSaveBtn').addEventListener('click', saveSchedules);
-
             document.getElementById('scheduleModal').addEventListener('click', function(e) {
                 if (e.target === this) closeScheduleModal();
+            });
+
+            // With Friend
+            document.getElementById('addSharedEventBtn').addEventListener('click', function() {
+                openFriendEventModal();
+            });
+            document.getElementById('friendEventCancelBtn').addEventListener('click', closeFriendEventModal);
+            document.getElementById('friendEventSendBtn').addEventListener('click', sendFriendEvent);
+            document.getElementById('friendEventModal').addEventListener('click', function(e) {
+                if (e.target === this) closeFriendEventModal();
+            });
+
+            // 申請一覧
+            document.getElementById('viewRequestsBtn').addEventListener('click', function() {
+                openFriendRequestsModal();
+            });
+            document.getElementById('friendRequestsCloseBtn').addEventListener('click', closeFriendRequestsModal);
+            document.getElementById('friendRequestsModal').addEventListener('click', function(e) {
+                if (e.target === this) closeFriendRequestsModal();
             });
 
             if (typeof renderPage === 'function') {
                 renderPage('Calendar', '', 'calendar');
             }
 
-            // ✅ 少し遅延させてからカレンダーを読み込む
             setTimeout(async () => {
                 const today = new Date();
                 selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
                 await renderCalendar();
                 await renderEvents(selectedDate);
+                await loadFriendRequests();
             }, 500);
-
-            // DOMContentLoaded 内に追加
-            document.getElementById('addSharedEventBtn').addEventListener('click', function() {
-                openFriendEventModal();
-            });
-
-            document.getElementById('friendEventCancelBtn').addEventListener('click', closeFriendEventModal);
-            document.getElementById('friendEventSendBtn').addEventListener('click', sendFriendEvent);
-
-            document.getElementById('friendEventModal').addEventListener('click', function(e) {
-                if (e.target === this) closeFriendEventModal();
-            });
         });
     </script>
 </body>
