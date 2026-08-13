@@ -283,7 +283,15 @@
                 padding: 10px 8px;
                 min-width: 60px;
             }
-        }
+            }
+            .calendar-day .dot.shared {
+                background: #ff9800 !important;
+            }
+
+            .event-title {
+                white-space: normal !important;
+                word-break: break-word !important;
+            }
     </style>
 </head>
 <body>
@@ -512,8 +520,10 @@
             }
         }
 
+
+                
         // ============================================================
-        // レンダリング関数
+        // レンダリング関数（修正版）
         // ============================================================
         async function renderEvents(dateStr) {
             const container = document.getElementById('eventList');
@@ -539,25 +549,47 @@
                 return;
             }
 
+            // ✅ イベントを日時でソート
+            events.sort((a, b) => a.time.localeCompare(b.time));
+
             container.innerHTML = events.map(e => {
                 const safe = escapeEvent(e);
-                const statusClass = safe.type === 'own' ? 'own' : safe.status;
-                const statusLabel = safe.type === 'own' ? '👤 My Schedule' : (safe.status === 'confirmed' ? '✅ Confirmed' : '⏳ Pending');
+                
+                // ✅ ステータス判定（shared の場合は友達イベント）
+                const isShared = safe.type === 'shared';
+                const statusClass = isShared ? 'confirmed' : 'own';
+                const statusLabel = isShared ? '👤 Friend' : '👤 My Schedule';
+                
+                // ✅ タイトルから "[With xxx]" を削除してユーザー名のみ表示
+                let displayTitle = safe.title;
+                // パターン: "[With 名前] タイトル" → "タイトル (名前)"
+                const match = displayTitle.match(/^\[With\s+(.+?)\]\s*(.*)$/);
+                if (match) {
+                    displayTitle = `${match[2] || match[1]} (${match[1]})`;
+                }
+                // または "[With 名前]" だけの場合
+                displayTitle = displayTitle.replace(/^\[With\s+([^\]]+)\]\s*/, '$1: ');
+                
                 const displayTime = formatTimeDisplay(safe.time);
+                
                 return `
                     <div class="event-item">
                         <span class="event-time ${statusClass}">${displayTime}</span>
-                        <span class="event-title">${safe.title}</span>
+                        <span class="event-title" style="white-space:normal;word-break:break-word;">${displayTitle}</span>
                         <span class="event-person">👤 ${safe.person}</span>
                         <span class="event-status ${statusClass}">${statusLabel}</span>
-                        <button class="event-delete-btn" onclick="deleteEvent('${e.id}', '${dateStr}')" title="Delete">
-                            <i class="bi bi-trash3"></i>
-                        </button>
+                        ${!isShared ? `<button class="event-delete-btn" onclick="deleteEvent('${e.id}', '${dateStr}')" title="Delete"><i class="bi bi-trash3"></i></button>` : ''}
                     </div>
                 `;
             }).join('');
         }
 
+
+
+
+        // ============================================================
+        // カレンダー描画（修正版 - 友達イベントをオレンジ色に）
+        // ============================================================
         async function renderCalendar() {
             const grid = document.getElementById('calGrid');
             document.getElementById('calTitle').textContent = `${monthNames[calMonth]} ${calYear}`;
@@ -581,14 +613,22 @@
                 const events = currentEvents[ds] || await loadEventsFromFirestore(ds);
                 if (!currentEvents[ds]) currentEvents[ds] = events;
                 
+                // ✅ イベントタイプをチェック
                 const hasOwn = events && events.some(e => e.type === 'own');
+                const hasShared = events && events.some(e => e.type === 'shared');
 
                 let cls = 'calendar-day';
                 if (isToday) cls += ' today';
                 if (isSelected) cls += ' selected';
 
                 html += `<div class="${cls}" onclick="selectDate('${ds}')">${d}`;
-                if (hasOwn) html += `<div class="dot own"></div>`;
+                
+                // ✅ 優先順位: own（青） > shared（オレンジ）
+                if (hasOwn) {
+                    html += `<div class="dot own"></div>`;
+                } else if (hasShared) {
+                    html += `<div class="dot shared" style="background:#ff9800;"></div>`;
+                }
                 html += `</div>`;
             }
 
@@ -601,6 +641,9 @@
 
             grid.innerHTML = html;
         }
+
+
+
 
         async function selectDate(ds) {
             selectedDate = ds;
