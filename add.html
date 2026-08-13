@@ -47,7 +47,12 @@
     <script src="js/template.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const url = 'https://tomosche.com/add.html';
+            displayMyUserId();
+
+            // ✅ QRコードに自分のIDを含める
+            const userId = window.currentUser?.userId || '';
+            const url = `https://tomosche.com/add.html?friendId=${userId}`;
+            
             try {
                 new QRCode(document.getElementById('qrcode'), {
                     text: url,
@@ -56,10 +61,6 @@
                 });
             } catch(e) {
                 console.error('QR生成エラー:', e);
-            }
-
-            if (window.currentUser) {
-                document.getElementById('myUserId').textContent = window.currentUser.userId || 'Unknown';
             }
 
             document.getElementById('sendBtn').addEventListener('click', function() {
@@ -71,24 +72,35 @@
                 }
             });
 
-            // ✅ QRコード読み込みで自動友達追加
             setTimeout(() => {
                 sendAutoFriendRequest();
             }, 1500);
 
-            // ✅ テンプレート描画（バージョン情報＋フッターメニュー）
             if (typeof renderPage === 'function') {
                 renderPage('Add Friends', '', 'add');
             }
         });
 
-        // ============================================================
-        // ✅ 自動友達リクエスト送信（QRコード読み込み時）
-        // ============================================================
+        async function displayMyUserId() {
+            try {
+                if (window.liffReadyPromise) {
+                    await window.liffReadyPromise;
+                }
+                if (window.currentUser && window.currentUser.userId) {
+                    document.getElementById('myUserId').textContent = window.currentUser.userId;
+                } else {
+                    document.getElementById('myUserId').textContent = 'Not logged in';
+                }
+            } catch (e) {
+                console.error('User ID display error:', e);
+                document.getElementById('myUserId').textContent = 'Error loading';
+            }
+        }
+
         async function sendAutoFriendRequest() {
             try {
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const { getFirestore, collection, query, where, getDocs, addDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 
                 const auth = getAuth();
                 const user = auth.currentUser;
@@ -133,28 +145,21 @@
                     return;
                 }
 
-                // 既にリクエストが存在するかチェック
-                const existingRequest = await getDocs(query(
-                    collection(db, 'friendRequests'),
-                    where('fromUserId', '==', user.uid),
-                    where('toUserId', '==', friendId),
-                    where('status', '==', 'pending')
-                ));
-                if (!existingRequest.empty) {
-                    showStatus('Friend request already sent!', 'info');
-                    return;
-                }
+                // 友達のユーザー情報を取得（名前表示用）
+                const friendRef = doc(db, 'users', friendId);
+                const friendSnap = await getDoc(friendRef);
+                const friendName = friendSnap.exists ? friendSnap.data().displayName : 'Friend';
 
-                // ✅ 友達リクエストを作成（承認は自動で行う）
+                // 友達リクエストを作成（自動承認）
                 await addDoc(collection(db, 'friendRequests'), {
                     fromUserId: user.uid,
                     toUserId: friendId,
-                    status: 'accepted',  // 自動承認
+                    status: 'accepted',
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 });
 
-                // ✅ friendships に双方のレコードを作成
+                // friendships に双方のレコードを作成
                 await addDoc(collection(db, 'friendships'), {
                     userId: user.uid,
                     friendId: friendId,
@@ -168,7 +173,10 @@
                     createdAt: new Date().toISOString()
                 });
 
-                showStatus('✅ Friend added successfully! 🎉', 'success');
+                showStatus(`✅ ${friendName} added successfully! 🎉`, 'success');
+
+                // ✅ Home画面の友達一覧を更新（localStorageにフラグを保存）
+                localStorage.setItem('tomosche_friends_updated', 'true');
 
             } catch (error) {
                 console.error('Send friend request error:', error);
