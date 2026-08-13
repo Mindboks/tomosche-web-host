@@ -23,10 +23,13 @@
         .image-search .search-box input { border: none; background: none; outline: none; flex: 1; font-size: clamp(12px, 2.5vw, 14px); color: #333; }
         .image-search .search-box input::placeholder { color: #bbb; }
         .avatars { display: flex; gap: 12px; flex-wrap: wrap; padding: 12px 0 8px 0; justify-content: flex-start; }
-        .avatar-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #333; width: 56px; }
-        .avatar-circle { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: clamp(14px, 2.5vw, 16px); font-weight: 600; color: #333; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .avatar-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #333; width: 56px; cursor: pointer; }
+        .avatar-circle { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: clamp(14px, 2.5vw, 16px); font-weight: 600; color: #333; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); background: #e8f5e9; }
         .avatar-add { border: 2px dashed #ccc; color: #999; background: #f0f4f8; font-size: 20px; }
+        .avatar-add:hover { border-color: #06C755; color: #06C755; }
         .avatar-name { font-size: clamp(9px, 2vw, 10px); color: #888; text-align: center; max-width: 56px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .avatar-empty { text-align: center; color: #bbb; padding: 12px 0; font-size: 14px; width: 100%; }
+        .avatar-empty i { font-size: 24px; display: block; margin-bottom: 4px; }
         .today-card { background: white; border-radius: 16px; padding: 16px; border: 1px solid #f0f4f8; margin-top: 8px; }
         .today-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: clamp(13px, 2.5vw, 14px); color: #333; margin-bottom: 8px; }
         .today-header i { color: #06C755; margin-right: 6px; }
@@ -70,15 +73,66 @@
         document.getElementById('dateDisplay').textContent =
             `Today・${monthNames[now.getMonth()]} ${now.getDate()}  ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-        const friends = [];
-        const avatarsContainer = document.getElementById('avatars');
-        if (friends.length === 0) {
-            avatarsContainer.innerHTML = `
-                <div style="text-align:center;color:#bbb;padding:12px 0;font-size:14px;width:100%;">
-                    <i class="bi bi-people" style="font-size:24px;display:block;margin-bottom:4px;"></i>
-                    No friends added yet
-                </div>
-            `;
+        // ============================================================
+        // ✅ 友達一覧を Firestore から読み込む
+        // ============================================================
+        async function loadFriends() {
+            const container = document.getElementById('avatars');
+            try {
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+                const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const auth = getAuth();
+                const user = auth.currentUser;
+                if (!user) {
+                    container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>Please log in to see friends</div>`;
+                    return;
+                }
+                const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+                const firebaseConfig = {
+                    apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
+                    authDomain: 'tomoche.firebaseapp.com',
+                    projectId: 'tomoche',
+                    storageBucket: 'tomoche.firebasestorage.app',
+                    messagingSenderId: '687415158427',
+                    appId: '1:687415158427:web:1efc4417146176da74c83e'
+                };
+                const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                const q = query(collection(db, 'friendships'), where('userId', '==', user.uid));
+                const snapshot = await getDocs(q);
+                if (snapshot.empty) {
+                    container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>No friends added yet</div>`;
+                    return;
+                }
+                const friends = [];
+                for (const doc of snapshot.docs) {
+                    const data = doc.data();
+                    const friendRef = await db.collection('users').doc(data.friendId).get();
+                    if (friendRef.exists) {
+                        const friendData = friendRef.data();
+                        friends.push({
+                            id: data.friendId,
+                            name: friendData.displayName || 'Friend',
+                            initial: (friendData.displayName || 'F')[0].toUpperCase(),
+                            status: data.status || 'pending'
+                        });
+                    }
+                }
+                if (friends.length === 0) {
+                    container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>No friends added yet</div>`;
+                    return;
+                }
+                container.innerHTML = friends.map(fr => `
+                    <div class="avatar-item" onclick="alert('Friend: ${escapeHtml(fr.name)}')">
+                        <div class="avatar-circle">${escapeHtml(fr.initial)}</div>
+                        <span class="avatar-name">${escapeHtml(fr.name)}</span>
+                    </div>
+                `).join('');
+                container.innerHTML += `<a href="add.html" class="avatar-item"><div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div><span class="avatar-name">Add</span></a>`;
+            } catch (error) {
+                console.error('Load friends error:', error);
+                container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>Failed to load friends</div>`;
+            }
         }
 
         document.getElementById('globalSearch').addEventListener('keydown', function(e) {
@@ -89,6 +143,7 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            loadFriends();
             if (typeof renderPage === 'function') {
                 renderPage('Tomosche', '', 'home');
             }
