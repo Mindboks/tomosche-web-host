@@ -37,25 +37,33 @@ service cloud.firestore {
     }
     
     // ============================================================
-    // ✅ 予定データ（events）- 修正版
+    // 予定データ（events）- 修正版
     // ============================================================
     match /events/{eventId} {
+      // ✅ 読み取り：自分の予定（userId）または共有された予定（sharedWith）
       allow read: if request.auth != null && 
         (request.auth.uid == resource.data.userId || 
-         request.auth.uid == resource.data.sharedWith);
+        request.auth.uid == resource.data.sharedWith);
       
+      // ✅ 作成：本人のみ
       allow create: if request.auth != null && 
         request.auth.uid == request.resource.data.userId;
       
+      // ✅ 更新：本人は全フィールド更新可能
       allow update: if request.auth != null && 
         request.auth.uid == resource.data.userId;
       
+      // ✅ 更新：共有相手は status のみ更新可能
       allow update: if request.auth != null && 
         request.auth.uid == resource.data.sharedWith &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
       
+      // ✅ 削除：本人のみ
       allow delete: if request.auth != null && 
         request.auth.uid == resource.data.userId;
+      
+      // ✅ インデックス要件（listFields で sharedWith のクエリを許可）
+      // 注: Firebase Console で複合インデックスを作成する必要があります
     }
     
     // ============================================================

@@ -443,7 +443,7 @@
 
 
         // ============================================================
-        // Firestore から予定を読み込む（共有相手情報含む）
+        // Firestore から予定を読み込む（エラーハンドリング強化版）
         // ============================================================
         async function loadEventsFromFirestore(dateStr) {
             try {
@@ -461,60 +461,69 @@
                 if (!user) return [];
 
                 const db = getFirestore(app);
-
-                // 自分の予定（userId == user.uid）
-                const myQuery = query(
-                    collection(db, 'events'),
-                    where('userId', '==', user.uid),
-                    where('date', '==', dateStr)
-                );
-                const mySnapshot = await getDocs(myQuery);
                 const events = [];
                 const eventIds = new Set();
 
-                mySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    const id = doc.id;
-                    if (!eventIds.has(id)) {
-                        eventIds.add(id);
-                        events.push({
-                            id: id,
-                            time: data.time || '12:00',
-                            title: data.title || 'Untitled',
-                            person: data.person || 'Me',
-                            note: data.note || '',
-                            status: data.status || 'own',
-                            type: data.type || 'own',
-                            sharedWith: data.sharedWith || null  // ← 追加
-                        });
-                    }
-                });
+                // 1. 自分の予定（userId == user.uid）
+                try {
+                    const myQuery = query(
+                        collection(db, 'events'),
+                        where('userId', '==', user.uid),
+                        where('date', '==', dateStr)
+                    );
+                    const mySnapshot = await getDocs(myQuery);
+                    mySnapshot.forEach(doc => {
+                        const data = doc.data();
+                        const id = doc.id;
+                        if (!eventIds.has(id)) {
+                            eventIds.add(id);
+                            events.push({
+                                id: id,
+                                time: data.time || '12:00',
+                                title: data.title || 'Untitled',
+                                person: data.person || 'Me',
+                                note: data.note || '',
+                                status: data.status || 'own',
+                                type: data.type || 'own',
+                                sharedWith: data.sharedWith || null,
+                                userId: data.userId || user.uid
+                            });
+                        }
+                    });
+                } catch (err) {
+                    console.warn('自分の予定取得エラー:', err);
+                }
 
-                // 友達から共有された予定（sharedWith == user.uid）
-                const sharedQuery = query(
-                    collection(db, 'events'),
-                    where('sharedWith', '==', user.uid),
-                    where('date', '==', dateStr)
-                );
-                const sharedSnapshot = await getDocs(sharedQuery);
-                sharedSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    const id = doc.id;
-                    if (!eventIds.has(id)) {
-                        eventIds.add(id);
-                        events.push({
-                            id: id,
-                            time: data.time || '12:00',
-                            title: data.title || 'Untitled',
-                            person: data.person || 'Friend',
-                            note: data.note || '',
-                            status: data.status || 'confirmed',
-                            type: 'shared',
-                            sharedWith: data.sharedWith || null,
-                            fromUserId: data.userId || null  // ← 共有元のユーザーID
-                        });
-                    }
-                });
+                // 2. 友達から共有された予定（sharedWith == user.uid）
+                try {
+                    const sharedQuery = query(
+                        collection(db, 'events'),
+                        where('sharedWith', '==', user.uid),
+                        where('date', '==', dateStr)
+                    );
+                    const sharedSnapshot = await getDocs(sharedQuery);
+                    sharedSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        const id = doc.id;
+                        if (!eventIds.has(id)) {
+                            eventIds.add(id);
+                            events.push({
+                                id: id,
+                                time: data.time || '12:00',
+                                title: data.title || 'Untitled',
+                                person: data.person || 'Friend',
+                                note: data.note || '',
+                                status: data.status || 'confirmed',
+                                type: 'shared',
+                                sharedWith: data.sharedWith || null,
+                                userId: data.userId || null
+                            });
+                        }
+                    });
+                } catch (err) {
+                    console.warn('共有予定取得エラー:', err);
+                    // インデックスがなくてもエラーにならないように
+                }
 
                 return events;
             } catch (error) {
@@ -524,7 +533,7 @@
         }
 
         // ============================================================
-        // イベント削除（Shared削除権限対応）
+        // イベント削除（権限チェック強化版）
         // ============================================================
         async function deleteEvent(eventId, dateStr) {
             try {
@@ -555,12 +564,16 @@
                 
                 const eventData = eventSnap.data();
 
-                // Sharedイベントの削除権限チェック
+                // ✅ Sharedイベントの削除権限チェック
                 if (eventData.type === 'shared') {
-                    // 承諾者（sharedWith == user.uid）のみ削除可能
-                    if (eventData.sharedWith !== user.uid) {
-                        // 削除リクエストを送信
-                        if (confirm('This event was created by your friend. Send a cancellation request?')) {
+                    // 承諾者（sharedWith == user.uid）のみ直接削除可能
+                    if (eventData.sharedWith === user.uid) {
+                        if (!confirm(`Delete shared event "${eventData.title}"?`)) return;
+                        await deleteDoc(eventRef);
+                        alert('✅ Shared event deleted.');
+                    } else {
+                        // 依頼者は削除リクエストを送信
+                        if (confirm(`"${eventData.title}" was shared by your friend. Send cancellation request?`)) {
                             await addDoc(collection(db, 'friendEvents'), {
                                 fromUserId: user.uid,
                                 toUserId: eventData.userId,
@@ -576,13 +589,13 @@
                         }
                         return;
                     }
+                } else {
+                    // 自分のイベントは直接削除
+                    if (!confirm(`Delete "${eventData.title}"?`)) return;
+                    await deleteDoc(eventRef);
                 }
-
-                // 自分のイベントまたは削除権限があるSharedイベントは直接削除
-                if (!confirm(`Delete "${eventData.title}"?`)) return;
                 
-                await deleteDoc(eventRef);
-                
+                // 再読み込み
                 currentEvents[dateStr] = await loadEventsFromFirestore(dateStr);
                 await renderCalendar();
                 await renderEvents(dateStr);
