@@ -424,23 +424,26 @@
         const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
+
         // ============================================================
-        // 時間フォーマット関数
+        // 時間フォーマット関数（修正版）
         // ============================================================
         function formatTimeDisplay(timeStr) {
-            if (!timeStr) return '12:00 PM';
+            if (!timeStr) return '--:--';
             const parts = timeStr.split(':');
+            if (parts.length < 2) return '--:--';
             let hour = parseInt(parts[0], 10);
             const minute = parts[1] || '00';
+            if (isNaN(hour)) return '--:--';
             const ampm = hour >= 12 ? 'PM' : 'AM';
             hour = hour % 12;
             if (hour === 0) hour = 12;
             return `${hour}:${minute} ${ampm}`;
         }
 
+
         // ============================================================
-        // Firestore から予定を読み込む（修正版）
-        // 自分の予定（userId）＋ 共有された予定（sharedWith）を取得
+        // Firestore から予定を読み込む（重複防止版）
         // ============================================================
         async function loadEventsFromFirestore(dateStr) {
             try {
@@ -459,7 +462,7 @@
 
                 const db = getFirestore(app);
 
-                // ✅ 自分の予定（userId == user.uid）を取得
+                // ✅ 自分の予定（userId == user.uid）
                 const myQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid),
@@ -467,20 +470,26 @@
                 );
                 const mySnapshot = await getDocs(myQuery);
                 const events = [];
+                const eventIds = new Set(); // 重複防止用
+
                 mySnapshot.forEach(doc => {
                     const data = doc.data();
-                    events.push({
-                        id: doc.id,
-                        time: data.time || '12:00',
-                        title: data.title || 'Untitled',
-                        person: data.person || 'Me',
-                        note: data.note || '',
-                        status: data.status || 'own',
-                        type: data.type || 'own'
-                    });
+                    const id = doc.id;
+                    if (!eventIds.has(id)) {
+                        eventIds.add(id);
+                        events.push({
+                            id: id,
+                            time: data.time || '12:00',
+                            title: data.title || 'Untitled',
+                            person: data.person || 'Me',
+                            note: data.note || '',
+                            status: data.status || 'own',
+                            type: data.type || 'own'
+                        });
+                    }
                 });
 
-                // ✅ 友達から共有された予定（sharedWith == user.uid）を取得
+                // ✅ 友達から共有された予定（sharedWith == user.uid）
                 const sharedQuery = query(
                     collection(db, 'events'),
                     where('sharedWith', '==', user.uid),
@@ -489,15 +498,19 @@
                 const sharedSnapshot = await getDocs(sharedQuery);
                 sharedSnapshot.forEach(doc => {
                     const data = doc.data();
-                    events.push({
-                        id: doc.id,
-                        time: data.time || '12:00',
-                        title: data.title || 'Untitled',
-                        person: data.person || 'Friend',
-                        note: data.note || '',
-                        status: data.status || 'confirmed',
-                        type: 'shared'  // ← 共有イベントとしてマーク
-                    });
+                    const id = doc.id;
+                    if (!eventIds.has(id)) {
+                        eventIds.add(id);
+                        events.push({
+                            id: id,
+                            time: data.time || '12:00',
+                            title: data.title || 'Untitled',
+                            person: data.person || 'Friend',
+                            note: data.note || '',
+                            status: data.status || 'confirmed',
+                            type: 'shared'
+                        });
+                    }
                 });
 
                 return events;
@@ -508,9 +521,10 @@
         }
 
         // ============================================================
-        // イベント削除
+        // イベント削除（Sharedイベント対応）
         // ============================================================
         async function deleteEvent(eventId, dateStr) {
+            // 確認ダイアログ
             if (!confirm('Delete this event?')) return;
 
             try {
@@ -519,7 +533,7 @@
                 }
 
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const { getFirestore, doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getFirestore, doc, deleteDoc, getDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
                 
                 const app = getApp();
@@ -531,8 +545,37 @@
                 }
 
                 const db = getFirestore(app);
-                await deleteDoc(doc(db, 'events', eventId));
+
+                // イベント情報を取得（Sharedかどうか確認）
+                const eventRef = doc(db, 'events', eventId);
+                const eventSnap = await getDoc(eventRef);
+                const eventData = eventSnap.data();
+
+                if (eventData && eventData.type === 'shared') {
+                    // Sharedイベントは削除リクエストとして処理
+                    if (confirm('This is a shared event. Send a cancellation request to your friend?')) {
+                        // friendEvents に削除リクエストを作成
+                        const friendEventsRef = collection(db, 'friendEvents');
+                        await addDoc(friendEventsRef, {
+                            fromUserId: user.uid,
+                            toUserId: eventData.sharedWith || eventData.userId,
+                            date: eventData.date,
+                            time: eventData.time,
+                            title: `[CANCEL] ${eventData.title}`,
+                            note: 'This event has been cancelled by the participant.',
+                            status: 'cancelled',
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                        });
+                        alert('✅ Cancellation request sent to your friend.');
+                    }
+                    return;
+                }
+
+                // 自分のイベントは直接削除
+                await deleteDoc(eventRef);
                 
+                // 再読み込み
                 currentEvents[dateStr] = await loadEventsFromFirestore(dateStr);
                 await renderCalendar();
                 await renderEvents(dateStr);
@@ -546,7 +589,7 @@
 
                 
         // ============================================================
-        // レンダリング関数（修正版）
+        // レンダリング関数（修正版 - Shared削除ボタン追加）
         // ============================================================
         async function renderEvents(dateStr) {
             const container = document.getElementById('eventList');
@@ -576,16 +619,12 @@
 
             container.innerHTML = events.map(e => {
                 const safe = escapeEvent(e);
-                
-                // ✅ 共有イベントかどうか判定
                 const isShared = safe.type === 'shared';
                 const statusClass = isShared ? 'confirmed' : 'own';
                 const statusLabel = isShared ? '👤 Shared' : '👤 My Schedule';
                 
                 let displayTitle = safe.title;
-                // 共有イベントのタイトルを整形
                 if (isShared) {
-                    // すでに "[With xxx]" 形式なら整形
                     const match = displayTitle.match(/^\[With\s+(.+?)\]\s*(.*)$/);
                     if (match) {
                         displayTitle = `${match[2] || match[1]} (${match[1]})`;
@@ -594,13 +633,16 @@
                 
                 const displayTime = formatTimeDisplay(safe.time);
                 
+                // ✅ Sharedイベントにも削除ボタンを追加（削除リクエスト送信）
                 return `
                     <div class="event-item">
                         <span class="event-time ${statusClass}">${displayTime}</span>
                         <span class="event-title" style="white-space:normal;word-break:break-word;">${displayTitle}</span>
                         <span class="event-person">👤 ${safe.person}</span>
                         <span class="event-status ${statusClass}">${statusLabel}</span>
-                        ${!isShared ? `<button class="event-delete-btn" onclick="deleteEvent('${e.id}', '${dateStr}')" title="Delete"><i class="bi bi-trash3"></i></button>` : ''}
+                        <button class="event-delete-btn" onclick="deleteEvent('${e.id}', '${dateStr}')" title="Delete">
+                            <i class="bi bi-trash3"></i>
+                        </button>
                     </div>
                 `;
             }).join('');
