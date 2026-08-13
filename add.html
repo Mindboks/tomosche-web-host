@@ -17,10 +17,12 @@
         .send-btn:hover { background: #049a44; }
         .qr-note { font-size: 12px; color: #aaa; margin-top: 16px; }
         .status-msg { margin-top: 16px; padding: 12px; border-radius: 12px; text-align: center; display: none; font-weight: 600; }
-        .status-msg.success { display: block; background: #e8f5e9; color: #2e7d32; }
-        .status-msg.error { display: block; background: #ffebee; color: #c62828; }
-        .status-msg.info { display: block; background: #e3f2fd; color: #1565c0; }
+        .status-msg.success { display: block; background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .status-msg.error { display: block; background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        .status-msg.info { display: block; background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+        .status-msg.debug { display: block; background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; font-family: monospace; font-size: 12px; text-align: left; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }
         .my-id { font-size: 12px; color: #888; margin-top: 8px; word-break: break-all; }
+        .debug-toggle { font-size: 11px; color: #999; cursor: pointer; text-decoration: underline; margin-top: 8px; display: inline-block; }
     </style>
 </head>
 <body>
@@ -37,8 +39,12 @@
                 <button class="send-btn" id="sendBtn"><i class="bi bi-line me-2"></i>Send via LINE</button>
                 <div class="qr-note">When scanned, your friend will be automatically added</div>
                 <div class="my-id">Your ID: <span id="myUserId">Loading...</span></div>
+                <div style="margin-top:8px;">
+                    <span class="debug-toggle" onclick="toggleDebug()">🔍 Show Debug Info</span>
+                </div>
             </div>
             <div class="status-msg" id="statusMsg"></div>
+            <div class="status-msg debug" id="debugMsg" style="display:none;"></div>
         </div>
     </div>
 
@@ -46,24 +52,37 @@
     <script src="js/app.js"></script>
     <script src="js/template.js"></script>
     <script>
-        let qrGenerated = false;
+        let debugVisible = false;
 
         document.addEventListener('DOMContentLoaded', async function() {
             generateQRCode();
             displayMyUserId();
 
-            // ★ 固定2秒待ちではなく、認証完了（Firebaseサインインまで）を確実に待つ
             if (window.liffReadyPromise) {
                 await window.liffReadyPromise;
             }
-            sendAutoFriendRequest();
+            await sendAutoFriendRequest();
 
             if (typeof renderPage === 'function') {
                 renderPage('Add Friends', '', 'add');
             }
         });
 
-        // ✅ QRコード生成（auth-guard完了後に実行）
+        function toggleDebug() {
+            const el = document.getElementById('debugMsg');
+            debugVisible = !debugVisible;
+            el.style.display = debugVisible ? 'block' : 'none';
+        }
+
+        function showDebug(message) {
+            const el = document.getElementById('debugMsg');
+            el.textContent += message + '\n';
+            if (debugVisible) {
+                el.style.display = 'block';
+            }
+            console.log(message);
+        }
+
         async function generateQRCode() {
             try {
                 if (window.liffReadyPromise) {
@@ -78,7 +97,6 @@
                         width: 200,
                         height: 200
                     });
-                    qrGenerated = true;
                 } catch(e) {
                     console.error('QR生成エラー:', e);
                 }
@@ -115,13 +133,22 @@
         });
 
         // ============================================================
-        // ✅ 自動友達リクエスト送信（QRコード読み込み時）
-        // クライアントから直接Firestoreに書き込むのではなく、
-        // Admin SDK権限を持つ addFriendV2 経由で処理する
-        // （他人のfriendships/usersへの直接書き込み・読み取りはルール上できないため）
+        // ✅ 友達追加（Cloud Functions 経由 + デバッグ機能）
         // ============================================================
         async function sendAutoFriendRequest() {
+            showDebug('=== 友達追加処理開始 ===');
+            
             try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const friendId = urlParams.get('friendId');
+
+                showDebug(`📌 URLパラメータ friendId: ${friendId || '(なし)'}`);
+
+                if (!friendId) {
+                    showDebug('ℹ️ friendIdがありません。QRコード表示モードです。');
+                    return;
+                }
+
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
                 const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
 
@@ -137,26 +164,28 @@
                 const auth = getAuth(app);
                 const user = auth.currentUser;
 
+                showDebug(`👤 認証状態: ${user ? 'ログイン中 (UID: ' + user.uid + ')' : '未ログイン'}`);
+
                 if (!user) {
                     showStatus('Please log in to add friends.', 'error');
-                    return;
-                }
-
-                const urlParams = new URLSearchParams(window.location.search);
-                const friendId = urlParams.get('friendId');
-
-                if (!friendId) {
-                    console.log('No friendId in URL. Showing QR code only.');
+                    showDebug('❌ ユーザーが未ログインです');
                     return;
                 }
 
                 if (friendId === user.uid) {
                     showStatus('You cannot add yourself.', 'error');
+                    showDebug('❌ 自分自身を追加しようとしています');
                     return;
                 }
 
                 const idToken = await user.getIdToken();
-                const res = await fetch('https://us-central1-tomoche.cloudfunctions.net/addFriendV2', {
+                showDebug('🔑 IDトークン取得完了');
+
+                const apiUrl = 'https://us-central1-tomoche.cloudfunctions.net/addFriendV2';
+                showDebug(`📡 APIリクエスト: ${apiUrl}`);
+                showDebug(`📤 送信データ: { friendId: "${friendId}" }`);
+
+                const res = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -165,24 +194,33 @@
                     body: JSON.stringify({ friendId })
                 });
 
-                if (!res.ok) {
-                    const errData = await res.json().catch(() => ({}));
-                    throw new Error(errData.error || `HTTP ${res.status}`);
-                }
+                showDebug(`📥 レスポンスステータス: ${res.status}`);
 
                 const data = await res.json();
+                showDebug(`📦 レスポンスボディ: ${JSON.stringify(data, null, 2)}`);
+
+                if (!res.ok) {
+                    throw new Error(data.error || `HTTP ${res.status}`);
+                }
 
                 if (data.alreadyFriends) {
-                    showStatus('Already friends! 🎉', 'info');
+                    showStatus(`✅ Already friends with ${data.friendName}! 🎉`, 'info');
+                    showDebug(`✅ 既に友達です: ${data.friendName}`);
                 } else {
                     showStatus(`✅ ${data.friendName} added successfully! 🎉`, 'success');
+                    showDebug(`✅ 友達追加成功: ${data.friendName}`);
                     localStorage.setItem('tomosche_friends_updated', 'true');
+                    showDebug('📌 更新フラグを設定しました (tomosche_friends_updated=true)');
                 }
 
             } catch (error) {
-                console.error('Send friend request error:', error);
-                showStatus('Failed to add friend. Please try again.', 'error');
+                console.error('Add friend error:', error);
+                showStatus('❌ Failed to add friend. Please try again.', 'error');
+                showDebug(`❌ エラー: ${error.message}`);
+                showDebug(`❌ スタック: ${error.stack || '(なし)'}`);
             }
+
+            showDebug('=== 友達追加処理終了 ===');
         }
 
         function showStatus(message, type) {

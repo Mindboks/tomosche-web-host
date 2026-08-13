@@ -39,6 +39,7 @@
         .today-time { color: #06C755; font-weight: 600; min-width: 44px; font-size: clamp(11px, 2vw, 12px); }
         .today-title { flex: 1; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .today-person { color: #888; background: #f0f4f8; padding: 2px 10px; border-radius: 999px; font-size: clamp(10px, 1.8vw, 11px); white-space: nowrap; }
+        .debug-console { font-size: 11px; color: #999; margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 8px; display: none; white-space: pre-wrap; word-break: break-all; max-height: 150px; overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -74,18 +75,31 @@
             `Today・${monthNames[now.getMonth()]} ${now.getDate()}  ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
         // ============================================================
-        // ✅ 友達一覧を Firestore から読み込む
-        // friendships ドキュメントに埋め込まれた friendName を使うので、
-        // 他人の users コレクションを読みに行く必要がない
-        // （読みに行こうとしてもセキュリティルール上できない）
+        // ✅ 友達一覧を Firestore からリアルタイムで読み込む
         // ============================================================
+        function renderFriendsList(friends, container) {
+            console.log('🎨 レンダリング開始:', friends.length, '人');
+            if (friends.length === 0) {
+                container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>No friends added yet</div>`;
+            } else {
+                container.innerHTML = friends.map(fr => `
+                    <div class="avatar-item" onclick="alert('Friend: ${escapeHtml(fr.name)}')">
+                        <div class="avatar-circle">${escapeHtml(fr.initial)}</div>
+                        <span class="avatar-name">${escapeHtml(fr.name)}</span>
+                    </div>
+                `).join('');
+            }
+            container.innerHTML += `<a href="add.html" class="avatar-item"><div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div><span class="avatar-name">Add</span></a>`;
+        }
+
         async function loadFriends() {
             const container = document.getElementById('avatars');
+            console.log('🔍 loadFriends 開始');
             try {
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
-                
+                const { getFirestore, collection, query, where, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+
                 const firebaseConfig = {
                     apiKey: 'AIzaSyAutsnScMxkcm6UXv0vhLs6hVDY_rxhLP0',
                     authDomain: 'tomoche.firebaseapp.com',
@@ -97,6 +111,7 @@
                 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
                 const auth = getAuth(app);
                 const user = auth.currentUser;
+                console.log('👤 ユーザー:', user ? user.uid : '未ログイン');
 
                 if (!user) {
                     container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>Please log in to see friends</div>`;
@@ -104,39 +119,41 @@
                 }
 
                 const db = getFirestore(app);
-
-                // friendships から友達を取得（自分のレコードのみ・friendNameが埋め込み済み）
                 const q = query(collection(db, 'friendships'), where('userId', '==', user.uid));
-                const snapshot = await getDocs(q);
 
-                if (snapshot.empty) {
-                    container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>No friends added yet</div>`;
-                    return;
-                }
+                console.log('⏳ Firestore 監視開始...');
+                onSnapshot(q, (snapshot) => {
+                    console.log('📦 更新検知! 件数:', snapshot.size);
+                    
+                    if (snapshot.empty) {
+                        console.log('ℹ️ 友達データなし');
+                        renderFriendsList([], container);
+                        return;
+                    }
 
-                const friends = snapshot.docs.map(docSnap => {
-                    const data = docSnap.data();
-                    const name = data.friendName || 'Friend';
-                    return {
-                        id: data.friendId,
-                        name: name,
-                        initial: name.charAt(0).toUpperCase()
-                    };
+                    const friends = [];
+                    snapshot.forEach(docSnap => {
+                        const data = docSnap.data();
+                        console.log('📄 ドキュメント:', docSnap.id, data);
+                        const name = data.friendName || 'Friend';
+                        friends.push({
+                            id: data.friendId,
+                            name: name,
+                            initial: name.charAt(0).toUpperCase()
+                        });
+                    });
+                    
+                    console.log('👥 友達リスト:', friends);
+                    renderFriendsList(friends, container);
+                    
+                }, (error) => {
+                    console.error('❌ onSnapshot エラー:', error);
+                    container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>Error: ${error.message}</div>`;
                 });
 
-                container.innerHTML = friends.map(fr => `
-                    <div class="avatar-item" onclick="alert('Friend: ${escapeHtml(fr.name)}')">
-                        <div class="avatar-circle">${escapeHtml(fr.initial)}</div>
-                        <span class="avatar-name">${escapeHtml(fr.name)}</span>
-                    </div>
-                `).join('');
-                container.innerHTML += `<a href="add.html" class="avatar-item"><div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div><span class="avatar-name">Add</span></a>`;
-
-                localStorage.removeItem('tomosche_friends_updated');
-
             } catch (error) {
-                console.error('Load friends error:', error);
-                container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>Failed to load friends</div>`;
+                console.error('❌ loadFriends エラー:', error);
+                container.innerHTML = `<div class="avatar-empty"><i class="bi bi-people"></i>Error: ${error.message}</div>`;
             }
         }
 
@@ -149,12 +166,6 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             loadFriends();
-            setInterval(() => {
-                const shouldUpdate = localStorage.getItem('tomosche_friends_updated') === 'true';
-                if (shouldUpdate) {
-                    loadFriends();
-                }
-            }, 3000);
             if (typeof renderPage === 'function') {
                 renderPage('Tomosche', '', 'home');
             }
