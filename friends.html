@@ -463,19 +463,26 @@
             const container = document.getElementById('scheduleList');
 
             if (!events || events.length === 0) {
-                container.innerHTML = `<div class="empty-state">...</div>`;
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-calendar3"></i>
+                        <p>No schedule yet</p>
+                        <p class="sub">Add your schedule from the Calendar page</p>
+                        <a href="calendar.html" class="btn-add">Go to Calendar</a>
+                    </div>
+                `;
                 return;
             }
 
-            // ★ 自分のプロフィール画像を取得
+            // 自分のプロフィール画像を取得
             const myPictureUrl = window.currentUser?.pictureUrl || null;
 
             container.innerHTML = events.map(ev => {
-                const dateInfo = formatDateDisplayCommon(ev.date, ev.time);
+                // ★ 修正: formatDateDisplayCommon → formatDateDisplay
+                const dateInfo = formatDateDisplay(ev.date, ev.time);
                 const safeTitle = escapeHtml(ev.title);
                 const safeName = escapeHtml(ev.displayName);
                 
-                // ★ アイコン表示（自分の場合はLINE画像、友達は頭文字）
                 let avatarHtml = '';
                 if (ev.isMe && myPictureUrl) {
                     avatarHtml = `<img src="${myPictureUrl}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #06C755;" />`;
@@ -485,19 +492,15 @@
                     avatarHtml = `<div class="${avatarClass}">${initial}</div>`;
                 }
 
-                // 削除ボタン（常に表示）
                 const deleteBtn = `<button class="btn-delete-event" onclick="deleteEvent('${ev.id}')" title="Delete event"><i class="bi bi-trash3"></i></button>`;
 
                 return `
                     <div class="friend-item">
-                        <!-- 左側：日付 -->
                         <div class="event-date-area">
                             <div class="event-date-day">${dateInfo.day}</div>
                             <div class="event-date-month">${dateInfo.month}</div>
                             <div class="event-date-time">${dateInfo.time}</div>
                         </div>
-                        
-                        <!-- 中央：イベント情報 -->
                         <div class="event-info-area">
                             <div class="event-title">${safeTitle}</div>
                             <div class="event-person">
@@ -506,8 +509,6 @@
                             </div>
                             <span class="event-status-badge ${ev.statusClass}">${ev.statusText}</span>
                         </div>
-                        
-                        <!-- 右側：アイコン + 削除ボタン -->
                         <div class="event-actions-area">
                             ${avatarHtml}
                             ${deleteBtn}
@@ -516,7 +517,6 @@
                 `;
             }).join('');
         }
-
 
 
         // ============================================================
