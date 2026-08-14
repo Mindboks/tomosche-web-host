@@ -3,9 +3,10 @@
 // ================================================================
 
 function renderPage(title, content, activeNav) {
+    // js/template.js の renderPage 関数内の navItems を修正
     const navItems = [
         { id: 'home', href: '/', icon: 'bi-house-fill', label: 'Home' },
-        { id: 'friends', href: 'friends.html', icon: 'bi-people-fill', label: 'Friends' },
+        { id: 'friends', href: 'friends.html', icon: 'bi-people-fill', label: 'Schedule' },  // ← 変更
         { id: 'calendar', href: 'calendar.html', icon: 'bi-calendar-event-fill', label: 'Calendar' },
         { id: 'add', href: 'add.html', icon: 'bi-person-plus-fill', label: 'Add' }
     ];
