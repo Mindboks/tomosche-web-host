@@ -493,7 +493,7 @@
         }
 
         // ============================================================
-        // リクエスト処理（承認/拒否）
+        // リクエスト処理（承認/拒否）- 修正版
         // ============================================================
         async function processRequest(status) {
             if (!selectedRequestId) return;
@@ -527,6 +527,7 @@
 
                 if (status === 'approved') {
                     if (isCancel) {
+                        // キャンセル承認
                         await updateDoc(requestRef, {
                             status: 'approved',
                             updatedAt: new Date().toISOString()
@@ -534,11 +535,13 @@
                         statusEl.textContent = '✅ Cancellation accepted.';
                         statusEl.style.color = '#06C755';
                     } else {
+                        // 通常承認
                         await updateDoc(requestRef, {
                             status: 'confirmed',
                             updatedAt: new Date().toISOString()
                         });
 
+                        // 自分のカレンダーに追加
                         await addDoc(collection(db, 'events'), {
                             userId: user.uid,
                             date: req.date,
@@ -553,6 +556,7 @@
                             updatedAt: new Date().toISOString()
                         });
 
+                        // 友達のカレンダーに追加
                         const myDisplayName = window.currentUser?.displayName || 'Me';
                         await addDoc(collection(db, 'events'), {
                             userId: req.fromUserId,
@@ -572,10 +576,18 @@
                         statusEl.style.color = '#06C755';
                     }
                 } else {
+                    // ★ 拒否（Decline）：ステータスを rejected に更新するだけ
                     await updateDoc(requestRef, {
                         status: 'rejected',
                         updatedAt: new Date().toISOString()
                     });
+                    
+                    // 拒否のコメントがあれば保存（オプション）
+                    if (comment) {
+                        console.log('📝 拒否コメント:', comment);
+                        // 必要に応じて feedback コレクションなどに保存
+                    }
+                    
                     statusEl.textContent = '❌ Request declined.';
                     statusEl.style.color = '#e53935';
                 }
