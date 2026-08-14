@@ -721,7 +721,7 @@ async function loadEventsFromFirestore(dateStr) {
 
 
         // ============================================================
-        // カレンダー描画（高速化版 + 重複ドット表示）
+        // カレンダー描画（高速化版 + 重複ドット表示 + キャッシュ修正）
         // ============================================================
         async function renderCalendar() {
             const grid = document.getElementById('calGrid');
@@ -733,14 +733,16 @@ async function loadEventsFromFirestore(dateStr) {
 
             // ✅ 月単位で一括取得（キャッシュがない場合のみ）
             const monthKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
-            if (!currentEvents[monthKey]) {
+            // ★ 修正: monthKey が true かどうかではなく、events データが存在するかで判断
+            if (!currentEvents[monthKey] || currentEvents[monthKey] === true) {
                 const eventsMap = await loadMonthEvents(calYear, calMonth);
                 // 日付単位で currentEvents に展開
                 for (const [date, events] of Object.entries(eventsMap)) {
                     currentEvents[date] = events;
                 }
-                currentEvents[monthKey] = true; // キャッシュ済みフラグ
-                console.log(`📦 月データをキャッシュ: ${monthKey}`);
+                // ★ 修正: true ではなく、データが存在することを示すオブジェクトを保存
+                currentEvents[monthKey] = { loaded: true };
+                console.log(`📦 月データをキャッシュ: ${monthKey}, 日数: ${Object.keys(eventsMap).length}`);
             }
 
             let html = weekdays.map(w => `<div class="calendar-weekday">${w}</div>`).join('');
@@ -755,12 +757,12 @@ async function loadEventsFromFirestore(dateStr) {
                 const isToday = calYear === today.getFullYear() && calMonth === today.getMonth() && d === today.getDate();
                 const isSelected = selectedDate === ds;
 
+                // ★ 修正: データが正しく取れているか確認
                 const events = currentEvents[ds] || [];
+                console.log(`📅 ${ds}: ${events.length}件`);
                 
-                // ✅ イベントタイプをチェック（重複表示対応）
                 const hasOwn = events.some(e => e.type === 'own');
                 const hasShared = events.some(e => e.type === 'shared');
-                const hasBoth = hasOwn && hasShared;
 
                 let cls = 'calendar-day';
                 if (isToday) cls += ' today';
@@ -768,9 +770,7 @@ async function loadEventsFromFirestore(dateStr) {
 
                 html += `<div class="${cls}" onclick="selectDate('${ds}')">${d}`;
                 
-                // ✅ 重複表示：両方ある場合は2つ、それ以外は1つ
-                if (hasBoth) {
-                    // 2つのドット（青＋オレンジ）を横に並べて表示
+                if (hasOwn && hasShared) {
                     html += `<div style="display:flex;gap:2px;position:absolute;bottom:3px;left:50%;transform:translateX(-50%);">
                                 <div class="dot own" style="position:relative;bottom:0;margin:0;"></div>
                                 <div class="dot shared" style="position:relative;bottom:0;margin:0;background:#ff9800 !important;"></div>
