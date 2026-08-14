@@ -722,7 +722,7 @@
 
 
         // ============================================================
-        // カレンダー描画（高速化版 + 重複ドット表示 + キャッシュ修正）
+        // カレンダー描画（高速化版 + 重複ドット表示 + 常に表示）
         // ============================================================
         async function renderCalendar() {
             const grid = document.getElementById('calGrid');
@@ -734,16 +734,16 @@
 
             // ✅ 月単位で一括取得（キャッシュがない場合のみ）
             const monthKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
-            // ★ 修正: monthKey が true かどうかではなく、events データが存在するかで判断
-            if (!currentEvents[monthKey] || currentEvents[monthKey] === true) {
+            // ★ 修正: キャッシュがなければ必ず取得する
+            if (!currentEvents[monthKey]) {
                 const eventsMap = await loadMonthEvents(calYear, calMonth);
-                // 日付単位で currentEvents に展開
                 for (const [date, events] of Object.entries(eventsMap)) {
                     currentEvents[date] = events;
                 }
-                // ★ 修正: true ではなく、データが存在することを示すオブジェクトを保存
                 currentEvents[monthKey] = { loaded: true };
                 console.log(`📦 月データをキャッシュ: ${monthKey}, 日数: ${Object.keys(eventsMap).length}`);
+            } else {
+                console.log(`✅ キャッシュ済み: ${monthKey}`);
             }
 
             let html = weekdays.map(w => `<div class="calendar-weekday">${w}</div>`).join('');
@@ -758,10 +758,8 @@
                 const isToday = calYear === today.getFullYear() && calMonth === today.getMonth() && d === today.getDate();
                 const isSelected = selectedDate === ds;
 
-                // ★ 修正: データが正しく取れているか確認
+                // ★ キャッシュからデータを取得
                 const events = currentEvents[ds] || [];
-                console.log(`📅 ${ds}: ${events.length}件`);
-                
                 const hasOwn = events.some(e => e.type === 'own');
                 const hasShared = events.some(e => e.type === 'shared');
 
