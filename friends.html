@@ -155,8 +155,6 @@
             font-size: 15px;
         }
         .schedule-modal .btn-cancel { background: #f0f4f8; color: #666; }
-        .schedule-modal .btn-save { background: #2196f3; color: white; }
-        .schedule-modal .btn-save:hover { background: #1976d2; }
         .request-item {
             background: #f8f9fa;
             border-radius: 12px;
@@ -192,7 +190,7 @@
         </div>
     </div>
 
-    <!-- ✅ 友達からのイベント申請一覧モーダル -->
+    <!-- 友達からのイベント申請一覧モーダル -->
     <div class="schedule-modal-overlay" id="friendRequestsModal">
         <div class="schedule-modal">
             <h3>📩 Friend Event Requests</h3>
@@ -285,6 +283,7 @@
 
                 const db = getFirestore(app);
 
+                // 友達一覧
                 const friendsQuery = query(
                     collection(db, 'friendships'),
                     where('userId', '==', user.uid)
@@ -304,7 +303,7 @@
                 );
                 const myEventsSnapshot = await getDocs(myEventsQuery);
 
-                // 共有予定（sharedWith == user.uid）
+                // ★★★ 友達の予定（sharedWith == user.uid）- これが重要！ ★★★
                 const sharedEventsQuery = query(
                     collection(db, 'events'),
                     where('sharedWith', '==', user.uid)
@@ -312,18 +311,30 @@
                 const sharedEventsSnapshot = await getDocs(sharedEventsQuery);
 
                 const eventMap = new Map();
+
+                // 自分の予定を追加
                 myEventsSnapshot.forEach(eDoc => {
                     const data = eDoc.data();
                     const id = eDoc.id;
                     if (!eventMap.has(id)) {
-                        eventMap.set(id, { id: id, ...data, type: data.type || 'own' });
+                        eventMap.set(id, {
+                            id: id,
+                            ...data,
+                            type: data.type || 'own'
+                        });
                     }
                 });
+
+                // ★★★ 友達の予定（共有イベント）を追加 ★★★
                 sharedEventsSnapshot.forEach(eDoc => {
                     const data = eDoc.data();
                     const id = eDoc.id;
                     if (!eventMap.has(id)) {
-                        eventMap.set(id, { id: id, ...data, type: 'shared' });
+                        eventMap.set(id, {
+                            id: id,
+                            ...data,
+                            type: 'shared'
+                        });
                     }
                 });
 
@@ -345,7 +356,6 @@
                             displayName = fName;
                             friendName = fName;
                         } else {
-                            // 自分が共有したイベント（自分が依頼者）
                             isMe = true;
                             displayName = 'My';
                             friendName = 'My';
@@ -512,7 +522,7 @@
         }
 
         // ============================================================
-        // イベント削除
+        // イベント削除（キャンセル依頼対応）
         // ============================================================
         async function deleteEvent(eventId) {
             console.log('🗑️ deleteEvent 開始');
@@ -555,6 +565,7 @@
                         await deleteDoc(eventRef);
                         alert('✅ Shared event deleted.');
                     } else {
+                        // ★ キャンセル依頼を送信
                         if (confirm(`"${eventData.title}" was shared by your friend. Send cancellation request?`)) {
                             await addDoc(collection(db, 'friendEvents'), {
                                 fromUserId: user.uid,
@@ -568,6 +579,8 @@
                                 updatedAt: new Date().toISOString()
                             });
                             alert('✅ Cancellation request sent to your friend.');
+
+                            // ★ 再読み込みしてリクエストモーダルを開く
                             await loadAllData();
                             await loadFriendRequests();
                             await openFriendRequestsModal();
@@ -653,10 +666,9 @@
             const modal = document.getElementById('friendRequestsModal');
             const container = document.getElementById('friendRequestList');
 
-            // ★ モーダルがすでに開いている場合は閉じてから開き直す
+            // モーダルがすでに開いている場合は閉じてから開き直す
             if (modal.classList.contains('active')) {
                 modal.classList.remove('active');
-                // 少し待ってから開き直す
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
 
@@ -851,6 +863,7 @@
 
                 const cleanTitle = requestData.title.replace('[CANCEL] ', '').trim();
 
+                // 自分のイベント
                 const myEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid),
@@ -864,6 +877,7 @@
                     }
                 }
 
+                // 友達のイベント
                 const friendEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', friendId),
@@ -897,7 +911,7 @@
             }
             loadAllData();
 
-            // ★ リクエストモーダルの閉じるボタン
+            // リクエストモーダルの閉じるボタン
             document.getElementById('friendRequestsCloseBtn').addEventListener('click', closeFriendRequestsModal);
             document.getElementById('friendRequestsModal').addEventListener('click', function(e) {
                 if (e.target === this) closeFriendRequestsModal();
