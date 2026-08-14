@@ -241,7 +241,7 @@
         }
 
         // ============================================================
-        // 友達一覧 + イベントを読み込む（修正版）
+        // 友達一覧 + イベントを読み込む（クエリ最適化版）
         // ============================================================
         async function loadAllData() {
             const container = document.getElementById('friendList');
@@ -286,54 +286,77 @@
                     return;
                 }
 
-                // 2. 各友達の情報とイベントを取得
+                // 2. ★ 自分のイベントを取得（自分が関係するイベントのみ）
+                // ① 自分の予定（userId == user.uid）
+                const myEventsQuery = query(
+                    collection(db, 'events'),
+                    where('userId', '==', user.uid)
+                );
+                const myEventsSnapshot = await getDocs(myEventsQuery);
+                
+                // ② 自分が共有されている予定（sharedWith == user.uid）
+                const sharedEventsQuery = query(
+                    collection(db, 'events'),
+                    where('sharedWith', '==', user.uid)
+                );
+                const sharedEventsSnapshot = await getDocs(sharedEventsQuery);
+
+                // イベントをマップに格納（重複防止）
+                const eventMap = new Map();
+                
+                myEventsSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    // ★ 友達に関係するイベントかチェック
+                    const friendId = data.sharedWith || null;
+                    if (friendId) {
+                        eventMap.set(doc.id, {
+                            id: doc.id,
+                            ...data,
+                            type: data.type || 'own'
+                        });
+                    }
+                });
+                
+                sharedEventsSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (!eventMap.has(doc.id)) {
+                        eventMap.set(doc.id, {
+                            id: doc.id,
+                            ...data,
+                            type: 'shared'
+                        });
+                    }
+                });
+
+                // 3. 友達ごとにイベントを振り分け
                 const friends = [];
                 for (const doc of friendsSnapshot.docs) {
                     const data = doc.data();
                     const friendId = data.friendId;
                     const friendName = data.friendName || 'Friend';
 
-                    // ★ 修正: 全てのイベントを取得（userId で絞らず、全件取得してからフィルタ）
-                    const allEventsQuery = query(
-                        collection(db, 'events')
-                    );
-                    const allEventsSnapshot = await getDocs(allEventsQuery);
-                    
                     const events = [];
-                    allEventsSnapshot.forEach(eventDoc => {
-                        const eventData = eventDoc.data();
-                        // ★ 条件: userId == friendId または sharedWith == user.uid のイベント
-                        const isOwnEvent = eventData.userId === friendId;
-                        const isSharedWithMe = eventData.sharedWith === user.uid;
-                        const isMySharedEvent = eventData.userId === user.uid && eventData.sharedWith === friendId;
-                        
-                        // ★ 自分が関係するイベントのみを表示
-                        if (isOwnEvent || isSharedWithMe || isMySharedEvent) {
-                            // 重複を避ける
-                            const exists = events.some(e => e.id === eventDoc.id);
-                            if (!exists) {
-                                // イベントタイトルを整形
-                                let displayTitle = eventData.title || 'Untitled';
-                                // [With xxx] を除去
-                                displayTitle = displayTitle.replace(/^\[With\s+.+?\]\s*/, '').trim();
-                                
-                                events.push({
-                                    id: eventDoc.id,
-                                    title: displayTitle,
-                                    originalTitle: eventData.title || 'Untitled',
-                                    date: eventData.date || 'Unknown',
-                                    time: eventData.time || '--:--',
-                                    status: eventData.status || 'pending',
-                                    type: eventData.type || 'own',
-                                    userId: eventData.userId,
-                                    sharedWith: eventData.sharedWith || null,
-                                    person: eventData.person || 'Friend'
-                                });
-                            }
+                    for (const [id, eventData] of eventMap) {
+                        // ★ 友達に関係するイベントのみ（userId == friendId または sharedWith == friendId）
+                        if (eventData.userId === friendId || eventData.sharedWith === friendId) {
+                            let displayTitle = eventData.title || 'Untitled';
+                            displayTitle = displayTitle.replace(/^\[With\s+.+?\]\s*/, '').trim();
+                            
+                            events.push({
+                                id: id,
+                                title: displayTitle,
+                                originalTitle: eventData.title || 'Untitled',
+                                date: eventData.date || 'Unknown',
+                                time: eventData.time || '--:--',
+                                status: eventData.status || 'pending',
+                                type: eventData.type || 'own',
+                                userId: eventData.userId,
+                                sharedWith: eventData.sharedWith || null,
+                                person: eventData.person || 'Friend'
+                            });
                         }
-                    });
+                    }
 
-                    // イベントを日付順にソート
                     events.sort((a, b) => a.date.localeCompare(b.date));
 
                     friends.push({
@@ -355,7 +378,6 @@
                 container.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-triangle"></i><p>Failed to load friends</p><p class="sub">${error.message}</p></div>`;
             }
         }
-
         // ============================================================
         // ソート機能
         // ============================================================
