@@ -372,7 +372,7 @@
         }
 
         // ============================================================
-        // リクエスト一覧を読み込む（Home用）
+        // リクエスト一覧を読み込む（pending + confirmed も表示）
         // ============================================================
         let currentRequests = [];
         let selectedRequestId = null;
@@ -394,15 +394,26 @@
 
                 const db = getFirestore(app);
 
-                const q = query(
+                // ★ 修正: pending と confirmed の両方を取得
+                const pendingQuery = query(
                     collection(db, 'friendEvents'),
                     where('toUserId', '==', user.uid),
                     where('status', '==', 'pending')
                 );
-                const snapshot = await getDocs(q);
+                const pendingSnapshot = await getDocs(pendingQuery);
+                
+                // ★ confirmed も取得（承認済みの履歴として表示）
+                const confirmedQuery = query(
+                    collection(db, 'friendEvents'),
+                    where('toUserId', '==', user.uid),
+                    where('status', '==', 'confirmed')
+                );
+                const confirmedSnapshot = await getDocs(confirmedQuery);
                 
                 const requests = [];
-                snapshot.forEach(doc => {
+                
+                // pending リクエストを追加
+                pendingSnapshot.forEach(doc => {
                     const data = doc.data();
                     requests.push({
                         id: doc.id,
@@ -413,8 +424,32 @@
                         title: data.title,
                         note: data.note || '',
                         status: data.status,
-                        createdAt: data.createdAt
+                        createdAt: data.createdAt,
+                        isCancel: data.title && data.title.startsWith('[CANCEL]')
                     });
+                });
+                
+                // confirmed リクエストを追加（承認済み）
+                confirmedSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    requests.push({
+                        id: doc.id,
+                        fromUserId: data.fromUserId,
+                        fromUserName: data.fromUserName || 'Friend',
+                        date: data.date,
+                        time: data.time,
+                        title: data.title,
+                        note: data.note || '',
+                        status: data.status,
+                        createdAt: data.createdAt,
+                        isCancel: data.title && data.title.startsWith('[CANCEL]'),
+                        isConfirmed: true
+                    });
+                });
+
+                // 日付順にソート（新しい順）
+                requests.sort((a, b) => {
+                    return new Date(b.createdAt) - new Date(a.createdAt);
                 });
 
                 currentRequests = requests;
@@ -425,36 +460,73 @@
             }
         }
 
+
         function renderRequests(requests) {
             const container = document.getElementById('requestListHome');
             const badge = document.getElementById('requestBadgeHome');
 
+            // pending のみカウント（バッジ表示用）
+            const pendingOnly = requests.filter(r => r.status === 'pending' && !r.isCancel);
+
             if (!requests || requests.length === 0) {
-                container.innerHTML = `<div class="request-empty">📭 No pending requests</div>`;
+                container.innerHTML = `<div class="request-empty">📭 No requests</div>`;
                 badge.style.display = 'none';
                 return;
             }
 
             badge.style.display = 'inline';
-            badge.textContent = requests.length;
+            badge.textContent = pendingOnly.length;
 
-            container.innerHTML = requests.map(req => {
-                const displayTitle = req.title.replace('[CANCEL] ', '').trim();
-                const isCancel = req.title.startsWith('[CANCEL]');
-                return `
-                    <div class="request-item-card" onclick="openRequestModal('${req.id}')">
-                        <div class="req-info">
-                            <span class="req-badge">${isCancel ? '❌ Cancel' : '📩 New'}</span>
-                            <span class="req-title">${escapeHtml(displayTitle)}</span>
+            // ★ pending と confirmed を分けて表示
+            const pending = requests.filter(r => r.status === 'pending');
+            const confirmed = requests.filter(r => r.status === 'confirmed');
+
+            let html = '';
+
+            // Pending セクション
+            if (pending.length > 0) {
+                html += `<div style="font-weight:600;font-size:13px;color:#333;margin-bottom:6px;">📩 Pending</div>`;
+                html += pending.map(req => {
+                    const displayTitle = req.title.replace('[CANCEL] ', '').trim();
+                    const isCancel = req.isCancel;
+                    return `
+                        <div class="request-item-card" onclick="openRequestModal('${req.id}')">
+                            <div class="req-info">
+                                <span class="req-badge">${isCancel ? '❌ Cancel' : '📩 New'}</span>
+                                <span class="req-title">${escapeHtml(displayTitle)}</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                <span class="req-from">👤 ${escapeHtml(req.fromUserName)}</span>
+                                <span class="req-date">📅 ${req.date}</span>
+                            </div>
                         </div>
-                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                            <span class="req-from">👤 ${escapeHtml(req.fromUserName)}</span>
-                            <span class="req-date">📅 ${req.date}</span>
+                    `;
+                }).join('');
+            }
+
+            // Confirmed セクション（承認済み）
+            if (confirmed.length > 0) {
+                html += `<div style="font-weight:600;font-size:13px;color:#2e7d32;margin-top:12px;margin-bottom:6px;">✅ Confirmed</div>`;
+                html += confirmed.map(req => {
+                    const displayTitle = req.title.replace('[CANCEL] ', '').trim();
+                    return `
+                        <div class="request-item-card" style="background:#e8f5e9;border-color:#a5d6a7;cursor:default;" onclick="alert('✅ Already confirmed: ${escapeHtml(displayTitle)}')">
+                            <div class="req-info">
+                                <span class="req-badge" style="background:#e8f5e9;color:#2e7d32;">✅ Done</span>
+                                <span class="req-title" style="color:#2e7d32;">${escapeHtml(displayTitle)}</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                <span class="req-from">👤 ${escapeHtml(req.fromUserName)}</span>
+                                <span class="req-date">📅 ${req.date}</span>
+                            </div>
                         </div>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            }
+
+            container.innerHTML = html || `<div class="request-empty">📭 No requests</div>`;
         }
+
 
         // ============================================================
         // リクエストモーダル
