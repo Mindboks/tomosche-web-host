@@ -505,13 +505,16 @@
                 const dateInfo = formatDateDisplay(ev.date, ev.time);
                 const safeTitle = escapeHtml(ev.title);
                 
-                // ★ 表示名を正しく設定（My または友達の名前）
-                let displayName = ev.displayName;
-                let isMe = ev.isMe;
+                // ★★★ 修正: 表示名を正しく設定 ★★★
+                // isMe が true の場合は 'My'、それ以外は friendName または displayName を使用
+                let displayName = '';
+                let isMe = ev.isMe || false;
                 
-                // ★ 友達のイベントの場合、friendName を使用
-                if (!isMe && ev.friendName) {
-                    displayName = ev.friendName;
+                if (isMe) {
+                    displayName = 'My';
+                } else {
+                    // 友達の名前を優先
+                    displayName = ev.friendName || ev.displayName || 'Friend';
                 }
                 
                 const safeName = escapeHtml(displayName);
