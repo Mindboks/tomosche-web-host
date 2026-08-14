@@ -14,9 +14,7 @@
     <script src="js/escape.js"></script>
     <script src="js/template.js"></script>
     <style>
-        /* ✅ 全体の余白を広げる */
         .container.py-3 { padding: 16px 12px !important; max-width: 100% !important; }
-        
         .friend-item {
             display: flex;
             align-items: stretch;
@@ -26,8 +24,6 @@
             width: 100%;
         }
         .friend-item:last-child { border-bottom: none; }
-
-        /* ✅ 日付エリア（左側・大きく） */
         .event-date-area {
             display: flex;
             flex-direction: column;
@@ -39,62 +35,17 @@
             border-radius: 12px;
             padding: 8px 12px;
         }
-        .event-date-day {
-            font-size: 22px;
-            font-weight: 700;
-            color: #333;
-            line-height: 1.2;
-        }
-        .event-date-month {
-            font-size: 12px;
-            color: #888;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .event-date-time {
-            font-size: 13px;
-            color: #06C755;
-            font-weight: 600;
-            margin-top: 2px;
-        }
-
-        /* ✅ イベント情報エリア（中央・広く） */
-        .event-info-area {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 4px 0;
-        }
-        .event-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-            line-height: 1.3;
-        }
-        .event-person {
-            font-size: 13px;
-            color: #888;
-            margin-top: 2px;
-        }
-        .event-person .person-name {
-            font-weight: 500;
-            color: #555;
-        }
-        .event-status-badge {
-            display: inline-block;
-            font-size: 10px;
-            padding: 1px 10px;
-            border-radius: 999px;
-            font-weight: 600;
-            margin-top: 4px;
-        }
+        .event-date-day { font-size: 22px; font-weight: 700; color: #333; line-height: 1.2; }
+        .event-date-month { font-size: 12px; color: #888; font-weight: 600; text-transform: uppercase; }
+        .event-date-time { font-size: 13px; color: #06C755; font-weight: 600; margin-top: 2px; }
+        .event-info-area { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 4px 0; }
+        .event-title { font-size: 16px; font-weight: 600; color: #333; line-height: 1.3; }
+        .event-person { font-size: 13px; color: #888; margin-top: 2px; }
+        .event-person .person-name { font-weight: 500; color: #555; }
+        .event-status-badge { display: inline-block; font-size: 10px; padding: 1px 10px; border-radius: 999px; font-weight: 600; margin-top: 4px; }
         .event-status-badge.own { background: #e3f2fd; color: #1565c0; }
         .event-status-badge.shared { background: #fff3e0; color: #e65100; }
         .event-status-badge.confirmed { background: #e8f5e9; color: #2e7d32; }
-
-        /* ✅ 友達アイコン + 削除ボタン（右側・縦並び） */
         .event-actions-area {
             display: flex;
             flex-direction: column;
@@ -118,11 +69,7 @@
             border: 2px solid white;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
-        .friend-avatar-small.me {
-            background: #e3f2fd;
-            color: #1565c0;
-        }
-
+        .friend-avatar-small.me { background: #e3f2fd; color: #1565c0; }
         .btn-delete-event {
             background: none;
             border: none;
@@ -133,17 +80,8 @@
             transition: all 0.2s;
             border-radius: 50%;
         }
-        .btn-delete-event:hover {
-            color: #e53935;
-            background: rgba(229, 57, 53, 0.08);
-        }
-
-        /* ✅ 空の状態 */
-        .empty-state {
-            text-align: center;
-            padding: 48px 20px;
-            color: #999;
-        }
+        .btn-delete-event:hover { color: #e53935; background: rgba(229, 57, 53, 0.08); }
+        .empty-state { text-align: center; padding: 48px 20px; color: #999; }
         .empty-state i { font-size: 56px; color: #ddd; display: block; margin-bottom: 16px; }
         .empty-state p { font-size: 14px; margin-bottom: 4px; }
         .empty-state .sub { font-size: 12px; color: #bbb; }
@@ -157,14 +95,7 @@
             text-decoration: none;
             font-weight: 600;
         }
-
-        /* ✅ ソートバー */
-        .sort-bar {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
+        .sort-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
         .sort-bar button {
             padding: 6px 14px;
             border-radius: 999px;
@@ -175,15 +106,8 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .sort-bar button.active {
-            background: #06C755;
-            color: white;
-            border-color: #06C755;
-        }
-        .sort-bar button:hover:not(.active) {
-            background: #f5f5f5;
-        }
-
+        .sort-bar button.active { background: #06C755; color: white; border-color: #06C755; }
+        .sort-bar button:hover:not(.active) { background: #f5f5f5; }
         .friend-count-badge {
             background: #e8f5e9;
             color: #2e7d32;
@@ -193,8 +117,54 @@
             font-weight: 600;
             margin-left: 8px;
         }
-
-        /* ✅ レスポンシブ */
+        /* モーダルスタイル */
+        .schedule-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .schedule-modal-overlay.active { display: flex; }
+        .schedule-modal {
+            background: white;
+            border-radius: 24px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .schedule-modal h3 { font-weight: 700; margin-bottom: 4px; }
+        .schedule-modal .subtitle { color: #888; font-size: 14px; margin-bottom: 20px; }
+        .schedule-modal .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+        .schedule-modal .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 999px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .schedule-modal .btn-cancel { background: #f0f4f8; color: #666; }
+        .schedule-modal .btn-save { background: #2196f3; color: white; }
+        .schedule-modal .btn-save:hover { background: #1976d2; }
+        .request-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+            border: 1px solid #e9ecef;
+        }
+        .request-item:last-child { margin-bottom: 0; }
         @media (max-width: 480px) {
             .event-date-day { font-size: 18px; }
             .event-date-area { min-width: 50px; padding: 6px 8px; }
@@ -212,7 +182,6 @@
                 <span class="friend-count-badge" id="eventCount">0</span>
             </div>
 
-            <!-- ソートバー -->
             <div class="sort-bar">
                 <button class="active" data-sort="date" onclick="setSort('date')">📅 Date</button>
                 <button data-sort="name" onclick="setSort('name')">👤 Name</button>
@@ -220,6 +189,20 @@
             </div>
 
             <div id="scheduleList"></div>
+        </div>
+    </div>
+
+    <!-- ✅ 友達からのイベント申請一覧モーダル -->
+    <div class="schedule-modal-overlay" id="friendRequestsModal">
+        <div class="schedule-modal">
+            <h3>📩 Friend Event Requests</h3>
+            <div class="subtitle">Event requests from your friends</div>
+            <div id="friendRequestList" style="margin-top:12px;">
+                <div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">Loading requests...</div>
+            </div>
+            <div class="modal-actions" style="margin-top:16px;">
+                <button class="btn-cancel" id="friendRequestsCloseBtn" style="width:100%;">Close</button>
+            </div>
         </div>
     </div>
 
@@ -233,7 +216,7 @@
         let currentUser = null;
 
         // ============================================================
-        // 日付フォーマット（月/日 時:分）
+        // 日付フォーマット
         // ============================================================
         function formatDateDisplay(dateStr, timeStr) {
             if (!dateStr) return { day: '--', month: '--', time: '--:--' };
@@ -241,8 +224,6 @@
             if (parts.length < 3) return { day: '--', month: '--', time: '--:--' };
             const month = parseInt(parts[1], 10);
             const day = parseInt(parts[2], 10);
-            
-            // 時間フォーマット
             let timeDisplay = '--:--';
             if (timeStr) {
                 const tParts = timeStr.split(':');
@@ -257,17 +238,28 @@
                     }
                 }
             }
-            
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            return {
-                day: String(day),
-                month: monthNames[month - 1] || '---',
-                time: timeDisplay
-            };
+            return { day: String(day), month: monthNames[month - 1] || '---', time: timeDisplay };
         }
 
         // ============================================================
-        // 全イベントを読み込む（自分 + 友達）- 完全修正版
+        // 時間フォーマット
+        // ============================================================
+        function formatTimeDisplay(timeStr) {
+            if (!timeStr) return '--:--';
+            const parts = timeStr.split(':');
+            if (parts.length < 2) return '--:--';
+            let hour = parseInt(parts[0], 10);
+            const minute = parts[1] || '00';
+            if (isNaN(hour)) return '--:--';
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            hour = hour % 12;
+            if (hour === 0) hour = 12;
+            return `${hour}:${minute} ${ampm}`;
+        }
+
+        // ============================================================
+        // 全イベントを読み込む
         // ============================================================
         async function loadAllData() {
             const container = document.getElementById('scheduleList');
@@ -293,11 +285,6 @@
 
                 const db = getFirestore(app);
 
-                // 1. 友達一覧を取得（friendshipsに埋め込み済みのfriendNameを使う）
-                // ★ 修正：他人の users/{friendId} を直接読みに行くのはセキュリティルール上不可能
-                //   （本人のusersドキュメントしか読めない設定になっている）。
-                //   friendships ドキュメント自身に friendName が addFriendV2 経由で
-                //   すでに埋め込まれているので、それをそのまま使えば十分。
                 const friendsQuery = query(
                     collection(db, 'friendships'),
                     where('userId', '==', user.uid)
@@ -308,74 +295,77 @@
                     const data = fDoc.data();
                     friendMap.set(data.friendId, data.friendName || 'Friend');
                 });
-                // 自分自身もマップに追加
                 friendMap.set(user.uid, 'My');
 
-                // 2. 自分の予定を取得（userId == user.uid）
-                // ★ 修正：where()を付けずに collection(db, 'events') を丸ごと取得しようとすると、
-                //   セキュリティルールが「auth.uid == userId または auth.uid == sharedWith」という
-                //   ドキュメントごとの条件になっているため、Firestoreはクエリ全体を
-                //   permission-denied で拒否する（一部だけ返す、という動作にはならない）。
-                //   ルールの条件に対応する where('userId', '==', user.uid) を必ず付ける。
-                //   共有イベントは承諾時に両者それぞれのドキュメントが作られているため、
-                //   sharedWithによる追加クエリも不要（重複表示の原因になる）。
+                // 自分の予定
                 const myEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid)
                 );
                 const myEventsSnapshot = await getDocs(myEventsQuery);
 
-                // 3. イベントをマップに格納（重複防止）
+                // 共有予定（sharedWith == user.uid）
+                const sharedEventsQuery = query(
+                    collection(db, 'events'),
+                    where('sharedWith', '==', user.uid)
+                );
+                const sharedEventsSnapshot = await getDocs(sharedEventsQuery);
+
                 const eventMap = new Map();
                 myEventsSnapshot.forEach(eDoc => {
                     const data = eDoc.data();
                     const id = eDoc.id;
                     if (!eventMap.has(id)) {
-                        eventMap.set(id, {
-                            id: id,
-                            ...data,
-                            type: data.type || 'own'
-                        });
+                        eventMap.set(id, { id: id, ...data, type: data.type || 'own' });
+                    }
+                });
+                sharedEventsSnapshot.forEach(eDoc => {
+                    const data = eDoc.data();
+                    const id = eDoc.id;
+                    if (!eventMap.has(id)) {
+                        eventMap.set(id, { id: id, ...data, type: 'shared' });
                     }
                 });
 
-                console.log('📊 eventMap サイズ:', eventMap.size);
-
-                // 4. イベントリストに変換
                 const events = [];
                 for (const [id, eventData] of eventMap) {
-                    console.log('📄 イベントデータ:', eventData);
-
                     let displayName = 'Friend';
                     let isMe = false;
                     let friendName = '';
 
-                    // ★ 修正：userIdが自分かどうかではなく、type（own / shared）で判定する。
-                    //   共有イベント（type: 'shared'）は自分のuserIdであっても、
-                    //   「誰と共有しているか」を見せるのが目的なので isMe は false にし、
-                    //   handleFriendRequest() 側で既に正しく保存済みの person フィールド
-                    //   （相手の表示名）をそのまま使う。
                     if (eventData.type === 'own') {
                         isMe = true;
                         displayName = 'My';
                         friendName = 'My';
                     } else if (eventData.type === 'shared') {
-                        isMe = false;
-                        friendName = eventData.person || friendMap.get(eventData.sharedWith) || 'Friend';
-                        displayName = friendName;
+                        if (eventData.sharedWith === user.uid) {
+                            // 友達から共有されたイベント
+                            isMe = false;
+                            const fName = friendMap.get(eventData.userId) || eventData.person || 'Friend';
+                            displayName = fName;
+                            friendName = fName;
+                        } else {
+                            // 自分が共有したイベント（自分が依頼者）
+                            isMe = true;
+                            displayName = 'My';
+                            friendName = 'My';
+                        }
                     } else {
-                        displayName = eventData.person || 'Friend';
-                        friendName = displayName;
+                        if (eventData.userId === user.uid) {
+                            isMe = true;
+                            displayName = 'My';
+                            friendName = 'My';
+                        } else {
+                            isMe = false;
+                            const fName = friendMap.get(eventData.userId) || eventData.person || 'Friend';
+                            displayName = fName;
+                            friendName = fName;
+                        }
                     }
 
-                    // ★ デバッグ: 判定結果を表示
-                    console.log(`🔍 イベント: ${eventData.title}, type: ${eventData.type}, isMe: ${isMe}, displayName: ${displayName}`);
-
-                    // タイトルを整形
                     let displayTitle = eventData.title || 'Untitled';
                     displayTitle = displayTitle.replace(/^\[With\s+.+?\]\s*/, '').trim();
 
-                    // 状態
                     let statusText = 'Pending';
                     let statusClass = 'pending';
                     if (eventData.status === 'confirmed') {
@@ -408,7 +398,6 @@
                     });
                 }
 
-                // ソート
                 events.sort((a, b) => a.date.localeCompare(b.date));
 
                 allEvents = events;
@@ -431,17 +420,14 @@
                 currentSort = type;
                 sortDirection = 'asc';
             }
-
             document.querySelectorAll('.sort-bar button[data-sort]').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.sort === type);
             });
-
             applySortAndRender();
         }
 
         function applySortAndRender() {
             const sorted = [...allEvents];
-
             switch (currentSort) {
                 case 'date':
                     sorted.sort((a, b) => {
@@ -453,10 +439,8 @@
                         return sortDirection === 'asc' ? a.displayName.localeCompare(b.displayName) : b.displayName.localeCompare(a.displayName);
                     });
                     break;
-                default:
-                    break;
+                default: break;
             }
-
             renderEventList(sorted);
         }
 
@@ -478,28 +462,20 @@
                 return;
             }
 
-            // 自分のプロフィール画像を取得
             const myPictureUrl = window.currentUser?.pictureUrl || null;
 
             container.innerHTML = events.map(ev => {
                 const dateInfo = formatDateDisplay(ev.date, ev.time);
                 const safeTitle = escapeHtml(ev.title);
-                
-                // ★★★ 修正: 表示名を正しく設定 ★★★
-                // isMe が true の場合は 'My'、それ以外は friendName または displayName を使用
                 let displayName = '';
                 let isMe = ev.isMe || false;
-                
                 if (isMe) {
                     displayName = 'My';
                 } else {
-                    // 友達の名前を優先
                     displayName = ev.friendName || ev.displayName || 'Friend';
                 }
-                
                 const safeName = escapeHtml(displayName);
-                
-                // ★ アイコン表示（自分の場合はLINE画像、友達は頭文字）
+
                 let avatarHtml = '';
                 if (isMe && myPictureUrl) {
                     avatarHtml = `<img src="${myPictureUrl}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #06C755;" />`;
@@ -536,12 +512,12 @@
         }
 
         // ============================================================
-        // イベント削除（カレンダーと同じロジック）
+        // イベント削除
         // ============================================================
         async function deleteEvent(eventId) {
             console.log('🗑️ deleteEvent 開始');
             console.log('🔍 eventId:', eventId);
-            
+
             try {
                 if (window.liffReadyPromise) {
                     await window.liffReadyPromise;
@@ -550,7 +526,7 @@
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
                 const { getFirestore, doc, deleteDoc, getDoc, collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-                
+
                 const app = getApp();
                 const auth = getAuth(app);
                 const user = auth.currentUser;
@@ -559,36 +535,27 @@
                     return;
                 }
 
-                console.log('👤 現在のユーザーUID:', user.uid);
-
                 const db = getFirestore(app);
                 const eventRef = doc(db, 'events', eventId);
                 const eventSnap = await getDoc(eventRef);
-                
+
                 if (!eventSnap.exists) {
                     alert('Event not found.');
                     return;
                 }
-                
+
                 const eventData = eventSnap.data();
-                console.log('📄 イベントデータ:', JSON.stringify(eventData, null, 2));
 
                 if (eventData.type === 'shared') {
-                    const canDeleteDirectly = eventData.role === 'acceptor' || 
-                                              (eventData.sharedWith && eventData.sharedWith === user.uid);
-                    
-                    console.log('🔍 isShared: true');
-                    console.log('🔍 canDeleteDirectly:', canDeleteDirectly);
-                    
+                    const canDeleteDirectly = eventData.role === 'acceptor' ||
+                        (eventData.sharedWith && eventData.sharedWith === user.uid);
+
                     if (canDeleteDirectly) {
                         if (!confirm(`Delete shared event "${eventData.title}"?`)) return;
                         await deleteDoc(eventRef);
                         alert('✅ Shared event deleted.');
-                        console.log('✅ 共有イベントを直接削除');
                     } else {
-                        // ★ キャンセルリクエストを送信
                         if (confirm(`"${eventData.title}" was shared by your friend. Send cancellation request?`)) {
-                            console.log('📤 キャンセルリクエスト送信中...');
                             await addDoc(collection(db, 'friendEvents'), {
                                 fromUserId: user.uid,
                                 toUserId: eventData.userId || eventData.sharedWith,
@@ -601,9 +568,6 @@
                                 updatedAt: new Date().toISOString()
                             });
                             alert('✅ Cancellation request sent to your friend.');
-                            console.log('✅ キャンセルリクエスト送信完了');
-                            
-                            // ★ 再読み込みしてリクエストモーダルを開く
                             await loadAllData();
                             await loadFriendRequests();
                             await openFriendRequestsModal();
@@ -614,9 +578,8 @@
                     if (!confirm(`Delete "${eventData.title}"?`)) return;
                     await deleteDoc(eventRef);
                     alert('✅ Event deleted.');
-                    console.log('✅ 自分のイベントを削除');
                 }
-                
+
                 await loadAllData();
 
             } catch (error) {
@@ -625,10 +588,8 @@
             }
         }
 
-
-
         // ============================================================
-        // 友達からのイベント申請一覧を取得（pending + キャンセル）
+        // 友達からのイベント申請一覧を取得
         // ============================================================
         let pendingRequests = [];
 
@@ -641,7 +602,7 @@
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
                 const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-                
+
                 const app = getApp();
                 const auth = getAuth(app);
                 const user = auth.currentUser;
@@ -686,17 +647,24 @@
         }
 
         // ============================================================
-        // 申請一覧モーダルを開く（通常 + キャンセル表示）
+        // 申請一覧モーダルを開く
         // ============================================================
         async function openFriendRequestsModal() {
             const modal = document.getElementById('friendRequestsModal');
             const container = document.getElementById('friendRequestList');
-            
+
+            // ★ モーダルがすでに開いている場合は閉じてから開き直す
+            if (modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                // 少し待ってから開き直す
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
             modal.classList.add('active');
             container.innerHTML = '<div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">Loading requests...</div>';
 
             const requests = await loadFriendRequests();
-            
+
             if (requests.length === 0) {
                 container.innerHTML = `<div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">📭 No pending requests</div>`;
                 return;
@@ -781,7 +749,7 @@
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
                 const { getFirestore, doc, updateDoc, getDoc, collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-                
+
                 const app = getApp();
                 const auth = getAuth(app);
                 const user = auth.currentUser;
@@ -839,12 +807,7 @@
                 }
 
                 await loadFriendRequests();
-                openFriendRequestsModal();
-
-                if (selectedDate) {
-                    await renderCalendar();
-                    await renderEvents(selectedDate);
-                }
+                await openFriendRequestsModal();
 
             } catch (error) {
                 console.error('Handle friend request error:', error);
@@ -853,7 +816,7 @@
         }
 
         // ============================================================
-        // キャンセルリクエストを承認（双方のイベントを削除）
+        // キャンセルリクエストを承認
         // ============================================================
         async function handleCancellation(requestId, friendId) {
             if (!confirm('Accept this cancellation request? Both calendars will be updated.')) return;
@@ -866,7 +829,7 @@
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
                 const { getFirestore, doc, updateDoc, getDoc, collection, query, where, getDocs, deleteDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-                
+
                 const app = getApp();
                 const auth = getAuth(app);
                 const user = auth.currentUser;
@@ -888,7 +851,6 @@
 
                 const cleanTitle = requestData.title.replace('[CANCEL] ', '').trim();
 
-                // 自分のイベント
                 const myEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid),
@@ -902,7 +864,6 @@
                     }
                 }
 
-                // 友達のイベント
                 const friendEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', friendId),
@@ -919,18 +880,13 @@
                 alert('✅ Cancellation accepted. Events removed from both calendars.');
 
                 await loadFriendRequests();
-                openFriendRequestsModal();
-                if (selectedDate) {
-                    await renderCalendar();
-                    await renderEvents(selectedDate);
-                }
+                await openFriendRequestsModal();
 
             } catch (error) {
                 console.error('Handle cancellation error:', error);
                 alert('Failed to process cancellation. Please try again.');
             }
         }
-
 
         // ============================================================
         // 初期化
@@ -940,29 +896,13 @@
                 renderPage('Schedule List', '', 'friends');
             }
             loadAllData();
-            
+
             // ★ リクエストモーダルの閉じるボタン
             document.getElementById('friendRequestsCloseBtn').addEventListener('click', closeFriendRequestsModal);
             document.getElementById('friendRequestsModal').addEventListener('click', function(e) {
                 if (e.target === this) closeFriendRequestsModal();
             });
         });
-
-        
     </script>
-
-    <!-- ✅ 友達からのイベント申請一覧モーダル（カレンダーと同じ） -->
-    <div class="schedule-modal-overlay" id="friendRequestsModal">
-        <div class="schedule-modal">
-            <h3>📩 Friend Event Requests</h3>
-            <div class="subtitle">Event requests from your friends</div>
-            <div id="friendRequestList" style="margin-top:12px;">
-                <div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">Loading requests...</div>
-            </div>
-            <div class="modal-actions" style="margin-top:16px;">
-                <button class="btn-cancel" id="friendRequestsCloseBtn" style="width:100%;">Close</button>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
