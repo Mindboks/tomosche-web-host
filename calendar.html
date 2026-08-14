@@ -1574,7 +1574,7 @@
 
 
         // ============================================================
-        // キャンセルリクエストを承認（双方のイベントを削除）
+        // キャンセルリクエストを承認（デバッグ版）
         // ============================================================
         async function handleCancellation(requestId, friendId) {
             if (!confirm('Accept this cancellation request? Both calendars will be updated.')) return;
@@ -1596,6 +1596,9 @@
                     return;
                 }
 
+                console.log('👤 現在のユーザーUID:', user.uid);
+                console.log('👤 友達のUID (friendId):', friendId);
+
                 const db = getFirestore(app);
 
                 // 1. リクエストを取得
@@ -1614,13 +1617,13 @@
                     updatedAt: new Date().toISOString()
                 });
 
-                // 3. 削除するイベントのタイトルを取得（[CANCEL] と [With xxx] を除去）
+                // 3. 削除するイベントのタイトルを取得
                 let cleanTitle = requestData.title.replace('[CANCEL] ', '').trim();
-                // [With MOMOTA] 部分を除去
                 cleanTitle = cleanTitle.replace(/^\[With\s+.+?\]\s*/, '').trim();
                 console.log(`🗑️ 削除対象タイトル: "${cleanTitle}"`);
 
                 // 4. 自分のイベントを削除
+                console.log(`🔍 自分のイベント検索: userId=${user.uid}, date=${requestData.date}, time=${requestData.time}`);
                 const myEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid),
@@ -1632,7 +1635,6 @@
                 for (const docSnap of myEvents.docs) {
                     const data = docSnap.data();
                     console.log(`   📄 ${docSnap.id}: ${data.title}`);
-                    // タイトルが一致するものを削除
                     if (data.title && data.title.includes(cleanTitle)) {
                         await deleteDoc(docSnap.ref);
                         console.log(`   ✅ 自分のイベント削除完了: ${docSnap.id}`);
@@ -1640,6 +1642,7 @@
                 }
 
                 // 5. 友達のイベントを削除
+                console.log(`🔍 友達のイベント検索: userId=${friendId}, date=${requestData.date}, time=${requestData.time}`);
                 const friendEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', friendId),
@@ -1672,7 +1675,6 @@
                 alert('Failed to process cancellation. Please try again.');
             }
         }
-
 
         // ============================================================
         // 申請一覧モーダルを閉じる（正しい定義）
