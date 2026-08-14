@@ -293,96 +293,99 @@
 
                 const db = getFirestore(app);
 
-                // 1. ★★★ 友達一覧を取得（friendships から friendName を直接使用）★★★
+                // 1. 友達一覧を取得（friendshipsに埋め込み済みのfriendNameを使う）
                 const friendsQuery = query(
                     collection(db, 'friendships'),
                     where('userId', '==', user.uid)
                 );
                 const friendsSnapshot = await getDocs(friendsQuery);
                 const friendMap = new Map();
-                // ★ ループ変数名を snap に変更（doc は import 済みの関数なので使わない）
-                for (const snap of friendsSnapshot.docs) {
-                    const data = snap.data();
-                    // ★ friendships に埋め込まれた friendName を直接使用（users を読まない）
+                friendsSnapshot.forEach(fDoc => {
+                    const data = fDoc.data();
                     friendMap.set(data.friendId, data.friendName || 'Friend');
-                }
-                // 自分自身もマップに追加
+                });
                 friendMap.set(user.uid, 'My');
 
-                // 2. ★★★ 自分の予定を取得（userId == user.uid）★★★
+                // 2. ★★★ 全てのイベントを取得（自分の予定 + 共有予定）★★★
+                // ① 自分の予定（userId == user.uid）
                 const myEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid)
                 );
                 const myEventsSnapshot = await getDocs(myEventsQuery);
-                
-                // 3. ★★★ 共有予定を取得（sharedWith == user.uid）★★★
+
+                // ② ★★★ 友達の予定（sharedWith == user.uid）- これが友達のイベント！ ★★★
                 const sharedEventsQuery = query(
                     collection(db, 'events'),
                     where('sharedWith', '==', user.uid)
                 );
                 const sharedEventsSnapshot = await getDocs(sharedEventsQuery);
 
-                // 4. ★★★ イベントをマップに格納（重複防止）★★★
+                // 3. イベントをマップに格納（重複防止）
                 const eventMap = new Map();
                 
                 // 自分の予定を追加
-                for (const snap of myEventsSnapshot.docs) {
-                    const data = snap.data();
-                    const id = snap.id;
+                myEventsSnapshot.forEach(eDoc => {
+                    const data = eDoc.data();
+                    const id = eDoc.id;
                     if (!eventMap.has(id)) {
                         eventMap.set(id, {
                             id: id,
                             ...data,
-                            type: data.type || 'own',
-                            isOwn: true
+                            type: data.type || 'own'
                         });
                     }
-                }
+                });
                 
-                // 共有予定を追加
-                for (const snap of sharedEventsSnapshot.docs) {
-                    const data = snap.data();
-                    const id = snap.id;
+                // ★★★ 友達の予定（共有イベント）を追加 ★★★
+                sharedEventsSnapshot.forEach(eDoc => {
+                    const data = eDoc.data();
+                    const id = eDoc.id;
                     if (!eventMap.has(id)) {
                         eventMap.set(id, {
                             id: id,
                             ...data,
-                            type: 'shared',
-                            isOwn: false
+                            type: data.type || 'shared'
                         });
                     }
-                }
+                });
 
-                // 5. ★★★ イベントリストに変換 ★★★
+                console.log('📊 eventMap サイズ:', eventMap.size);
+
+                // 4. イベントリストに変換
                 const events = [];
                 for (const [id, eventData] of eventMap) {
+                    console.log('📄 イベントデータ:', eventData);
+
                     let displayName = 'Friend';
                     let isMe = false;
                     let friendName = '';
-                    
-                    // ★★★ 判定ロジック（type を優先）★★★
+
+                    // ★★★ 判定ロジック ★★★
+                    // type === 'own' → 自分のイベント
                     if (eventData.type === 'own') {
-                        // 自分のイベント
                         isMe = true;
                         displayName = 'My';
                         friendName = 'My';
-                    } else if (eventData.type === 'shared') {
-                        // 共有イベント
-                        if (eventData.userId === user.uid) {
-                            // 自分が共有した（自分が依頼者）
-                            isMe = true;
-                            displayName = 'My';
-                            friendName = 'My';
-                        } else {
-                            // 友達が共有した（友達が依頼者）
+                    } 
+                    // type === 'shared' → 共有イベント
+                    else if (eventData.type === 'shared') {
+                        // sharedWith が自分 → 友達が共有したイベント
+                        if (eventData.sharedWith === user.uid) {
                             isMe = false;
+                            // userId が友達なので、友達の名前を取得
                             const fName = friendMap.get(eventData.userId) || eventData.person || 'Friend';
                             displayName = fName;
                             friendName = fName;
+                        } else {
+                            // 自分が共有したイベント（自分が依頼者）
+                            isMe = true;
+                            displayName = 'My';
+                            friendName = 'My';
                         }
-                    } else {
-                        // その他（userId で判定）
+                    } 
+                    // その他（userId で判定）
+                    else {
                         if (eventData.userId === user.uid) {
                             isMe = true;
                             displayName = 'My';
@@ -394,6 +397,8 @@
                             friendName = fName;
                         }
                     }
+
+                    console.log(`🔍 イベント: ${eventData.title}, type: ${eventData.type}, isMe: ${isMe}, displayName: ${displayName}`);
 
                     // タイトルを整形
                     let displayTitle = eventData.title || 'Untitled';
@@ -445,6 +450,11 @@
             }
         }
 
+
+
+
+
+        
         // ============================================================
         // ソート機能
         // ============================================================
