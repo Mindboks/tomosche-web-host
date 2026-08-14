@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Friends - Tomosche</title>
+    <title>Schedule - Tomosche</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
@@ -90,6 +90,15 @@
         .btn-accept:hover { background: #049a44; }
         .btn-decline { background: #e53935; color: white; }
         .btn-decline:hover { background: #c62828; }
+        .btn-pending {
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 999px;
+            padding: 2px 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
 
         .sort-bar {
             display: flex;
@@ -144,6 +153,17 @@
             font-weight: 600;
             margin-left: 8px;
         }
+
+        .event-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+        .event-dot.own { background: #2196f3; }
+        .event-dot.shared { background: #ff9800; }
+        .event-dot.confirmed { background: #06C755; }
     </style>
 </head>
 <body>
@@ -151,7 +171,7 @@
         <div class="container py-3" id="friendsContent">
             <div class="d-flex align-items-center mb-3">
                 <button class="back-btn" onclick="history.back()"><i class="bi bi-arrow-left"></i></button>
-                <h1 class="page-title">Friends</h1>
+                <h1 class="page-title">Schedule</h1>
                 <span class="friend-count-badge" id="friendCount">0</span>
             </div>
 
@@ -174,6 +194,22 @@
         let friendsData = [];
         let currentSort = 'date';
         let sortDirection = 'asc';
+
+        // ============================================================
+        // 時間フォーマット
+        // ============================================================
+        function formatTimeDisplay(timeStr) {
+            if (!timeStr) return '--:--';
+            const parts = timeStr.split(':');
+            if (parts.length < 2) return '--:--';
+            let hour = parseInt(parts[0], 10);
+            const minute = parts[1] || '00';
+            if (isNaN(hour)) return '--:--';
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            hour = hour % 12;
+            if (hour === 0) hour = 12;
+            return `${hour}:${minute} ${ampm}`;
+        }
 
         // ============================================================
         // 友達一覧 + イベントを読み込む
@@ -228,30 +264,31 @@
                     const friendId = data.friendId;
                     const friendName = data.friendName || 'Friend';
 
-                    // 友達のイベントを取得（sharedWith == user.uid のものを探す）
-                    // または userId == friendId のイベントを探す
+                    // ★ 修正: 友達のイベントを取得（userId == friendId）
                     const eventsQuery = query(
                         collection(db, 'events'),
-                        where('userId', '==', friendId),
-                        where('date', '>=', new Date().toISOString().split('T')[0])
+                        where('userId', '==', friendId)
                     );
                     const eventsSnapshot = await getDocs(eventsQuery);
 
                     const events = [];
                     eventsSnapshot.forEach(eventDoc => {
                         const eventData = eventDoc.data();
-                        events.push({
-                            id: eventDoc.id,
-                            title: eventData.title || 'Untitled',
-                            date: eventData.date || 'Unknown',
-                            time: eventData.time || '--:--',
-                            status: eventData.status || 'pending',
-                            type: eventData.type || 'own',
-                            sharedWith: eventData.sharedWith || null
-                        });
+                        // ★ 自分のイベント（type === 'own'）または共有イベント（type === 'shared'）
+                        if (eventData.type === 'own' || eventData.type === 'shared') {
+                            events.push({
+                                id: eventDoc.id,
+                                title: eventData.title || 'Untitled',
+                                date: eventData.date || 'Unknown',
+                                time: eventData.time || '--:--',
+                                status: eventData.status || 'pending',
+                                type: eventData.type || 'own',
+                                sharedWith: eventData.sharedWith || null
+                            });
+                        }
                     });
 
-                    // 自分が共有されているイベントも取得
+                    // ★ 自分が共有されているイベントも取得（sharedWith == user.uid かつ userId == friendId）
                     const sharedEventsQuery = query(
                         collection(db, 'events'),
                         where('sharedWith', '==', user.uid),
@@ -260,7 +297,6 @@
                     const sharedEventsSnapshot = await getDocs(sharedEventsQuery);
                     sharedEventsSnapshot.forEach(eventDoc => {
                         const eventData = eventDoc.data();
-                        // 重複を避ける
                         const exists = events.some(e => e.id === eventDoc.id);
                         if (!exists) {
                             events.push({
@@ -311,7 +347,6 @@
                 sortDirection = 'asc';
             }
 
-            // ボタンのアクティブ表示を更新
             document.querySelectorAll('.sort-bar button[data-sort]').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.sort === type);
             });
@@ -324,7 +359,6 @@
 
             switch (currentSort) {
                 case 'date':
-                    // 最新のイベントがある友達順
                     sorted.sort((a, b) => {
                         const aDate = a.events.length > 0 ? a.events[0].date : '9999-99-99';
                         const bDate = b.events.length > 0 ? b.events[0].date : '9999-99-99';
@@ -373,26 +407,36 @@
                 const safeName = escapeHtml(fr.name);
                 const safeInitial = escapeHtml(fr.initial);
                 const safeStatus = escapeHtml(fr.status);
-                const statusLabel = safeStatus === 'shared' ? '✓ Calendar shared' : '⏳ Pending approval';
+                const statusLabel = safeStatus === 'shared' ? '✓ Shared' : '⏳ Pending';
                 const statusClass = safeStatus === 'shared' ? 'shared' : 'pending';
 
                 // イベント一覧を生成
                 let eventsHtml = '';
                 if (fr.events && fr.events.length > 0) {
                     eventsHtml = `<div class="friend-events">`;
-                    fr.events.slice(0, 3).forEach(ev => {
-                        const displayTitle = ev.title.replace(/^\[With\s+.+?\]\s*/, '').trim();
+                    fr.events.slice(0, 5).forEach(ev => {
+                        let displayTitle = ev.title || 'Untitled';
+                        // [With xxx] を除去
+                        displayTitle = displayTitle.replace(/^\[With\s+.+?\]\s*/, '').trim();
+                        const displayTime = formatTimeDisplay(ev.time);
+                        const isShared = ev.type === 'shared';
+                        const dotClass = isShared ? 'shared' : (ev.status === 'confirmed' ? 'confirmed' : 'own');
                         const statusIcon = ev.status === 'confirmed' ? '✅' : '⏳';
                         eventsHtml += `
                             <div class="friend-event-item">
-                                <span class="friend-event-title">${escapeHtml(displayTitle)}</span>
-                                <span class="friend-event-date">${ev.date}</span>
-                                <span style="font-size:11px;color:#888;">${statusIcon}</span>
+                                <span>
+                                    <span class="event-dot ${dotClass}"></span>
+                                    <span class="friend-event-title">${escapeHtml(displayTitle)}</span>
+                                </span>
+                                <span>
+                                    <span class="friend-event-date">${ev.date} ${displayTime}</span>
+                                    <span style="font-size:11px;color:#888;margin-left:4px;">${statusIcon}</span>
+                                </span>
                             </div>
                         `;
                     });
-                    if (fr.events.length > 3) {
-                        eventsHtml += `<div style="font-size:11px;color:#999;padding-top:4px;">+ ${fr.events.length - 3} more...</div>`;
+                    if (fr.events.length > 5) {
+                        eventsHtml += `<div style="font-size:11px;color:#999;padding-top:4px;">+ ${fr.events.length - 5} more...</div>`;
                     }
                     eventsHtml += `</div>`;
                 }
@@ -401,20 +445,28 @@
                 let actionButtons = '';
                 if (fr.status === 'pending') {
                     actionButtons = `
-                        <button class="btn btn-success btn-sm" onclick="acceptFriend('${fr.id}')" style="padding:4px 14px;border:none;border-radius:999px;background:#06C755;color:white;font-weight:600;cursor:pointer;">Accept</button>
-                        <button class="btn btn-secondary btn-sm" onclick="rejectFriend('${fr.id}')" style="padding:4px 14px;border:none;border-radius:999px;background:#e53935;color:white;font-weight:600;cursor:pointer;">Decline</button>
+                        <button class="btn-accept" onclick="acceptFriend('${fr.id}')" style="padding:4px 14px;border:none;border-radius:999px;background:#06C755;color:white;font-weight:600;cursor:pointer;font-size:12px;">Accept</button>
+                        <button class="btn-decline" onclick="rejectFriend('${fr.id}')" style="padding:4px 14px;border:none;border-radius:999px;background:#e53935;color:white;font-weight:600;cursor:pointer;font-size:12px;">Decline</button>
                     `;
+                } else {
+                    actionButtons = `<span class="btn-pending" style="padding:4px 14px;border:none;border-radius:999px;background:#e8f5e9;color:#2e7d32;font-weight:600;font-size:12px;">✓ Friend</span>`;
                 }
+
+                // イベント数表示
+                const eventBadge = fr.eventCount > 0 ? `<span style="background:#e3f2fd;color:#1565c0;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;margin-left:6px;">${fr.eventCount} events</span>` : '';
 
                 return `
                     <div class="friend-item">
                         <div class="friend-avatar">${safeInitial}</div>
                         <div class="friend-info">
-                            <div class="friend-name">${safeName}</div>
+                            <div class="friend-name">
+                                ${safeName}
+                                ${eventBadge}
+                            </div>
                             <div class="friend-status ${statusClass}">${statusLabel}</div>
                             ${eventsHtml}
                         </div>
-                        <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">
+                        <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;align-items:center;">
                             ${actionButtons}
                             <button class="friend-delete" onclick="deleteFriend('${fr.id}')" style="background:none;border:none;color:#ccc;font-size:18px;cursor:pointer;padding:4px 8px;" title="Remove friend">
                                 <i class="bi bi-trash3"></i>
@@ -431,8 +483,7 @@
         async function acceptFriend(friendId) {
             if (!confirm(`Accept friendship with this friend?`)) return;
             try {
-                // 実際の承認処理（friendships の status を更新）
-                // ここでは簡易的にリロード
+                // 実際の承認処理
                 alert('✅ Friend request accepted!');
                 await loadAllData();
             } catch (error) {
@@ -455,7 +506,6 @@
         async function deleteFriend(friendId) {
             if (!confirm(`Remove this friend?`)) return;
             try {
-                // 実際の削除処理
                 alert('🗑️ Friend removed.');
                 await loadAllData();
             } catch (error) {
@@ -469,7 +519,7 @@
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof renderPage === 'function') {
-                renderPage('Friends', '', 'friends');
+                renderPage('Schedule', '', 'friends');
             }
             loadAllData();
         });
