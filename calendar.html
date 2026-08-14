@@ -486,16 +486,20 @@
         }
 
         // ============================================================
-        // イベント削除（権限チェック強化版）
+        // イベント削除（徹底修正版）
         // ============================================================
         async function deleteEvent(eventId, dateStr) {
+            console.log('🗑️ deleteEvent 開始');
+            console.log('🔍 eventId:', eventId);
+            console.log('🔍 dateStr:', dateStr);
+            
             try {
                 if (window.liffReadyPromise) {
                     await window.liffReadyPromise;
                 }
 
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const { getFirestore, doc, deleteDoc, getDoc, collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getFirestore, doc, deleteDoc, getDoc, collection, addDoc, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
                 
                 const app = getApp();
@@ -505,6 +509,8 @@
                     alert('Please log in to delete events.');
                     return;
                 }
+
+                console.log('👤 現在のユーザーUID:', user.uid);
 
                 const db = getFirestore(app);
                 const eventRef = doc(db, 'events', eventId);
@@ -516,40 +522,48 @@
                 }
                 
                 const eventData = eventSnap.data();
+                console.log('📄 イベントデータ:', JSON.stringify(eventData, null, 2));
+                console.log('🔍 eventData.userId:', eventData.userId);
+                console.log('🔍 現在のユーザーUID:', user.uid);
+                console.log('🔍 一致?', eventData.userId === user.uid);
 
-                // Sharedイベントの削除権限チェック（role フィールドで判定）
-                if (eventData.type === 'shared') {
-                    // ★ 修正：role がない場合や acceptor の場合に削除可能
-                    const canDelete = eventData.role === 'acceptor' || 
-                                      (eventData.sharedWith && eventData.sharedWith === user.uid);
-                    
-                    if (canDelete) {
-                        if (!confirm(`Delete shared event "${eventData.title}"?`)) return;
-                        await deleteDoc(eventRef);
-                        alert('✅ Shared event deleted.');
-                    } else {
-                        // 依頼者は削除リクエストを送信
-                        if (confirm(`"${eventData.title}" was shared by your friend. Send cancellation request?`)) {
-                            await addDoc(collection(db, 'friendEvents'), {
-                                fromUserId: user.uid,
-                                toUserId: eventData.userId,
-                                date: eventData.date,
-                                time: eventData.time,
-                                title: `[CANCEL] ${eventData.title}`,
-                                note: `${window.currentUser?.displayName || 'Someone'} wants to cancel this shared event.`,
-                                status: 'pending',
-                                createdAt: new Date().toISOString(),
-                                updatedAt: new Date().toISOString()
-                            });
-                            alert('✅ Cancellation request sent to your friend.');
-                        }
-                        return;
+                // ★ 修正: Sharedイベントの削除権限チェック
+                // role が acceptor または sharedWith が自分と一致する場合に削除可能
+                const isShared = eventData.type === 'shared';
+                const canDeleteDirectly = !isShared || 
+                                        eventData.role === 'acceptor' || 
+                                        eventData.sharedWith === user.uid;
+                
+                console.log('🔍 isShared:', isShared);
+                console.log('🔍 canDeleteDirectly:', canDeleteDirectly);
+
+                if (isShared && !canDeleteDirectly) {
+                    // キャンセルリクエストを送信
+                    if (confirm(`"${eventData.title}" was shared by your friend. Send cancellation request?`)) {
+                        console.log('📤 キャンセルリクエスト送信中...');
+                        await addDoc(collection(db, 'friendEvents'), {
+                            fromUserId: user.uid,
+                            toUserId: eventData.userId || eventData.sharedWith,
+                            date: eventData.date,
+                            time: eventData.time,
+                            title: `[CANCEL] ${eventData.title}`,
+                            note: `${window.currentUser?.displayName || 'Someone'} wants to cancel this shared event.`,
+                            status: 'pending',
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                        });
+                        alert('✅ Cancellation request sent to your friend.');
+                        console.log('✅ キャンセルリクエスト送信完了');
                     }
-                } else {
-                    // 自分のイベントは直接削除
-                    if (!confirm(`Delete "${eventData.title}"?`)) return;
-                    await deleteDoc(eventRef);
+                    return;
                 }
+
+                // ★ 直接削除
+                if (!confirm(`Delete "${eventData.title}"?`)) return;
+                console.log('🗑️ 削除実行中...');
+                await deleteDoc(eventRef);
+                console.log('✅ 削除完了');
+                alert('✅ Event deleted.');
                 
                 // 再読み込み
                 currentEvents[dateStr] = await loadEventsFromFirestore(dateStr);
@@ -557,11 +571,10 @@
                 await renderEvents(dateStr);
 
             } catch (error) {
-                console.error('Delete error:', error);
-                alert('Failed to delete event. Please try again.');
+                console.error('❌ Delete error:', error);
+                alert('Failed to delete event. Please try again.\n\n' + error.message);
             }
         }
-
         // ============================================================
         // レンダリング関数
         // ============================================================
