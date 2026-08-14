@@ -30,7 +30,8 @@
         .calendar-day.selected { background: #06C755; color: white; border-radius: 8px; }
         .calendar-day .dot { position: absolute; bottom: 5px; width: 6px; height: 6px; border-radius: 50%; }
         .calendar-day .dot.own { background: #2196f3; }
-        .calendar-day .dot.shared { background: #ff9800 !important; }
+        .calendar-day .dot.pending { background: #ff9800; }
+        .calendar-day .dot.confirmed { background: #06C755; }
         .calendar-weekday { background: #e8f5e9; color: #2e7d32; font-weight: 600; font-size: clamp(10px, 1.8vw, 13px); text-align: center; padding: 10px 0; }
         @media (max-width: 380px) {
             .calendar-day { font-size: 11px; min-height: 28px; min-width: 28px; }
@@ -54,11 +55,13 @@
         .event-item:last-child { border-bottom: none; }
         .event-time { font-size: 12px; font-weight: 600; }
         .event-time.own { color: #2196f3; }
+        .event-time.pending { color: #ff9800; }
         .event-time.confirmed { color: #06C755; }
-        .event-title { font-size: 14px; color: #333; flex: 1; white-space: normal !important; word-break: break-word !important; }
-        .event-person { font-size: 12px; color: #888; background: #f0f4f8; padding: 2px 10px; border-radius: 999px; display:flex; align-items:center; gap:4px; }
+        .event-title { font-size: 14px; color: #333; flex: 1; }
+        .event-person { font-size: 12px; color: #888; background: #f0f4f8; padding: 2px 10px; border-radius: 999px; }
         .event-status { font-size: 10px; padding: 2px 8px; border-radius: 999px; }
         .event-status.own { background: #e3f2fd; color: #1565c0; }
+        .event-status.pending { background: #fff3e0; color: #e65100; }
         .event-status.confirmed { background: #e8f5e9; color: #2e7d32; }
         .empty-events { text-align: center; color: #bbb; padding: 16px 0; }
         .cal-nav { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
@@ -79,7 +82,9 @@
             align-items: center;
             padding: 20px;
         }
-        .schedule-modal-overlay.active { display: flex; }
+        .schedule-modal-overlay.active {
+            display: flex;
+        }
         .schedule-modal {
             background: white;
             border-radius: 24px;
@@ -90,8 +95,15 @@
             padding: 24px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        .schedule-modal h3 { font-weight: 700; margin-bottom: 4px; }
-        .schedule-modal .subtitle { color: #888; font-size: 14px; margin-bottom: 20px; }
+        .schedule-modal h3 {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .schedule-modal .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
         .schedule-modal .form-row {
             display: flex;
             gap: 10px;
@@ -127,8 +139,14 @@
             appearance: auto;
             min-width: 44px;
         }
-        .schedule-modal .form-row .time-group select:focus { outline: none; }
-        .schedule-modal .form-row .time-group .time-separator { font-weight: 600; color: #999; font-size: 16px; }
+        .schedule-modal .form-row .time-group select:focus {
+            outline: none;
+        }
+        .schedule-modal .form-row .time-group .time-separator {
+            font-weight: 600;
+            color: #999;
+            font-size: 16px;
+        }
         .schedule-modal .form-row .title-input {
             flex: 1;
             min-width: 80px;
@@ -140,7 +158,9 @@
             outline: none;
             transition: border-color 0.2s;
         }
-        .schedule-modal .form-row .title-input:focus { border-color: #2196f3; }
+        .schedule-modal .form-row .title-input:focus {
+            border-color: #2196f3;
+        }
         .schedule-modal .form-row .delete-row {
             background: none;
             border: none;
@@ -150,7 +170,9 @@
             padding: 0 6px;
             flex-shrink: 0;
         }
-        .schedule-modal .form-row .delete-row:hover { color: #e53935; }
+        .schedule-modal .form-row .delete-row:hover {
+            color: #e53935;
+        }
         .schedule-modal .add-row-btn {
             background: none;
             border: 2px dashed #ddd;
@@ -162,8 +184,15 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .schedule-modal .add-row-btn:hover { border-color: #2196f3; color: #2196f3; }
-        .schedule-modal .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+        .schedule-modal .add-row-btn:hover {
+            border-color: #2196f3;
+            color: #2196f3;
+        }
+        .schedule-modal .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
         .schedule-modal .modal-actions button {
             flex: 1;
             padding: 12px;
@@ -173,18 +202,33 @@
             cursor: pointer;
             font-size: 15px;
         }
-        .schedule-modal .btn-cancel { background: #f0f4f8; color: #666; }
-        .schedule-modal .btn-save { background: #2196f3; color: white; }
-        .schedule-modal .btn-save:hover { background: #1976d2; }
-        .schedule-modal .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+        .schedule-modal .btn-cancel {
+            background: #f0f4f8;
+            color: #666;
+        }
+        .schedule-modal .btn-save {
+            background: #2196f3;
+            color: white;
+        }
+        .schedule-modal .btn-save:hover {
+            background: #1976d2;
+        }
+        .schedule-modal .btn-save:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
         .schedule-modal .status-msg {
             margin-top: 12px;
             font-size: 13px;
             text-align: center;
             display: none;
         }
-        .schedule-modal .status-msg.success { color: #06C755; }
-        .schedule-modal .status-msg.error { color: #e53935; }
+        .schedule-modal .status-msg.success {
+            color: #06C755;
+        }
+        .schedule-modal .status-msg.error {
+            color: #e53935;
+        }
 
         /* イベント削除ボタン */
         .event-delete-btn {
@@ -198,7 +242,10 @@
             transition: all 0.2s;
             flex-shrink: 0;
         }
-        .event-delete-btn:hover { color: #e53935; background: rgba(229, 57, 53, 0.08); }
+        .event-delete-btn:hover {
+            color: #e53935;
+            background: rgba(229, 57, 53, 0.08);
+        }
 
         .request-badge {
             background: red;
@@ -209,6 +256,7 @@
             margin-left: 4px;
             display: none;
         }
+
         .request-item {
             background: #f8f9fa;
             border-radius: 12px;
@@ -218,25 +266,32 @@
         }
         .request-item:last-child { margin-bottom: 0; }
 
-        .avatar-icon {
-            display: inline-block;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: #e8f5e9;
-            text-align: center;
-            line-height: 28px;
-            font-weight: 600;
-            font-size: 12px;
-            color: #2e7d32;
-        }
-
         @media (max-width: 480px) {
-            .schedule-modal .form-row { flex-wrap: wrap; gap: 6px; }
-            .schedule-modal .form-row .time-group { min-width: 140px; }
-            .schedule-modal .form-row .time-group select { font-size: 13px; min-width: 38px; }
-            .add-btn-group button { font-size: 12px; padding: 10px 8px; min-width: 60px; }
-        }
+            .schedule-modal .form-row {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .schedule-modal .form-row .time-group {
+                min-width: 140px;
+            }
+            .schedule-modal .form-row .time-group select {
+                font-size: 13px;
+                min-width: 38px;
+            }
+            .add-btn-group button {
+                font-size: 12px;
+                padding: 10px 8px;
+                min-width: 60px;
+            }
+            }
+            .calendar-day .dot.shared {
+                background: #ff9800 !important;
+            }
+
+            .event-title {
+                white-space: normal !important;
+                word-break: break-word !important;
+            }
     </style>
 </head>
 <body>
@@ -261,6 +316,7 @@
                     <div id="eventList"><div class="empty-events">Select a date</div></div>
                 </div>
 
+                <!-- ボタングループ（1つだけ） -->
                 <div class="add-btn-group">
                     <button class="btn-own" id="addOwnEventBtn"><i class="bi bi-person"></i> My Schedule</button>
                     <button class="btn-shared" id="addSharedEventBtn"><i class="bi bi-people"></i> With Friend</button>
@@ -368,8 +424,9 @@
         const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
+
         // ============================================================
-        // 時間フォーマット関数
+        // 時間フォーマット関数（修正版）
         // ============================================================
         function formatTimeDisplay(timeStr) {
             if (!timeStr) return '--:--';
@@ -384,8 +441,9 @@
             return `${hour}:${minute} ${ampm}`;
         }
 
+
         // ============================================================
-        // Firestore から予定を読み込む（重複防止版）
+        // Firestore から予定を読み込む（エラーハンドリング強化版）
         // ============================================================
         async function loadEventsFromFirestore(dateStr) {
             try {
@@ -406,9 +464,11 @@
                 const events = [];
                 const eventIds = new Set();
 
-                // ★ 修正: userId クエリのみに絞る（sharedWith クエリは重複表示の原因になるため削除）
+                // 自分の予定（userId == user.uid）を取得。
+                // ★ 修正：以前はここに加えて sharedWith == user.uid のクエリも実行していたが、
                 //   共有イベントは承諾時に「両者それぞれのドキュメント」が既に作られているため、
-                //   userId クエリだけで自身のカレンダーに表示される全イベントを取得できる。
+                //   sharedWithクエリを追加すると相手側ドキュメントまで拾ってしまい、
+                //   同じ予定が2重に表示される不具合が起きていた。userIdクエリだけで十分。
                 try {
                     const myQuery = query(
                         collection(db, 'events'),
@@ -478,7 +538,7 @@
                 
                 const eventData = eventSnap.data();
 
-                // ★ 修正: role ベースの削除権限チェック
+                // ✅ Sharedイベントの削除権限チェック（role フィールドで判定）
                 if (eventData.type === 'shared') {
                     // 承諾者（role === 'acceptor'）のみ直接削除可能
                     if (eventData.role === 'acceptor') {
@@ -486,7 +546,7 @@
                         await deleteDoc(eventRef);
                         alert('✅ Shared event deleted.');
                     } else {
-                        // 依頼者（role === 'requester'）は削除リクエストを送信
+                        // 依頼者は削除リクエストを送信
                         if (confirm(`"${eventData.title}" was shared by your friend. Send cancellation request?`)) {
                             await addDoc(collection(db, 'friendEvents'), {
                                 fromUserId: user.uid,
@@ -520,8 +580,10 @@
             }
         }
 
+
+                
         // ============================================================
-        // レンダリング関数
+        // レンダリング関数（修正版 - アイコン表示）
         // ============================================================
         async function renderEvents(dateStr) {
             const container = document.getElementById('eventList');
@@ -555,13 +617,15 @@
                 const statusClass = isShared ? 'confirmed' : 'own';
                 const statusLabel = isShared ? '👤 Shared' : '👤 My Schedule';
                 
+                // ✅ アイコン表示（Sharedの場合は相手の頭文字、それ以外は自分の頭文字）
                 let displayIcon = '👤';
                 let displayPerson = safe.person;
-                
                 if (isShared) {
+                    // Sharedイベントの場合は相手の頭文字を表示
                     const name = safe.person || 'Friend';
                     displayIcon = name.charAt(0).toUpperCase();
                 } else {
+                    // 自分のイベント
                     const currentUser = window.currentUser;
                     if (currentUser && currentUser.displayName) {
                         displayIcon = currentUser.displayName.charAt(0).toUpperCase();
@@ -581,26 +645,31 @@
                 
                 const displayTime = formatTimeDisplay(safe.time);
                 
-                // ★ 修正: role ベースで削除ボタン表示
-                const showDelete = !isShared || (isShared && e.role === 'acceptor');
+                // ✅ 削除ボタンは常に表示する。
+                // 押した後の挙動（即削除 or キャンセル依頼送信）は deleteEvent() 内で
+                // role（'acceptor' か 'requester' か）によって分岐する。
+                const showDelete = true;
                 
                 return `
                     <div class="event-item">
                         <span class="event-time ${statusClass}">${displayTime}</span>
-                        <span class="event-title">${displayTitle}</span>
-                        <span class="event-person">
-                            <span class="avatar-icon">${displayIcon}</span>
+                        <span class="event-title" style="white-space:normal;word-break:break-word;">${displayTitle}</span>
+                        <span class="event-person" style="display:flex;align-items:center;gap:4px;">
+                            <span style="display:inline-block;width:28px;height:28px;border-radius:50%;background:#e8f5e9;text-align:center;line-height:28px;font-weight:600;font-size:12px;color:#2e7d32;">${displayIcon}</span>
                             ${displayPerson}
                         </span>
                         <span class="event-status ${statusClass}">${statusLabel}</span>
-                        ${showDelete ? `<button class="event-delete-btn" onclick="deleteEvent('${e.id}', '${dateStr}')" title="Delete"><i class="bi bi-trash3"></i></button>` : ''}
+                        ${showDelete ? `<button class="event-delete-btn" onclick="deleteEvent('${e.id}', '${dateStr}')" title="${isShared && e.role !== 'acceptor' ? 'Request cancellation' : 'Delete'}"><i class="bi bi-trash3"></i></button>` : ''}
                     </div>
                 `;
             }).join('');
         }
 
+
+
+
         // ============================================================
-        // カレンダー描画
+        // カレンダー描画（修正版）
         // ============================================================
         async function renderCalendar() {
             const grid = document.getElementById('calGrid');
@@ -625,6 +694,7 @@
                 const events = currentEvents[ds] || await loadEventsFromFirestore(ds);
                 if (!currentEvents[ds]) currentEvents[ds] = events;
                 
+                // ✅ イベントタイプをチェック
                 const hasOwn = events && events.some(e => e.type === 'own');
                 const hasShared = events && events.some(e => e.type === 'shared');
 
@@ -634,6 +704,7 @@
 
                 html += `<div class="${cls}" onclick="selectDate('${ds}')">${d}`;
                 
+                // ✅ 優先順位: own（青） > shared（オレンジ）
                 if (hasOwn) {
                     html += `<div class="dot own"></div>`;
                 } else if (hasShared) {
@@ -651,6 +722,9 @@
 
             grid.innerHTML = html;
         }
+
+
+
 
         async function selectDate(ds) {
             selectedDate = ds;
@@ -1213,11 +1287,13 @@
                 if (status === 'confirmed') {
                     const eventsRef = collection(db, 'events');
 
-                    // ★ 修正: Firebase Authのuser.displayNameは常にnullのため、
-                    //   window.currentUser.displayName（LIFFプロフィール由来）を使う
+                    // ★ 修正：Firebase Authのuser.displayNameは常にnull/undefinedのため
+                    //   （カスタムトークンでのサインインでは設定されない）、
+                    //   代わりに信頼できる window.currentUser.displayName（LIFFプロフィール由来）を使う
                     const myDisplayName = window.currentUser?.displayName || 'Me';
 
-                    // 自分（承諾者）のカレンダーに追加（role: 'acceptor'）
+                    // 自分（承諾者）のカレンダーに追加
+                    // role: 'acceptor' → 直接削除が可能な側
                     await addDoc(eventsRef, {
                         userId: user.uid,
                         date: requestData.date,
@@ -1232,7 +1308,8 @@
                         updatedAt: new Date().toISOString()
                     });
 
-                    // 友達（依頼者）のカレンダーに追加（role: 'requester'）
+                    // 友達（依頼者）のカレンダーに追加
+                    // role: 'requester' → 削除リクエストのみ可能な側
                     await addDoc(eventsRef, {
                         userId: requestData.fromUserId,
                         date: requestData.date,
