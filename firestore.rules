@@ -37,23 +37,11 @@ service cloud.firestore {
     }
     
     // ============================================================
-    // ✅ 予定データ（events）- デバッグ版
+    // ✅ 予定データ（events）- デバッグ用：一時的に全許可
     // ============================================================
     match /events/{eventId} {
-      // 読み取りは認証済みユーザーのみ
-      allow read: if request.auth != null;
-      
-      // 作成は自分のデータのみ
-      allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.userId;
-      
-      // 更新は自分のデータのみ
-      allow update: if request.auth != null && 
-        request.auth.uid == resource.data.userId;
-      
-      // ✅ 削除：本人のみ（デバッグ用に条件を簡略化）
-      allow delete: if request.auth != null && 
-        request.auth.uid == resource.data.userId;
+      allow read, write: if request.auth != null;
+      allow delete: if request.auth != null;
     }
     
     // ============================================================
