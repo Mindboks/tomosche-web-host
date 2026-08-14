@@ -1444,7 +1444,7 @@
         }
 
         // ============================================================
-        // キャンセルリクエストを承認（双方のイベントを削除）
+        // キャンセルリクエストを承認（最終版）
         // ============================================================
         async function handleCancellation(requestId, friendId) {
             console.log('🚀 handleCancellation 開始');
@@ -1498,8 +1498,8 @@
                 const eventTime = requestData.time;
                 console.log(`🗑️ 削除対象: タイトル="${cleanTitle}", 日付=${eventDate}, 時間=${eventTime}`);
 
-                // 4. ★ 修正：全イベントを検索（userId 制限なし）
-                console.log(`🔍 全イベントを検索: date=${eventDate}, time=${eventTime}`);
+                // ★★★ 最終修正: date と time の両方で検索
+                console.log(`🔍 イベントを検索: date=${eventDate}, time=${eventTime}`);
                 const allEventsQuery = query(
                     collection(db, 'events'),
                     where('date', '==', eventDate),
@@ -1508,27 +1508,50 @@
                 const allEvents = await getDocs(allEventsQuery);
                 console.log(`📊 該当イベント: ${allEvents.size}件`);
 
-                let deletedCount = 0;
-                for (const docSnap of allEvents.docs) {
-                    const data = docSnap.data();
-                    console.log(`   📄 ${docSnap.id}: ${data.title} (userId=${data.userId})`);
+                // ★★★ もし見つからなければ、title 部分一致で再検索
+                if (allEvents.empty) {
+                    console.log(`⚠️ date+time で見つかりません。title部分一致で再検索...`);
+                    const titleQuery = query(
+                        collection(db, 'events'),
+                        where('date', '==', eventDate)
+                    );
+                    const titleSnapshot = await getDocs(titleQuery);
+                    console.log(`📊 title検索結果: ${titleSnapshot.size}件`);
                     
-                    if (data.title && data.title.includes(cleanTitle)) {
-                        await deleteDoc(docSnap.ref);
-                        deletedCount++;
-                        console.log(`   ✅ 削除完了: ${docSnap.id}`);
+                    let deletedCount = 0;
+                    for (const docSnap of titleSnapshot.docs) {
+                        const data = docSnap.data();
+                        console.log(`   📄 ${docSnap.id}: title="${data.title}", time="${data.time}"`);
+                        if (data.title && data.title.includes(cleanTitle)) {
+                            await deleteDoc(docSnap.ref);
+                            deletedCount++;
+                            console.log(`   ✅ 削除完了: ${docSnap.id}`);
+                        }
                     }
+                    
+                    if (deletedCount === 0) {
+                        console.warn('⚠️ 削除対象のイベントが見つかりませんでした');
+                        alert('⚠️ No matching events found to cancel.');
+                        return;
+                    }
+                    
+                    alert(`✅ Cancellation accepted. ${deletedCount} event(s) removed.`);
+                } else {
+                    // date+time で見つかった場合
+                    let deletedCount = 0;
+                    for (const docSnap of allEvents.docs) {
+                        const data = docSnap.data();
+                        console.log(`   📄 ${docSnap.id}: title="${data.title}", time="${data.time}"`);
+                        if (data.title && data.title.includes(cleanTitle)) {
+                            await deleteDoc(docSnap.ref);
+                            deletedCount++;
+                            console.log(`   ✅ 削除完了: ${docSnap.id}`);
+                        }
+                    }
+                    alert(`✅ Cancellation accepted. ${deletedCount} event(s) removed.`);
                 }
 
-                if (deletedCount === 0) {
-                    console.warn('⚠️ 削除対象のイベントが見つかりませんでした');
-                    alert('⚠️ No matching events found to cancel.');
-                    return;
-                }
-
-                alert(`✅ Cancellation accepted. ${deletedCount} event(s) removed.`);
-
-                // 5. 再読み込み
+                // 再読み込み
                 await loadFriendRequests();
                 await openFriendRequestsModal();
                 if (selectedDate) {
@@ -1541,7 +1564,6 @@
                 alert('Failed to process cancellation. Please try again.');
             }
         }
-
         // ============================================================
         // 申請一覧モーダルを閉じる
         // ============================================================
