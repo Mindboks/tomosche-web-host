@@ -466,97 +466,97 @@
         }
 
 
-// ============================================================
-// Firestore から予定を読み込む（修正版）
-// ============================================================
-async function loadEventsFromFirestore(dateStr) {
-    try {
-        if (window.liffReadyPromise) {
-            await window.liffReadyPromise;
-        }
-
-        const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-        const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
-        const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-        
-        const app = getApp();
-        const auth = getAuth(app);
-        const user = auth.currentUser;
-        if (!user) return [];
-
-        const db = getFirestore(app);
-        const events = [];
-        const eventIds = new Set();
-
-        // 1. 自分の予定（userId == user.uid）
-        try {
-            const myQuery = query(
-                collection(db, 'events'),
-                where('userId', '==', user.uid),
-                where('date', '==', dateStr)
-            );
-            const mySnapshot = await getDocs(myQuery);
-            mySnapshot.forEach(doc => {
-                const data = doc.data();
-                const id = doc.id;
-                if (!eventIds.has(id)) {
-                    eventIds.add(id);
-                    events.push({
-                        id: id,
-                        time: data.time || '12:00',
-                        title: data.title || 'Untitled',
-                        person: data.person || 'Me',
-                        note: data.note || '',
-                        status: data.status || 'own',
-                        type: data.type || 'own',
-                        sharedWith: data.sharedWith || null,
-                        role: data.role || null,
-                        userId: data.userId || user.uid
-                    });
+        // ============================================================
+        // Firestore から予定を読み込む（修正版）
+        // ============================================================
+        async function loadEventsFromFirestore(dateStr) {
+            try {
+                if (window.liffReadyPromise) {
+                    await window.liffReadyPromise;
                 }
-            });
-        } catch (err) {
-            console.warn('自分の予定取得エラー:', err);
-        }
 
-        // 2. ✅ 友達から共有された予定（sharedWith == user.uid）
-        //    これがないと友達のカレンダーに共有イベントが表示されない
-        try {
-            const sharedQuery = query(
-                collection(db, 'events'),
-                where('sharedWith', '==', user.uid),
-                where('date', '==', dateStr)
-            );
-            const sharedSnapshot = await getDocs(sharedQuery);
-            sharedSnapshot.forEach(doc => {
-                const data = doc.data();
-                const id = doc.id;
-                if (!eventIds.has(id)) {
-                    eventIds.add(id);
-                    events.push({
-                        id: id,
-                        time: data.time || '12:00',
-                        title: data.title || 'Untitled',
-                        person: data.person || 'Friend',
-                        note: data.note || '',
-                        status: data.status || 'confirmed',
-                        type: 'shared',
-                        sharedWith: data.sharedWith || null,
-                        role: data.role || null,
-                        userId: data.userId || null
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+                const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+                
+                const app = getApp();
+                const auth = getAuth(app);
+                const user = auth.currentUser;
+                if (!user) return [];
+
+                const db = getFirestore(app);
+                const events = [];
+                const eventIds = new Set();
+
+                // 1. 自分の予定（userId == user.uid）
+                try {
+                    const myQuery = query(
+                        collection(db, 'events'),
+                        where('userId', '==', user.uid),
+                        where('date', '==', dateStr)
+                    );
+                    const mySnapshot = await getDocs(myQuery);
+                    mySnapshot.forEach(doc => {
+                        const data = doc.data();
+                        const id = doc.id;
+                        if (!eventIds.has(id)) {
+                            eventIds.add(id);
+                            events.push({
+                                id: id,
+                                time: data.time || '12:00',
+                                title: data.title || 'Untitled',
+                                person: data.person || 'Me',
+                                note: data.note || '',
+                                status: data.status || 'own',
+                                type: data.type || 'own',
+                                sharedWith: data.sharedWith || null,
+                                role: data.role || null,
+                                userId: data.userId || user.uid
+                            });
+                        }
                     });
+                } catch (err) {
+                    console.warn('自分の予定取得エラー:', err);
                 }
-            });
-        } catch (err) {
-            console.warn('共有予定取得エラー:', err);
-        }
 
-        return events;
-    } catch (error) {
-        console.error('Load events error:', error);
-        return [];
-    }
-}
+                // 2. ✅ 友達から共有された予定（sharedWith == user.uid）
+                //    これがないと友達のカレンダーに共有イベントが表示されない
+                try {
+                    const sharedQuery = query(
+                        collection(db, 'events'),
+                        where('sharedWith', '==', user.uid),
+                        where('date', '==', dateStr)
+                    );
+                    const sharedSnapshot = await getDocs(sharedQuery);
+                    sharedSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        const id = doc.id;
+                        if (!eventIds.has(id)) {
+                            eventIds.add(id);
+                            events.push({
+                                id: id,
+                                time: data.time || '12:00',
+                                title: data.title || 'Untitled',
+                                person: data.person || 'Friend',
+                                note: data.note || '',
+                                status: data.status || 'confirmed',
+                                type: 'shared',
+                                sharedWith: data.sharedWith || null,
+                                role: data.role || null,
+                                userId: data.userId || null
+                            });
+                        }
+                    });
+                } catch (err) {
+                    console.warn('共有予定取得エラー:', err);
+                }
+
+                return events;
+            } catch (error) {
+                console.error('Load events error:', error);
+                return [];
+            }
+        }
 
         // ============================================================
         // イベント削除（権限チェック強化版）
@@ -598,7 +598,8 @@ async function loadEventsFromFirestore(dateStr) {
                         await deleteDoc(eventRef);
                         alert('✅ Shared event deleted.');
                     } else {
-                        // 依頼者は削除リクエストを送信
+                        // ★ 依頼者（role === 'requester'）は削除リクエストを送信
+                        // status を 'pending' にして Requests に表示させる
                         if (confirm(`"${eventData.title}" was shared by your friend. Send cancellation request?`)) {
                             await addDoc(collection(db, 'friendEvents'), {
                                 fromUserId: user.uid,
@@ -607,7 +608,7 @@ async function loadEventsFromFirestore(dateStr) {
                                 time: eventData.time,
                                 title: `[CANCEL] ${eventData.title}`,
                                 note: `${window.currentUser?.displayName || 'Someone'} wants to cancel this shared event.`,
-                                status: 'cancelled',
+                                status: 'pending',  // ★ 'cancelled' → 'pending' に変更
                                 createdAt: new Date().toISOString(),
                                 updatedAt: new Date().toISOString()
                             });
@@ -1330,10 +1331,9 @@ async function loadEventsFromFirestore(dateStr) {
 
 
         // ============================================================
-        // 友達からのイベント申請一覧を取得（pending + cancelled）
+        // 友達からのイベント申請一覧を取得（pending のみ + キャンセルも表示）
         // ============================================================
         let pendingRequests = [];
-        let cancelledRequests = [];
 
         async function loadFriendRequests() {
             try {
@@ -1353,7 +1353,7 @@ async function loadEventsFromFirestore(dateStr) {
                 const db = getFirestore(app);
                 const requests = [];
 
-                // ✅ pending リクエストを取得
+                // ★ 修正: pending リクエストを取得（[CANCEL] も含む）
                 const pendingQuery = query(
                     collection(db, 'friendEvents'),
                     where('toUserId', '==', user.uid),
@@ -1362,6 +1362,8 @@ async function loadEventsFromFirestore(dateStr) {
                 const pendingSnapshot = await getDocs(pendingQuery);
                 pendingSnapshot.forEach(docSnap => {
                     const data = docSnap.data();
+                    // ★ [CANCEL] が含まれているかチェック
+                    const isCancel = data.title && data.title.startsWith('[CANCEL]');
                     requests.push({
                         id: docSnap.id,
                         fromUserId: data.fromUserId,
@@ -1372,30 +1374,7 @@ async function loadEventsFromFirestore(dateStr) {
                         note: data.note || '',
                         status: data.status,
                         createdAt: data.createdAt,
-                        isCancel: false
-                    });
-                });
-
-                // ✅ cancelled リクエストも取得（削除依頼用）
-                const cancelledQuery = query(
-                    collection(db, 'friendEvents'),
-                    where('toUserId', '==', user.uid),
-                    where('status', '==', 'cancelled')
-                );
-                const cancelledSnapshot = await getDocs(cancelledQuery);
-                cancelledSnapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    requests.push({
-                        id: docSnap.id,
-                        fromUserId: data.fromUserId,
-                        fromUserName: data.fromUserName || 'Friend',
-                        date: data.date,
-                        time: data.time,
-                        title: data.title,
-                        note: data.note || '',
-                        status: data.status,
-                        createdAt: data.createdAt,
-                        isCancel: true
+                        isCancel: isCancel
                     });
                 });
 
@@ -1404,17 +1383,14 @@ async function loadEventsFromFirestore(dateStr) {
                     return new Date(b.createdAt) - new Date(a.createdAt);
                 });
 
-                pendingRequests = requests.filter(r => r.status === 'pending');
-                cancelledRequests = requests.filter(r => r.status === 'cancelled');
-                updateRequestBadge(pendingRequests.length);
+                pendingRequests = requests;
+                updateRequestBadge(requests.length);
                 return requests;
             } catch (error) {
                 console.error('Load friend requests error:', error);
                 return [];
             }
         }
-
-
 
 
 
@@ -1433,7 +1409,7 @@ async function loadEventsFromFirestore(dateStr) {
 
 
         // ============================================================
-        // 申請一覧モーダルを開く（pending + cancelled 表示）
+        // 申請一覧モーダルを開く（pending を表示 + キャンセル表示）
         // ============================================================
         async function openFriendRequestsModal() {
             const modal = document.getElementById('friendRequestsModal');
@@ -1445,19 +1421,20 @@ async function loadEventsFromFirestore(dateStr) {
             const requests = await loadFriendRequests();
             
             if (requests.length === 0) {
-                container.innerHTML = `<div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">📭 No requests</div>`;
+                container.innerHTML = `<div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">📭 No pending requests</div>`;
                 return;
             }
 
-            const pending = requests.filter(r => r.status === 'pending');
-            const cancelled = requests.filter(r => r.status === 'cancelled');
+            // ★ 通常のリクエストとキャンセルリクエストに分ける
+            const normalRequests = requests.filter(r => !r.isCancel);
+            const cancelRequests = requests.filter(r => r.isCancel);
 
             let html = '';
 
-            // Pending セクション
-            if (pending.length > 0) {
-                html += `<div style="font-weight:600;font-size:14px;color:#333;margin-bottom:8px;">📩 Pending Requests</div>`;
-                html += pending.map(req => {
+            // 通常のリクエスト（Pending）
+            if (normalRequests.length > 0) {
+                html += `<div style="font-weight:600;font-size:14px;color:#333;margin-bottom:8px;">📩 Event Requests</div>`;
+                html += normalRequests.map(req => {
                     const displayTime = formatTimeDisplay(req.time);
                     return `
                         <div class="request-item">
@@ -1478,16 +1455,18 @@ async function loadEventsFromFirestore(dateStr) {
                 }).join('');
             }
 
-            // Cancelled セクション
-            if (cancelled.length > 0) {
+            // ★ キャンセルリクエスト（Cancel Requests）
+            if (cancelRequests.length > 0) {
                 html += `<div style="font-weight:600;font-size:14px;color:#e53935;margin-top:16px;margin-bottom:8px;">❌ Cancellation Requests</div>`;
-                html += cancelled.map(req => {
+                html += cancelRequests.map(req => {
                     const displayTime = formatTimeDisplay(req.time);
+                    // [CANCEL] を表示用に整形
+                    const displayTitle = req.title.replace('[CANCEL] ', '');
                     return `
                         <div class="request-item" style="background:#fff5f5;border:1px solid #ffcdd2;">
                             <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
                                 <div style="flex:1;">
-                                    <div style="font-weight:600;font-size:15px;color:#e53935;">❌ ${escapeHtml(req.title)}</div>
+                                    <div style="font-weight:600;font-size:15px;color:#e53935;">❌ Cancel: ${escapeHtml(displayTitle)}</div>
                                     <div style="font-size:13px;color:#666;">📅 ${escapeHtml(req.date)} ${displayTime}</div>
                                     <div style="font-size:12px;color:#888;">👤 From: ${escapeHtml(req.fromUserName)}</div>
                                     ${req.note ? `<div style="font-size:12px;color:#999;margin-top:4px;">📝 ${escapeHtml(req.note)}</div>` : ''}
@@ -1503,6 +1482,7 @@ async function loadEventsFromFirestore(dateStr) {
 
             container.innerHTML = html || `<div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">📭 No requests</div>`;
         }
+
 
         // ============================================================
         // 友達からのイベント申請を処理（承諾/拒否）
