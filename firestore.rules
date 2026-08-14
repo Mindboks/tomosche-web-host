@@ -10,10 +10,10 @@ service cloud.firestore {
     }
     
     // ============================================================
-    // 友達関係（friendships）- 確実に読み取り許可
+    // 友達関係（friendships）- 修正版
     // ============================================================
     match /friendships/{friendshipId} {
-      // ✅ 本人の友達一覧は読み取り可能（userId == request.auth.uid）
+      // ✅ 読み取り：認証済みユーザーは自分の友達一覧を読める
       allow read: if request.auth != null && 
         request.auth.uid == resource.data.userId;
       
@@ -22,8 +22,8 @@ service cloud.firestore {
       
       allow update, delete: if request.auth != null && 
         request.auth.uid == resource.data.userId;
-    }
-        
+    } 
+    
     // ============================================================
     // 友達申請（friendRequests）
     // ============================================================
