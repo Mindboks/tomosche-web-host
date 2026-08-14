@@ -1444,7 +1444,7 @@
         }
 
         // ============================================================
-        // キャンセルリクエストを承認（最終版）
+        // キャンセルリクエストを承認（最終デバッグ版）
         // ============================================================
         async function handleCancellation(requestId, friendId) {
             console.log('🚀 handleCancellation 開始');
@@ -1482,7 +1482,7 @@
                     return;
                 }
                 const requestData = requestSnap.data();
-                console.log('📄 キャンセルリクエストデータ:', requestData);
+                console.log('📄 キャンセルリクエストデータ (全フィールド):', JSON.stringify(requestData, null, 2));
 
                 // 2. キャンセルリクエストを承認済みに更新
                 await updateDoc(requestRef, {
@@ -1492,37 +1492,54 @@
                 console.log('✅ リクエストを approved に更新');
 
                 // 3. 削除するイベントの情報を取得
-                let cleanTitle = requestData.title.replace('[CANCEL] ', '').trim();
+                const originalTitle = requestData.title || '';
+                console.log('📝 元のタイトル:', originalTitle);
+                
+                // [CANCEL] を除去
+                let cleanTitle = originalTitle.replace('[CANCEL] ', '').trim();
+                console.log('📝 [CANCEL]除去後:', cleanTitle);
+                
+                // [With xxx] を除去
                 cleanTitle = cleanTitle.replace(/^\[With\s+.+?\]\s*/, '').trim();
-                const eventDate = requestData.date;
-                const eventTime = requestData.time;
-                console.log(`🗑️ 削除対象: タイトル="${cleanTitle}", 日付=${eventDate}, 時間=${eventTime}`);
+                console.log('📝 [With xxx]除去後:', cleanTitle);
+                
+                const eventDate = requestData.date || '';
+                const eventTime = requestData.time || '';
+                console.log(`🗑️ 最終削除対象: タイトル="${cleanTitle}", 日付=${eventDate}, 時間=${eventTime}`);
 
-                // ★★★ 最終修正: date と time の両方で検索
-                console.log(`🔍 イベントを検索: date=${eventDate}, time=${eventTime}`);
-                const allEventsQuery = query(
+                // 4. まず date + time で検索
+                console.log(`🔍 検索1: date=${eventDate}, time=${eventTime}`);
+                const query1 = query(
                     collection(db, 'events'),
                     where('date', '==', eventDate),
                     where('time', '==', eventTime)
                 );
-                const allEvents = await getDocs(allEventsQuery);
-                console.log(`📊 該当イベント: ${allEvents.size}件`);
+                const snapshot1 = await getDocs(query1);
+                console.log(`📊 検索1結果: ${snapshot1.size}件`);
+                snapshot1.forEach(doc => {
+                    console.log(`   📄 ${doc.id}: ${JSON.stringify(doc.data())}`);
+                });
 
-                // ★★★ もし見つからなければ、title 部分一致で再検索
-                if (allEvents.empty) {
-                    console.log(`⚠️ date+time で見つかりません。title部分一致で再検索...`);
-                    const titleQuery = query(
+                // 5. 次に date のみで検索（見つからない場合）
+                if (snapshot1.empty) {
+                    console.log(`🔍 検索2: date=${eventDate} (全件)`);
+                    const query2 = query(
                         collection(db, 'events'),
                         where('date', '==', eventDate)
                     );
-                    const titleSnapshot = await getDocs(titleQuery);
-                    console.log(`📊 title検索結果: ${titleSnapshot.size}件`);
+                    const snapshot2 = await getDocs(query2);
+                    console.log(`📊 検索2結果: ${snapshot2.size}件`);
+                    snapshot2.forEach(doc => {
+                        console.log(`   📄 ${doc.id}: ${JSON.stringify(doc.data())}`);
+                    });
                     
+                    // 削除処理
                     let deletedCount = 0;
-                    for (const docSnap of titleSnapshot.docs) {
+                    for (const docSnap of snapshot2.docs) {
                         const data = docSnap.data();
-                        console.log(`   📄 ${docSnap.id}: title="${data.title}", time="${data.time}"`);
-                        if (data.title && data.title.includes(cleanTitle)) {
+                        const title = data.title || '';
+                        console.log(`   🔍 比較: title="${title}" に "${cleanTitle}" が含まれる? ${title.includes(cleanTitle)}`);
+                        if (title.includes(cleanTitle)) {
                             await deleteDoc(docSnap.ref);
                             deletedCount++;
                             console.log(`   ✅ 削除完了: ${docSnap.id}`);
@@ -1531,18 +1548,20 @@
                     
                     if (deletedCount === 0) {
                         console.warn('⚠️ 削除対象のイベントが見つかりませんでした');
-                        alert('⚠️ No matching events found to cancel.');
+                        alert('⚠️ No matching events found to cancel.\n\n' +
+                            `検索条件: 日付=${eventDate}, タイトル="${cleanTitle}"\n` +
+                            `ヒット件数: ${snapshot2.size}件`);
                         return;
                     }
-                    
                     alert(`✅ Cancellation accepted. ${deletedCount} event(s) removed.`);
                 } else {
-                    // date+time で見つかった場合
+                    // 検索1で見つかった場合
                     let deletedCount = 0;
-                    for (const docSnap of allEvents.docs) {
+                    for (const docSnap of snapshot1.docs) {
                         const data = docSnap.data();
-                        console.log(`   📄 ${docSnap.id}: title="${data.title}", time="${data.time}"`);
-                        if (data.title && data.title.includes(cleanTitle)) {
+                        const title = data.title || '';
+                        console.log(`   🔍 比較: title="${title}" に "${cleanTitle}" が含まれる? ${title.includes(cleanTitle)}`);
+                        if (title.includes(cleanTitle)) {
                             await deleteDoc(docSnap.ref);
                             deletedCount++;
                             console.log(`   ✅ 削除完了: ${docSnap.id}`);
@@ -1561,7 +1580,7 @@
 
             } catch (error) {
                 console.error('❌ Handle cancellation error:', error);
-                alert('Failed to process cancellation. Please try again.');
+                alert('Failed to process cancellation. Please try again.\n\n' + error.message);
             }
         }
         // ============================================================
