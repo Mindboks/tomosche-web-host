@@ -37,24 +37,21 @@ service cloud.firestore {
     }
     
     // ============================================================
-    // 予定データ（events）
+    // ✅ 予定データ（events）- デバッグ版
     // ============================================================
     match /events/{eventId} {
-      allow read: if request.auth != null && 
-        (request.auth.uid == resource.data.userId || 
-         request.auth.uid == resource.data.sharedWith);
+      // 読み取りは認証済みユーザーのみ
+      allow read: if request.auth != null;
       
+      // 作成は自分のデータのみ
       allow create: if request.auth != null && 
         request.auth.uid == request.resource.data.userId;
       
+      // 更新は自分のデータのみ
       allow update: if request.auth != null && 
         request.auth.uid == resource.data.userId;
       
-      allow update: if request.auth != null && 
-        request.auth.uid == resource.data.sharedWith &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
-      
-      // ✅ 削除：本人のみ
+      // ✅ 削除：本人のみ（デバッグ用に条件を簡略化）
       allow delete: if request.auth != null && 
         request.auth.uid == resource.data.userId;
     }

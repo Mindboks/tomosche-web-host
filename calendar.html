@@ -1632,9 +1632,12 @@
                 );
                 const myEvents = await getDocs(myEventsQuery);
                 console.log(`📊 自分のイベント: ${myEvents.size}件`);
+                // 削除処理の前に userId をログに出力
                 for (const docSnap of myEvents.docs) {
                     const data = docSnap.data();
-                    console.log(`   📄 ${docSnap.id}: ${data.title}`);
+                    console.log(`   📄 ${docSnap.id}: title=${data.title}, userId=${data.userId}`);
+                    console.log(`   🔑 現在のUID: ${user.uid}`);
+                    console.log(`   ✅ 一致: ${data.userId === user.uid}`);
                     if (data.title && data.title.includes(cleanTitle)) {
                         await deleteDoc(docSnap.ref);
                         console.log(`   ✅ 自分のイベント削除完了: ${docSnap.id}`);
