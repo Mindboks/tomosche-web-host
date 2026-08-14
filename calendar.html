@@ -465,7 +465,7 @@
             if (hour === 0) hour = 12;
             return `${hour}:${minute} ${ampm}`;
         }
-        
+
         // ============================================================
         // 日付選択
         // ============================================================
@@ -1598,62 +1598,80 @@
 
                 const db = getFirestore(app);
 
+                // 1. リクエストを取得
                 const requestRef = doc(db, 'friendEvents', requestId);
                 const requestSnap = await getDoc(requestRef);
+                if (!requestSnap.exists) {
+                    alert('Request not found.');
+                    return;
+                }
                 const requestData = requestSnap.data();
+                console.log('📄 キャンセルリクエストデータ:', requestData);
 
-                // キャンセルリクエストを承認済みに更新
+                // 2. キャンセルリクエストを承認済みに更新
                 await updateDoc(requestRef, {
                     status: 'approved',
                     updatedAt: new Date().toISOString()
                 });
 
-                // 双方の events から該当イベントを削除
+                // 3. 削除するイベントのタイトルを取得（[CANCEL] を除去）
                 const cleanTitle = requestData.title.replace('[CANCEL] ', '').trim();
+                console.log(`🗑️ 削除対象タイトル: "${cleanTitle}"`);
+                console.log(`📅 対象日付: ${requestData.date}`);
+                console.log(`⏰ 対象時間: ${requestData.time}`);
 
-                // 自分のイベント
+                // 4. 自分のイベントを削除（userId + date + time で検索）
                 const myEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid),
-                    where('date', '==', requestData.date)
+                    where('date', '==', requestData.date),
+                    where('time', '==', requestData.time)
                 );
                 const myEvents = await getDocs(myEventsQuery);
+                console.log(`📊 自分のイベント: ${myEvents.size}件`);
                 for (const docSnap of myEvents.docs) {
                     const data = docSnap.data();
+                    console.log(`   📄 ${docSnap.id}: ${data.title}`);
+                    // タイトルが一致するものを削除（日付と時間で絞り込んでいるので safe）
                     if (data.title && data.title.includes(cleanTitle)) {
                         await deleteDoc(docSnap.ref);
+                        console.log(`   ✅ 削除完了: ${docSnap.id}`);
                     }
                 }
 
-                // 友達のイベント
+                // 5. 友達のイベントを削除（friendId + date + time で検索）
                 const friendEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', friendId),
-                    where('date', '==', requestData.date)
+                    where('date', '==', requestData.date),
+                    where('time', '==', requestData.time)
                 );
                 const friendEvents = await getDocs(friendEventsQuery);
+                console.log(`📊 友達のイベント: ${friendEvents.size}件`);
                 for (const docSnap of friendEvents.docs) {
                     const data = docSnap.data();
+                    console.log(`   📄 ${docSnap.id}: ${data.title}`);
                     if (data.title && data.title.includes(cleanTitle)) {
                         await deleteDoc(docSnap.ref);
+                        console.log(`   ✅ 削除完了: ${docSnap.id}`);
                     }
                 }
 
                 alert('✅ Cancellation accepted. Events removed from both calendars.');
 
+                // 6. モーダルを閉じて再読み込み
                 await loadFriendRequests();
-                openFriendRequestsModal();
+                await openFriendRequestsModal();  // モーダルを再表示（更新）
                 if (selectedDate) {
                     await renderCalendar();
                     await renderEvents(selectedDate);
                 }
 
             } catch (error) {
-                console.error('Handle cancellation error:', error);
+                console.error('❌ Handle cancellation error:', error);
                 alert('Failed to process cancellation. Please try again.');
             }
         }
-
 
 
         // ============================================================
