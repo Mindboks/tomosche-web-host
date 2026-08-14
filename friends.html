@@ -294,6 +294,10 @@
                 const db = getFirestore(app);
 
                 // 1. 友達一覧を取得（friendshipsに埋め込み済みのfriendNameを使う）
+                // ★ 修正：他人の users/{friendId} を直接読みに行くのはセキュリティルール上不可能
+                //   （本人のusersドキュメントしか読めない設定になっている）。
+                //   friendships ドキュメント自身に friendName が addFriendV2 経由で
+                //   すでに埋め込まれているので、それをそのまま使えば十分。
                 const friendsQuery = query(
                     collection(db, 'friendships'),
                     where('userId', '==', user.uid)
@@ -304,27 +308,25 @@
                     const data = fDoc.data();
                     friendMap.set(data.friendId, data.friendName || 'Friend');
                 });
+                // 自分自身もマップに追加
                 friendMap.set(user.uid, 'My');
 
-                // 2. ★★★ 全てのイベントを取得（自分の予定 + 共有予定）★★★
-                // ① 自分の予定（userId == user.uid）
+                // 2. 自分の予定を取得（userId == user.uid）
+                // ★ 修正：where()を付けずに collection(db, 'events') を丸ごと取得しようとすると、
+                //   セキュリティルールが「auth.uid == userId または auth.uid == sharedWith」という
+                //   ドキュメントごとの条件になっているため、Firestoreはクエリ全体を
+                //   permission-denied で拒否する（一部だけ返す、という動作にはならない）。
+                //   ルールの条件に対応する where('userId', '==', user.uid) を必ず付ける。
+                //   共有イベントは承諾時に両者それぞれのドキュメントが作られているため、
+                //   sharedWithによる追加クエリも不要（重複表示の原因になる）。
                 const myEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid)
                 );
                 const myEventsSnapshot = await getDocs(myEventsQuery);
 
-                // ② ★★★ 友達の予定（sharedWith == user.uid）- これが友達のイベント！ ★★★
-                const sharedEventsQuery = query(
-                    collection(db, 'events'),
-                    where('sharedWith', '==', user.uid)
-                );
-                const sharedEventsSnapshot = await getDocs(sharedEventsQuery);
-
                 // 3. イベントをマップに格納（重複防止）
                 const eventMap = new Map();
-                
-                // 自分の予定を追加
                 myEventsSnapshot.forEach(eDoc => {
                     const data = eDoc.data();
                     const id = eDoc.id;
@@ -333,19 +335,6 @@
                             id: id,
                             ...data,
                             type: data.type || 'own'
-                        });
-                    }
-                });
-                
-                // ★★★ 友達の予定（共有イベント）を追加 ★★★
-                sharedEventsSnapshot.forEach(eDoc => {
-                    const data = eDoc.data();
-                    const id = eDoc.id;
-                    if (!eventMap.has(id)) {
-                        eventMap.set(id, {
-                            id: id,
-                            ...data,
-                            type: data.type || 'shared'
                         });
                     }
                 });
@@ -361,43 +350,25 @@
                     let isMe = false;
                     let friendName = '';
 
-                    // ★★★ 判定ロジック ★★★
-                    // type === 'own' → 自分のイベント
+                    // ★ 修正：userIdが自分かどうかではなく、type（own / shared）で判定する。
+                    //   共有イベント（type: 'shared'）は自分のuserIdであっても、
+                    //   「誰と共有しているか」を見せるのが目的なので isMe は false にし、
+                    //   handleFriendRequest() 側で既に正しく保存済みの person フィールド
+                    //   （相手の表示名）をそのまま使う。
                     if (eventData.type === 'own') {
                         isMe = true;
                         displayName = 'My';
                         friendName = 'My';
-                    } 
-                    // type === 'shared' → 共有イベント
-                    else if (eventData.type === 'shared') {
-                        // sharedWith が自分 → 友達が共有したイベント
-                        if (eventData.sharedWith === user.uid) {
-                            isMe = false;
-                            // userId が友達なので、友達の名前を取得
-                            const fName = friendMap.get(eventData.userId) || eventData.person || 'Friend';
-                            displayName = fName;
-                            friendName = fName;
-                        } else {
-                            // 自分が共有したイベント（自分が依頼者）
-                            isMe = true;
-                            displayName = 'My';
-                            friendName = 'My';
-                        }
-                    } 
-                    // その他（userId で判定）
-                    else {
-                        if (eventData.userId === user.uid) {
-                            isMe = true;
-                            displayName = 'My';
-                            friendName = 'My';
-                        } else {
-                            isMe = false;
-                            const fName = friendMap.get(eventData.userId) || eventData.person || 'Friend';
-                            displayName = fName;
-                            friendName = fName;
-                        }
+                    } else if (eventData.type === 'shared') {
+                        isMe = false;
+                        friendName = eventData.person || friendMap.get(eventData.sharedWith) || 'Friend';
+                        displayName = friendName;
+                    } else {
+                        displayName = eventData.person || 'Friend';
+                        friendName = displayName;
                     }
 
+                    // ★ デバッグ: 判定結果を表示
                     console.log(`🔍 イベント: ${eventData.title}, type: ${eventData.type}, isMe: ${isMe}, displayName: ${displayName}`);
 
                     // タイトルを整形
@@ -450,11 +421,6 @@
             }
         }
 
-
-
-
-
-        
         // ============================================================
         // ソート機能
         // ============================================================
