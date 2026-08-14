@@ -267,7 +267,7 @@
         }
 
         // ============================================================
-        // 全イベントを読み込む（自分 + 友達）
+        // 全イベントを読み込む（自分 + 友達）- 完全修正版
         // ============================================================
         async function loadAllData() {
             const container = document.getElementById('scheduleList');
@@ -279,7 +279,7 @@
                 }
 
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getFirestore, collection, query, where, getDocs, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
 
                 const app = getApp();
@@ -293,102 +293,89 @@
 
                 const db = getFirestore(app);
 
-                // 1. 友達一覧を取得（表示名取得用）
+                // 1. ★★★ 友達一覧を取得（friendships から友達の名前を取得）★★★
                 const friendsQuery = query(
                     collection(db, 'friendships'),
                     where('userId', '==', user.uid)
                 );
                 const friendsSnapshot = await getDocs(friendsQuery);
                 const friendMap = new Map();
-                friendsSnapshot.forEach(doc => {
+                for (const doc of friendsSnapshot.docs) {
                     const data = doc.data();
-                    friendMap.set(data.friendId, data.friendName || 'Friend');
-                });
-                // ★ 自分自身もマップに追加（自分のイベント用）
+                    const friendId = data.friendId;
+                    // ★ 友達のユーザー情報から名前を取得
+                    try {
+                        const friendRef = doc(db, 'users', friendId);
+                        const friendSnap = await getDoc(friendRef);
+                        if (friendSnap.exists()) {
+                            const friendData = friendSnap.data();
+                            friendMap.set(friendId, friendData.displayName || 'Friend');
+                        } else {
+                            friendMap.set(friendId, data.friendName || 'Friend');
+                        }
+                    } catch (e) {
+                        friendMap.set(friendId, data.friendName || 'Friend');
+                    }
+                }
+                // 自分自身もマップに追加
                 friendMap.set(user.uid, 'My');
 
-                // 2. ★ 自分の予定を取得（userId == user.uid）
-                const myEventsQuery = query(
-                    collection(db, 'events'),
-                    where('userId', '==', user.uid)
+                // 2. ★★★ 全てのイベントを取得（日付制限なし）★★★
+                const allEventsQuery = query(
+                    collection(db, 'events')
                 );
-                const myEventsSnapshot = await getDocs(myEventsQuery);
-                
-                // 3. ★ 共有予定を取得（sharedWith == user.uid）
-                const sharedEventsQuery = query(
-                    collection(db, 'events'),
-                    where('sharedWith', '==', user.uid)
-                );
-                const sharedEventsSnapshot = await getDocs(sharedEventsQuery);
+                const allEventsSnapshot = await getDocs(allEventsQuery);
 
-                // 4. イベントをマップに格納（重複防止）
+                // 3. ★★★ イベントをマップに格納（重複防止）★★★
                 const eventMap = new Map();
-                
-                // 自分の予定
-                myEventsSnapshot.forEach(doc => {
+                allEventsSnapshot.forEach(doc => {
                     const data = doc.data();
                     const id = doc.id;
-                    if (!eventMap.has(id)) {
-                        eventMap.set(id, {
-                            id: id,
-                            ...data,
-                            isOwn: true,
-                            type: data.type || 'own'
-                        });
-                    }
-                });
-                
-                // 共有予定
-                sharedEventsSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    const id = doc.id;
-                    if (!eventMap.has(id)) {
-                        eventMap.set(id, {
-                            id: id,
-                            ...data,
-                            isOwn: false,
-                            type: 'shared'
-                        });
+                    // ★★★ 自分に関係するイベントのみを追加（userId が自分 または sharedWith が自分）★★★
+                    if (data.userId === user.uid || data.sharedWith === user.uid) {
+                        if (!eventMap.has(id)) {
+                            eventMap.set(id, {
+                                id: id,
+                                ...data,
+                                type: data.type || 'own'
+                            });
+                        }
                     }
                 });
 
+                console.log('📊 eventMap サイズ:', eventMap.size);
 
-                
-                // 5. ★★★ イベントリストに変換（最終修正版）★★★
+                // 4. ★★★ イベントリストに変換 ★★★
                 const events = [];
                 for (const [id, eventData] of eventMap) {
-                    // 表示名を決定
+                    console.log('📄 イベントデータ:', eventData);
+                    
                     let displayName = 'Friend';
                     let isMe = false;
                     let friendName = '';
                     
-                    // ★★★ 修正: イベントの所有者を正しく判定 ★★★
-                    // 1. ★★★ 自分のイベント（userId == user.uid かつ type == 'own'）★★★
-                    if (eventData.userId === user.uid && eventData.type === 'own') {
+                    // ★★★ 判定ロジック ★★★
+                    // ケース1: 自分のイベント（userId が自分）
+                    if (eventData.userId === user.uid) {
                         isMe = true;
                         displayName = 'My';
                         friendName = 'My';
                     } 
-                    // 2. ★★★ 自分が共有したイベント（userId == user.uid かつ type == 'shared'）★★★
-                    // → この場合、自分は依頼者（requester）なので、共有相手が友達
-                    else if (eventData.userId === user.uid && eventData.type === 'shared') {
-                        isMe = true;
-                        displayName = 'My';
-                        friendName = 'My';
-                    } 
-                    // 3. ★★★ 友達のイベント（userId != user.uid）★★★
+                    // ケース2: 友達のイベント（userId が友達）
                     else if (eventData.userId !== user.uid) {
                         isMe = false;
-                        // userId が友達なので、友達の名前を取得
                         const fName = friendMap.get(eventData.userId) || eventData.person || 'Friend';
                         displayName = fName;
                         friendName = fName;
                     } 
-                    // 4. その他（person から取得）
-                    else if (eventData.person) {
-                        displayName = eventData.person;
-                        friendName = eventData.person;
+                    // ケース3: その他
+                    else {
+                        displayName = eventData.person || 'Friend';
+                        friendName = displayName;
                     }
+
+                    // ★★★ デバッグ: 判定結果を表示 ★★★
+                    console.log(`🔍 イベント: ${eventData.title}, userId: ${eventData.userId}, isMe: ${isMe}, displayName: ${displayName}`);
 
                     // タイトルを整形
                     let displayTitle = eventData.title || 'Untitled';
@@ -423,13 +410,9 @@
                         displayName: displayName,
                         isMe: isMe,
                         person: eventData.person || displayName,
-                        isOwn: eventData.isOwn || false,
                         friendName: friendName || displayName
                     });
                 }
-
-
-
 
                 // ソート
                 events.sort((a, b) => a.date.localeCompare(b.date));
