@@ -241,7 +241,7 @@
         }
 
         // ============================================================
-        // 友達一覧 + イベントを読み込む
+        // 友達一覧 + イベントを読み込む（修正版）
         // ============================================================
         async function loadAllData() {
             const container = document.getElementById('friendList');
@@ -293,52 +293,47 @@
                     const friendId = data.friendId;
                     const friendName = data.friendName || 'Friend';
 
-                    // 友達のイベントを取得（userId == friendId）
-                    const eventsQuery = query(
-                        collection(db, 'events'),
-                        where('userId', '==', friendId)
+                    // ★ 修正: 全てのイベントを取得（userId で絞らず、全件取得してからフィルタ）
+                    const allEventsQuery = query(
+                        collection(db, 'events')
                     );
-                    const eventsSnapshot = await getDocs(eventsQuery);
-
+                    const allEventsSnapshot = await getDocs(allEventsQuery);
+                    
                     const events = [];
-                    eventsSnapshot.forEach(eventDoc => {
+                    allEventsSnapshot.forEach(eventDoc => {
                         const eventData = eventDoc.data();
-                        if (eventData.type === 'own' || eventData.type === 'shared') {
-                            events.push({
-                                id: eventDoc.id,
-                                title: eventData.title || 'Untitled',
-                                date: eventData.date || 'Unknown',
-                                time: eventData.time || '--:--',
-                                status: eventData.status || 'pending',
-                                type: eventData.type || 'own',
-                                sharedWith: eventData.sharedWith || null
-                            });
+                        // ★ 条件: userId == friendId または sharedWith == user.uid のイベント
+                        const isOwnEvent = eventData.userId === friendId;
+                        const isSharedWithMe = eventData.sharedWith === user.uid;
+                        const isMySharedEvent = eventData.userId === user.uid && eventData.sharedWith === friendId;
+                        
+                        // ★ 自分が関係するイベントのみを表示
+                        if (isOwnEvent || isSharedWithMe || isMySharedEvent) {
+                            // 重複を避ける
+                            const exists = events.some(e => e.id === eventDoc.id);
+                            if (!exists) {
+                                // イベントタイトルを整形
+                                let displayTitle = eventData.title || 'Untitled';
+                                // [With xxx] を除去
+                                displayTitle = displayTitle.replace(/^\[With\s+.+?\]\s*/, '').trim();
+                                
+                                events.push({
+                                    id: eventDoc.id,
+                                    title: displayTitle,
+                                    originalTitle: eventData.title || 'Untitled',
+                                    date: eventData.date || 'Unknown',
+                                    time: eventData.time || '--:--',
+                                    status: eventData.status || 'pending',
+                                    type: eventData.type || 'own',
+                                    userId: eventData.userId,
+                                    sharedWith: eventData.sharedWith || null,
+                                    person: eventData.person || 'Friend'
+                                });
+                            }
                         }
                     });
 
-                    // 自分が共有されているイベントも取得（sharedWith == user.uid かつ userId == friendId）
-                    const sharedEventsQuery = query(
-                        collection(db, 'events'),
-                        where('sharedWith', '==', user.uid),
-                        where('userId', '==', friendId)
-                    );
-                    const sharedEventsSnapshot = await getDocs(sharedEventsQuery);
-                    sharedEventsSnapshot.forEach(eventDoc => {
-                        const eventData = eventDoc.data();
-                        const exists = events.some(e => e.id === eventDoc.id);
-                        if (!exists) {
-                            events.push({
-                                id: eventDoc.id,
-                                title: eventData.title || 'Untitled',
-                                date: eventData.date || 'Unknown',
-                                time: eventData.time || '--:--',
-                                status: eventData.status || 'confirmed',
-                                type: 'shared',
-                                sharedWith: eventData.sharedWith || null
-                            });
-                        }
-                    });
-
+                    // イベントを日付順にソート
                     events.sort((a, b) => a.date.localeCompare(b.date));
 
                     friends.push({
