@@ -494,7 +494,7 @@
                                 date: eventData.date,
                                 time: eventData.time,
                                 title: `[CANCEL] ${eventData.title}`,
-                                note: `${user.displayName || 'Someone'} wants to cancel this shared event.`,
+                                note: `${window.currentUser?.displayName || 'Someone'} wants to cancel this shared event.`,
                                 status: 'cancelled',
                                 createdAt: new Date().toISOString(),
                                 updatedAt: new Date().toISOString()
