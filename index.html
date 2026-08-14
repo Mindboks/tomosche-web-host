@@ -243,7 +243,7 @@
         }
 
         // ============================================================
-        // 友達一覧を読み込む（修正版 - エラーハンドリング強化）
+        // 友達一覧を読み込む（名前表示修正版）
         // ============================================================
         async function loadFriends() {
             const container = document.getElementById('avatars');
@@ -278,7 +278,6 @@
                 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
                 const db = getFirestore(app);
 
-                // ★ 修正: friendships を取得（自分の友達一覧）
                 const q = query(collection(db, 'friendships'), where('userId', '==', user.uid));
                 const snapshot = await getDocs(q);
                 console.log('📊 friendships 件数:', snapshot.size);
@@ -291,36 +290,37 @@
                 const friends = [];
                 for (const docSnap of snapshot.docs) {
                     const data = docSnap.data();
-                    console.log('📄 friendshipデータ:', data);
                     const friendId = data.friendId;
                     
-                    // ★ 友達のユーザー情報を取得
                     try {
                         const friendRef = doc(db, 'users', friendId);
                         const friendSnap = await getDoc(friendRef);
                         
                         if (friendSnap.exists()) {
                             const friendData = friendSnap.data();
-                            console.log('📄 友達データ:', friendData);
+                            // ★ 表示名を取得（displayName または LINE の名前）
+                            let displayName = friendData.displayName || 'Friend';
+                            // LINEのプロフィール名があればそれを使う
+                            if (friendData.lineDisplayName) {
+                                displayName = friendData.lineDisplayName;
+                            }
                             friends.push({
                                 id: friendId,
-                                name: friendData.displayName || 'Friend',
-                                initial: (friendData.displayName || 'F')[0].toUpperCase(),
+                                name: displayName,
+                                initial: displayName.charAt(0).toUpperCase(),
                                 pictureUrl: friendData.pictureUrl || null
                             });
                         } else {
-                            // 友達のユーザー情報が存在しない場合
                             console.warn('⚠️ 友達のユーザー情報なし:', friendId);
                             friends.push({
                                 id: friendId,
-                                name: 'Unknown Friend',
+                                name: 'Unknown',
                                 initial: '?',
                                 pictureUrl: null
                             });
                         }
                     } catch (err) {
                         console.error('❌ 友達情報取得エラー:', err);
-                        // エラーがあっても友達を表示する
                         friends.push({
                             id: friendId,
                             name: 'Friend',
@@ -337,18 +337,33 @@
                     return;
                 }
 
+                // ★ 友達を名前順にソート
+                friends.sort((a, b) => a.name.localeCompare(b.name));
+
                 container.innerHTML = friends.map(fr => {
+                    // ★ プロフィール画像があれば表示、なければ頭文字
                     const avatarContent = fr.pictureUrl 
                         ? `<img src="${fr.pictureUrl}" alt="${fr.name}" />` 
-                        : `<span>${escapeHtml(fr.initial)}</span>`;
+                        : `<span style="font-size:18px;font-weight:700;">${escapeHtml(fr.initial)}</span>`;
+                    
+                    // ★ 名前が長い場合は省略
+                    const displayName = fr.name.length > 8 ? fr.name.substring(0, 8) + '...' : fr.name;
+                    
                     return `
                         <div class="avatar-item" onclick="alert('Friend: ${escapeHtml(fr.name)}')">
-                            <div class="avatar-circle">${avatarContent}</div>
-                            <span class="avatar-name">${escapeHtml(fr.name)}</span>
+                            <div class="avatar-circle" style="background:#e8f5e9;">${avatarContent}</div>
+                            <span class="avatar-name">${escapeHtml(displayName)}</span>
                         </div>
                     `;
                 }).join('');
-                container.innerHTML += `<a href="add.html" class="avatar-item"><div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div><span class="avatar-name">Add</span></a>`;
+                
+                // ★ 「追加」ボタン
+                container.innerHTML += `
+                    <a href="add.html" class="avatar-item">
+                        <div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div>
+                        <span class="avatar-name">Add</span>
+                    </a>
+                `;
 
             } catch (error) {
                 console.error('❌ Load friends error:', error);
