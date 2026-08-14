@@ -1614,13 +1614,13 @@
                     updatedAt: new Date().toISOString()
                 });
 
-                // 3. 削除するイベントのタイトルを取得（[CANCEL] を除去）
-                const cleanTitle = requestData.title.replace('[CANCEL] ', '').trim();
+                // 3. 削除するイベントのタイトルを取得（[CANCEL] と [With xxx] を除去）
+                let cleanTitle = requestData.title.replace('[CANCEL] ', '').trim();
+                // [With MOMOTA] 部分を除去
+                cleanTitle = cleanTitle.replace(/^\[With\s+.+?\]\s*/, '').trim();
                 console.log(`🗑️ 削除対象タイトル: "${cleanTitle}"`);
-                console.log(`📅 対象日付: ${requestData.date}`);
-                console.log(`⏰ 対象時間: ${requestData.time}`);
 
-                // 4. 自分のイベントを削除（userId + date + time で検索）
+                // 4. 自分のイベントを削除
                 const myEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid),
@@ -1632,14 +1632,14 @@
                 for (const docSnap of myEvents.docs) {
                     const data = docSnap.data();
                     console.log(`   📄 ${docSnap.id}: ${data.title}`);
-                    // タイトルが一致するものを削除（日付と時間で絞り込んでいるので safe）
+                    // タイトルが一致するものを削除
                     if (data.title && data.title.includes(cleanTitle)) {
                         await deleteDoc(docSnap.ref);
-                        console.log(`   ✅ 削除完了: ${docSnap.id}`);
+                        console.log(`   ✅ 自分のイベント削除完了: ${docSnap.id}`);
                     }
                 }
 
-                // 5. 友達のイベントを削除（friendId + date + time で検索）
+                // 5. 友達のイベントを削除
                 const friendEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', friendId),
@@ -1653,7 +1653,7 @@
                     console.log(`   📄 ${docSnap.id}: ${data.title}`);
                     if (data.title && data.title.includes(cleanTitle)) {
                         await deleteDoc(docSnap.ref);
-                        console.log(`   ✅ 削除完了: ${docSnap.id}`);
+                        console.log(`   ✅ 友達のイベント削除完了: ${docSnap.id}`);
                     }
                 }
 
@@ -1661,7 +1661,7 @@
 
                 // 6. モーダルを閉じて再読み込み
                 await loadFriendRequests();
-                await openFriendRequestsModal();  // モーダルを再表示（更新）
+                await openFriendRequestsModal();
                 if (selectedDate) {
                     await renderCalendar();
                     await renderEvents(selectedDate);
