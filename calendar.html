@@ -1366,7 +1366,7 @@
         }
 
         // ============================================================
-        // 友達からのイベント申請を処理（承諾/拒否）
+        // 友達からのイベント申請を処理（承諾/拒否）- 修正版
         // ============================================================
         async function handleFriendRequest(requestId, status) {
             if (status === 'rejected') {
@@ -1407,31 +1407,33 @@
                     const eventsRef = collection(db, 'events');
                     const myDisplayName = window.currentUser?.displayName || 'Me';
 
-                    // ★ 自分（承諾者）のカレンダーに追加（role: 'acceptor'）
+                    // ★ 修正: 自分（承諾者）のカレンダーに追加
+                    // userId = 自分, sharedWith = 友達
                     await addDoc(eventsRef, {
-                        userId: user.uid,
+                        userId: user.uid,                              // ★ 自分
                         date: requestData.date,
                         time: requestData.time,
                         title: `[With ${requestData.fromUserName}] ${requestData.title}`,
                         person: requestData.fromUserName,
                         type: 'shared',
                         status: 'confirmed',
-                        sharedWith: requestData.fromUserId,
+                        sharedWith: requestData.fromUserId,            // ★ 友達
                         role: 'acceptor',
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString()
                     });
 
-                    // ★ 友達（依頼者）のカレンダーに追加（role: 'requester'）
+                    // ★ 修正: 友達（依頼者）のカレンダーに追加
+                    // userId = 友達, sharedWith = 自分
                     await addDoc(eventsRef, {
-                        userId: requestData.fromUserId,
+                        userId: requestData.fromUserId,                // ★ 友達
                         date: requestData.date,
                         time: requestData.time,
                         title: `[With ${myDisplayName}] ${requestData.title}`,
                         person: myDisplayName,
                         type: 'shared',
                         status: 'confirmed',
-                        sharedWith: user.uid,
+                        sharedWith: user.uid,                          // ★ 自分
                         role: 'requester',
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString()
