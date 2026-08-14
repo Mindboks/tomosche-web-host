@@ -42,22 +42,22 @@ service cloud.firestore {
     match /events/{eventId} {
       allow read: if request.auth != null && 
         (request.auth.uid == resource.data.userId || 
-         request.auth.uid == resource.data.sharedWith);
-  
+          request.auth.uid == resource.data.sharedWith);
+
       allow create: if request.auth != null && 
         request.auth.uid == request.resource.data.userId;
-  
+
       allow update: if request.auth != null && 
         request.auth.uid == resource.data.userId;
-  
+
       allow update: if request.auth != null && 
         request.auth.uid == resource.data.sharedWith &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
-  
+
       // ✅ 削除：本人（userId）または共有相手（sharedWith）が削除可能
       allow delete: if request.auth != null && 
         (request.auth.uid == resource.data.userId || 
-         request.auth.uid == resource.data.sharedWith);
+          request.auth.uid == resource.data.sharedWith);
     }
     
     // ============================================================

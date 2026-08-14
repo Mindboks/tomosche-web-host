@@ -360,7 +360,7 @@
                     if (eventData.userId === user.uid) {
                         // 自分のイベント
                         isMe = true;
-                        displayName = 'You';
+                        displayName = 'My';
                     } else if (friendMap.has(eventData.userId)) {
                         displayName = friendMap.get(eventData.userId);
                     } else if (eventData.person) {
@@ -467,14 +467,25 @@
                 return;
             }
 
+            // ★ 自分のプロフィール画像を取得
+            const myPictureUrl = window.currentUser?.pictureUrl || null;
+
             container.innerHTML = events.map(ev => {
-                const dateInfo = formatDateDisplay(ev.date, ev.time);
+                const dateInfo = formatDateDisplayCommon(ev.date, ev.time);
                 const safeTitle = escapeHtml(ev.title);
                 const safeName = escapeHtml(ev.displayName);
-                const initial = ev.isMe ? 'Y' : (ev.displayName.charAt(0) || 'F').toUpperCase();
-                const avatarClass = ev.isMe ? 'friend-avatar-small me' : 'friend-avatar-small';
                 
-                // ★ 修正: すべてのイベントに削除ボタンを表示（条件削除）
+                // ★ アイコン表示（自分の場合はLINE画像、友達は頭文字）
+                let avatarHtml = '';
+                if (ev.isMe && myPictureUrl) {
+                    avatarHtml = `<img src="${myPictureUrl}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #06C755;" />`;
+                } else {
+                    const initial = (ev.displayName.charAt(0) || 'F').toUpperCase();
+                    const avatarClass = ev.isMe ? 'friend-avatar-small me' : 'friend-avatar-small';
+                    avatarHtml = `<div class="${avatarClass}">${initial}</div>`;
+                }
+
+                // 削除ボタン（常に表示）
                 const deleteBtn = `<button class="btn-delete-event" onclick="deleteEvent('${ev.id}')" title="Delete event"><i class="bi bi-trash3"></i></button>`;
 
                 return `
@@ -496,10 +507,10 @@
                             <span class="event-status-badge ${ev.statusClass}">${ev.statusText}</span>
                         </div>
                         
-                        <!-- 右側：アイコン + 削除ボタン（常に表示） -->
+                        <!-- 右側：アイコン + 削除ボタン -->
                         <div class="event-actions-area">
-                            <div class="${avatarClass}">${initial}</div>
-                            ${deleteBtn}  <!-- ★ 常に表示 -->
+                            ${avatarHtml}
+                            ${deleteBtn}
                         </div>
                     </div>
                 `;
