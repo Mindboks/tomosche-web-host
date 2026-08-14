@@ -1446,7 +1446,7 @@ async function loadEventsFromFirestore(dateStr) {
         }
 
 
-        
+
         // ============================================================
         // キャンセルリクエストを承認（双方のイベントを削除）
         // ============================================================
@@ -1556,7 +1556,7 @@ async function loadEventsFromFirestore(dateStr) {
                 if (e.target === this) closeFriendEventModal();
             });
 
-            // 申請一覧
+            // ✅ 修正: closeFriendRequestsMode → closeFriendRequestsModal
             document.getElementById('viewRequestsBtn').addEventListener('click', function() {
                 openFriendRequestsModal();
             });
