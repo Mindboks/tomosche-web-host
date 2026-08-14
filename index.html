@@ -23,7 +23,6 @@
         .image-search .search-box input { border: none; background: none; outline: none; flex: 1; font-size: clamp(12px, 2.5vw, 14px); color: #333; }
         .image-search .search-box input::placeholder { color: #bbb; }
 
-        /* 友達アイコン */
         .avatars { display: flex; gap: 12px; flex-wrap: wrap; padding: 12px 0 8px 0; justify-content: flex-start; }
         .avatar-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #333; width: 56px; cursor: pointer; }
         .avatar-circle { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: clamp(14px, 2.5vw, 16px); font-weight: 600; color: #333; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); background: #e8f5e9; }
@@ -34,7 +33,7 @@
         .avatar-empty { text-align: center; color: #bbb; padding: 12px 0; font-size: 14px; width: 100%; }
         .avatar-empty i { font-size: 24px; display: block; margin-bottom: 4px; }
 
-        /* 今日の予定 */
+        /* Upcoming */
         .today-card { background: white; border-radius: 16px; padding: 16px; border: 1px solid #f0f4f8; margin-top: 8px; }
         .today-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: clamp(13px, 2.5vw, 14px); color: #333; margin-bottom: 8px; }
         .today-header i { color: #06C755; margin-right: 6px; }
@@ -45,7 +44,7 @@
         .today-title { flex: 1; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .today-person { color: #888; background: #f0f4f8; padding: 2px 10px; border-radius: 999px; font-size: clamp(10px, 1.8vw, 11px); white-space: nowrap; }
 
-        /* ✅ リクエスト一覧 */
+        /* リクエスト一覧 */
         .requests-card { background: white; border-radius: 16px; padding: 16px; border: 1px solid #f0f4f8; margin-top: 12px; }
         .requests-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: clamp(13px, 2.5vw, 14px); color: #333; margin-bottom: 8px; }
         .requests-header i { color: #ff9800; margin-right: 6px; }
@@ -101,7 +100,7 @@
             font-size: 13px;
         }
 
-        /* ✅ リクエストモーダル */
+        /* リクエストモーダル */
         .request-modal-overlay {
             display: none;
             position: fixed;
@@ -178,18 +177,7 @@
             </div>
             <div class="avatars" id="avatars"></div>
             
-            <!-- ✅ Upcoming セクション -->
-            <div class="today-card">
-                <div class="today-header">
-                    <span><i class="bi bi-clock-history"></i> Upcoming</span>
-                    <a href="calendar.html" class="today-more">See All →</a>
-                </div>
-                <div id="todayList">
-                    <div style="text-align:center;color:#bbb;padding:16px 0;font-size:14px;">📭 No upcoming events</div>
-                </div>
-            </div>
-
-            <!-- ✅ リクエスト一覧 -->
+            <!-- ✅ リクエスト一覧（上） -->
             <div class="requests-card" id="requestsCard">
                 <div class="requests-header">
                     <span><i class="bi bi-inbox"></i> Friend Requests</span>
@@ -199,10 +187,21 @@
                     <div class="request-empty">📭 No pending requests</div>
                 </div>
             </div>
+
+            <!-- ✅ Upcoming セクション（下） -->
+            <div class="today-card">
+                <div class="today-header">
+                    <span><i class="bi bi-clock-history"></i> Upcoming</span>
+                    <a href="calendar.html" class="today-more">See All →</a>
+                </div>
+                <div id="todayList">
+                    <div style="text-align:center;color:#bbb;padding:16px 0;font-size:14px;">📭 No upcoming events</div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- ✅ リクエスト詳細モーダル -->
+    <!-- リクエスト詳細モーダル -->
     <div class="request-modal-overlay" id="requestModal">
         <div class="request-modal">
             <h4 id="reqModalTitle">📩 Request</h4>
@@ -226,6 +225,22 @@
         const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         document.getElementById('dateDisplay').textContent =
             `Today・${monthNames[now.getMonth()]} ${now.getDate()}  ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+        // ============================================================
+        // 時間フォーマット（template.js の関数を使用）
+        // ============================================================
+        function formatTimeDisplaySimple(timeStr) {
+            if (!timeStr) return '--:--';
+            const parts = timeStr.split(':');
+            if (parts.length < 2) return '--:--';
+            let hour = parseInt(parts[0], 10);
+            const minute = parts[1] || '00';
+            if (isNaN(hour)) return '--:--';
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            hour = hour % 12;
+            if (hour === 0) hour = 12;
+            return `${hour}:${minute} ${ampm}`;
+        }
 
         // ============================================================
         // 友達一覧を読み込む
@@ -305,7 +320,7 @@
         }
 
         // ============================================================
-        // ✅ リクエスト一覧を読み込む（Home用）
+        // リクエスト一覧を読み込む（Home用）
         // ============================================================
         let currentRequests = [];
         let selectedRequestId = null;
@@ -390,7 +405,7 @@
         }
 
         // ============================================================
-        // ✅ リクエストモーダル
+        // リクエストモーダル
         // ============================================================
         function openRequestModal(requestId) {
             const req = currentRequests.find(r => r.id === requestId);
@@ -409,7 +424,6 @@
             document.getElementById('reqModalComment').value = '';
             document.getElementById('reqModalStatus').style.display = 'none';
 
-            // ボタン表示
             if (isCancel) {
                 document.getElementById('reqModalApproveBtn').textContent = 'Accept Cancellation';
                 document.getElementById('reqModalApproveBtn').style.background = '#ff9800';
@@ -427,7 +441,7 @@
         }
 
         // ============================================================
-        // ✅ リクエスト処理（承認/拒否）
+        // リクエスト処理（承認/拒否）
         // ============================================================
         async function processRequest(status) {
             if (!selectedRequestId) return;
@@ -442,8 +456,6 @@
             statusEl.style.color = '#888';
 
             try {
-                // カレンダーと同じ handleFriendRequest を流用（別途定義が必要）
-                // 簡易版：直接 Firestore を更新
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
                 const { getFirestore, doc, updateDoc, collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
@@ -459,23 +471,59 @@
 
                 const db = getFirestore(app);
                 const requestRef = doc(db, 'friendEvents', selectedRequestId);
-
-                // ステータス更新
-                const newStatus = status === 'approved' ? 'confirmed' : 'rejected';
-                await updateDoc(requestRef, {
-                    status: newStatus,
-                    updatedAt: new Date().toISOString()
-                });
+                const isCancel = req.title.startsWith('[CANCEL]');
 
                 if (status === 'approved') {
-                    // コメントがあれば別途保存（ここではログのみ）
-                    if (comment) {
-                        console.log('📝 コメント:', comment);
-                        // 必要に応じて feedback コレクションなどに保存
+                    if (isCancel) {
+                        await updateDoc(requestRef, {
+                            status: 'approved',
+                            updatedAt: new Date().toISOString()
+                        });
+                        statusEl.textContent = '✅ Cancellation accepted.';
+                        statusEl.style.color = '#06C755';
+                    } else {
+                        await updateDoc(requestRef, {
+                            status: 'confirmed',
+                            updatedAt: new Date().toISOString()
+                        });
+
+                        await addDoc(collection(db, 'events'), {
+                            userId: user.uid,
+                            date: req.date,
+                            time: req.time,
+                            title: req.title,
+                            person: req.fromUserName || 'Friend',
+                            type: 'shared',
+                            status: 'confirmed',
+                            sharedWith: req.fromUserId,
+                            role: 'acceptor',
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                        });
+
+                        const myDisplayName = window.currentUser?.displayName || 'Me';
+                        await addDoc(collection(db, 'events'), {
+                            userId: req.fromUserId,
+                            date: req.date,
+                            time: req.time,
+                            title: `[With ${myDisplayName}] ${req.title}`,
+                            person: myDisplayName,
+                            type: 'shared',
+                            status: 'confirmed',
+                            sharedWith: user.uid,
+                            role: 'requester',
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                        });
+
+                        statusEl.textContent = `✅ Request accepted! Added to both calendars.`;
+                        statusEl.style.color = '#06C755';
                     }
-                    statusEl.textContent = '✅ Request accepted!';
-                    statusEl.style.color = '#06C755';
                 } else {
+                    await updateDoc(requestRef, {
+                        status: 'rejected',
+                        updatedAt: new Date().toISOString()
+                    });
                     statusEl.textContent = '❌ Request declined.';
                     statusEl.style.color = '#e53935';
                 }
@@ -483,12 +531,94 @@
                 setTimeout(() => {
                     closeRequestModal();
                     loadRequests();
-                }, 1200);
+                    loadUpcomingEvents();
+                }, 1500);
 
             } catch (error) {
                 console.error('Process request error:', error);
                 statusEl.textContent = `❌ Failed: ${error.message}`;
                 statusEl.style.color = '#e53935';
+            }
+        }
+
+        // ============================================================
+        // Upcoming 予定を読み込む（今日以降の自分の予定）
+        // ============================================================
+        async function loadUpcomingEvents() {
+            const container = document.getElementById('todayList');
+            try {
+                if (window.liffReadyPromise) {
+                    await window.liffReadyPromise;
+                }
+
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+                const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+
+                const app = getApp();
+                const auth = getAuth(app);
+                const user = auth.currentUser;
+                if (!user) {
+                    container.innerHTML = `<div style="text-align:center;color:#bbb;padding:16px 0;font-size:14px;">Please log in</div>`;
+                    return;
+                }
+
+                const db = getFirestore(app);
+                const today = new Date().toISOString().split('T')[0];
+
+                const myEventsQuery = query(
+                    collection(db, 'events'),
+                    where('userId', '==', user.uid),
+                    where('date', '>=', today)
+                );
+                const snapshot = await getDocs(myEventsQuery);
+
+                const events = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.type === 'own' || data.type === 'shared') {
+                        let displayTitle = data.title || 'Untitled';
+                        displayTitle = displayTitle.replace(/^\[With\s+.+?\]\s*/, '').trim();
+                        events.push({
+                            id: doc.id,
+                            title: displayTitle,
+                            date: data.date,
+                            time: data.time || '--:--',
+                            person: data.person || 'Me'
+                        });
+                    }
+                });
+
+                events.sort((a, b) => {
+                    if (a.date !== b.date) return a.date.localeCompare(b.date);
+                    return a.time.localeCompare(b.time);
+                });
+
+                const displayEvents = events.slice(0, 5);
+
+                if (displayEvents.length === 0) {
+                    container.innerHTML = `<div style="text-align:center;color:#bbb;padding:16px 0;font-size:14px;">📭 No upcoming events</div>`;
+                    return;
+                }
+
+                container.innerHTML = displayEvents.map(e => {
+                    const displayTime = formatTimeDisplaySimple(e.time);
+                    return `
+                        <div class="today-item">
+                            <span class="today-time">${displayTime}</span>
+                            <span class="today-title">${escapeHtml(e.title)}</span>
+                            <span class="today-person">👤 ${escapeHtml(e.person)}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                if (events.length > 5) {
+                    container.innerHTML += `<div style="text-align:right;font-size:12px;color:#999;padding-top:4px;">+ ${events.length - 5} more...</div>`;
+                }
+
+            } catch (error) {
+                console.error('Load upcoming error:', error);
+                container.innerHTML = `<div style="text-align:center;color:#bbb;padding:16px 0;font-size:14px;">Failed to load</div>`;
             }
         }
 
@@ -516,8 +646,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadFriends();
             loadRequests();
-            // 5秒ごとにリクエストを更新
-            setInterval(loadRequests, 5000);
+            loadUpcomingEvents();
+            setInterval(loadRequests, 60000);
             if (typeof renderPage === 'function') {
                 renderPage('Tomosche', '', 'home');
             }
