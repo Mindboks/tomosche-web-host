@@ -536,7 +536,7 @@
         }
 
         // ============================================================
-        // イベント削除（カレンダーと同じロジック）
+        // イベント削除（カレンダーと同じロジック + キャンセル依頼表示）
         // ============================================================
         async function deleteEvent(eventId) {
             console.log('🗑️ deleteEvent 開始');
@@ -588,7 +588,7 @@
                         alert('✅ Shared event deleted.');
                         console.log('✅ 共有イベントを直接削除');
                     } else {
-                        // キャンセルリクエストを送信
+                        // ★ キャンセルリクエストを送信
                         if (confirm(`"${eventData.title}" was shared by your friend. Send cancellation request?`)) {
                             console.log('📤 キャンセルリクエスト送信中...');
                             await addDoc(collection(db, 'friendEvents'), {
@@ -604,6 +604,11 @@
                             });
                             alert('✅ Cancellation request sent to your friend.');
                             console.log('✅ キャンセルリクエスト送信完了');
+                            
+                            // ★ 再読み込み（リクエスト一覧を更新）
+                            await loadAllData();
+                            // ★ リクエストが届いていることをユーザーに伝える（オプション）
+                            alert('📩 Your friend will review the cancellation request.');
                         }
                         return;
                     }
