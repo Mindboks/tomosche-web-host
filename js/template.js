@@ -3,10 +3,9 @@
 // ================================================================
 
 function renderPage(title, content, activeNav) {
-    // js/template.js の renderPage 関数内の navItems を修正
     const navItems = [
         { id: 'home', href: '/', icon: 'bi-house-fill', label: 'Home' },
-        { id: 'friends', href: 'friends.html', icon: 'bi-people-fill', label: 'Schedule' },  // ← 変更
+        { id: 'friends', href: 'friends.html', icon: 'bi-people-fill', label: 'Schedule' },
         { id: 'calendar', href: 'calendar.html', icon: 'bi-calendar-event-fill', label: 'Calendar' },
         { id: 'add', href: 'add.html', icon: 'bi-person-plus-fill', label: 'Add' }
     ];
@@ -34,6 +33,7 @@ function renderPage(title, content, activeNav) {
         <div class="version" id="versionDisplay"></div>
     `;
 
+    // ✅ Moreメニューに Add Shortcut を追加
     const navFullHtml = `
         <div class="bottom-nav">
             ${navHtml}
@@ -46,6 +46,7 @@ function renderPage(title, content, activeNav) {
                 <a href="privacy.html"><div class="icon-box"><i class="bi bi-shield-lock" style="color:#1565c0;"></i></div><span>Privacy Policy</span></a>
                 <a href="terms.html"><div class="icon-box"><i class="bi bi-file-text" style="color:#e65100;"></i></div><span>Terms of Service</span></a>
                 <a href="#" id="feedbackMoreBtn"><div class="icon-box"><i class="bi bi-chat-dots" style="color:#f9a825;"></i></div><span>Feedback</span></a>
+                <a href="#" id="addShortcutBtn"><div class="icon-box"><i class="bi bi-plus-square" style="color:#2196f3;"></i></div><span>Add Shortcut</span></a>
                 <a href="#" id="logoutMoreBtn"><div class="icon-box"><i class="bi bi-box-arrow-right" style="color:#e53935;"></i></div><span>Logout</span></a>
             </div>
             <div class="more-close"><button onclick="closeMorePopup()">Close</button></div>
@@ -79,7 +80,15 @@ function renderPage(title, content, activeNav) {
     const vEl = document.getElementById('versionDisplay');
     if (vEl) vEl.textContent = getFullVersion();
 
-    updateProfileDisplay();
+    if (window.liffReadyPromise) {
+        window.liffReadyPromise.then(() => {
+            updateProfileDisplay();
+        }).catch(() => {
+            updateProfileDisplay();
+        });
+    } else {
+        updateProfileDisplay();
+    }
     bindHeaderFooterEvents();
 }
 
@@ -97,9 +106,7 @@ async function updateProfileDisplay() {
         if (window.currentUser && window.currentUser.displayName) {
             nameEl.textContent = window.currentUser.displayName;
             
-            // ✅ プロフィール画像を表示
             if (window.currentUser.pictureUrl && iconEl) {
-                // 既存のアイコンを画像に置き換え
                 iconEl.innerHTML = `<img src="${window.currentUser.pictureUrl}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #06C755;" />`;
             }
         } else {
@@ -129,6 +136,37 @@ function closeFeedbackModal() {
 }
 
 // ============================================================
+// ✅ Add to Home Screen 機能
+// ============================================================
+function addToHomeScreen() {
+    // iOS の場合
+    if (window.navigator && window.navigator.standalone) {
+        alert('📱 Already running as standalone app.');
+        return;
+    }
+    
+    // Android の場合（Chrome）
+    if (window.deferredPrompt) {
+        window.deferredPrompt.prompt();
+        window.deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('✅ User accepted the install prompt');
+            } else {
+                console.log('❌ User dismissed the install prompt');
+            }
+            window.deferredPrompt = null;
+        });
+        closeMorePopup();
+        return;
+    }
+    
+    // フォールバック：手動設定の案内
+    alert('📱 To add to Home Screen:\n\n' +
+          '📲 iOS: Tap Share → "Add to Home Screen"\n' +
+          '📲 Android: Tap Menu → "Add to Home Screen"');
+}
+
+// ============================================================
 // ✅ フィードバック送信（Cloud Functions 経由）
 // ============================================================
 async function submitFeedback() {
@@ -143,14 +181,14 @@ async function submitFeedback() {
         return;
     }
 
-    if (rawMessage.length < 50) {
+    if (rawMessage.length < 5) {
         status.style.display = 'block';
         status.style.color = '#e53935';
         status.textContent = 'Please provide more details (at least 5 characters).';
         return;
     }
 
-    if (rawMessage.length > 500) {
+    if (rawMessage.length > 2000) {
         status.style.display = 'block';
         status.style.color = '#e53935';
         status.textContent = 'Message is too long (max 2000 characters).';
@@ -160,7 +198,6 @@ async function submitFeedback() {
     const safeMessage = escapeHtml(rawMessage);
 
     try {
-        // ✅ Firebase Auth から ID トークンを取得（Config は不要）
         const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
         const auth = getAuth();
         const user = auth.currentUser;
@@ -174,7 +211,6 @@ async function submitFeedback() {
 
         const idToken = await user.getIdToken();
 
-        // ✅ Cloud Function に送信
         const response = await fetch('https://us-central1-tomoche.cloudfunctions.net/submitFeedback', {
             method: 'POST',
             headers: {
@@ -228,6 +264,16 @@ function bindHeaderFooterEvents() {
         });
     }
 
+    // ✅ Add to Home Screen ボタン
+    const addShortcutBtn = document.getElementById('addShortcutBtn');
+    if (addShortcutBtn) {
+        addShortcutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            addToHomeScreen();
+            closeMorePopup();
+        });
+    }
+
     const logoutBtn = document.getElementById('logoutMoreBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
@@ -243,7 +289,6 @@ function bindHeaderFooterEvents() {
         });
     }
 
-    // ★ フィードバックボタン（More内）
     const feedbackBtn = document.getElementById('feedbackMoreBtn');
     if (feedbackBtn) {
         feedbackBtn.addEventListener('click', function(e) {
@@ -260,7 +305,6 @@ function bindHeaderFooterEvents() {
         });
     }
 
-    // ★ フィードバックモーダルの「Send」ボタン
     const sendBtn = document.getElementById('feedbackSendBtn');
     if (sendBtn) {
         console.log('✅ Sendボタンが見つかりました');
@@ -273,7 +317,6 @@ function bindHeaderFooterEvents() {
         console.warn('⚠️ Sendボタンが見つかりません');
     }
 
-    // ★ フィードバックモーダルの「Cancel」ボタン
     const cancelBtn = document.getElementById('feedbackCancelBtn');
     if (cancelBtn) {
         cancelBtn.addEventListener('click', function(e) {
@@ -282,13 +325,23 @@ function bindHeaderFooterEvents() {
         });
     }
 
-    // モーダル外クリックで閉じる
     const feedbackModal = document.getElementById('feedbackModal');
     if (feedbackModal) {
         feedbackModal.addEventListener('click', function(e) {
             if (e.target === this) closeFeedbackModal();
         });
     }
+}
+
+// ============================================================
+// ✅ PWA インストールプロンプトをキャプチャ
+// ============================================================
+if (window.addEventListener) {
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.deferredPrompt = e;
+        console.log('✅ PWA install prompt captured');
+    });
 }
 
 console.log('📦 template.js loaded (partial insertion mode)');

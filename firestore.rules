@@ -10,18 +10,20 @@ service cloud.firestore {
     }
     
     // ============================================================
-    // 友達関係（friendships）
+    // 友達関係（friendships）- 確実に読み取り許可
     // ============================================================
     match /friendships/{friendshipId} {
+      // ✅ 本人の友達一覧は読み取り可能（userId == request.auth.uid）
       allow read: if request.auth != null && 
-        (request.auth.uid == resource.data.userId || 
-         request.auth.uid == resource.data.friendId);
+        request.auth.uid == resource.data.userId;
+      
       allow create: if request.auth != null && 
         request.auth.uid == request.resource.data.userId;
+      
       allow update, delete: if request.auth != null && 
         request.auth.uid == resource.data.userId;
     }
-    
+        
     // ============================================================
     // 友達申請（friendRequests）
     // ============================================================
@@ -37,27 +39,26 @@ service cloud.firestore {
     }
     
     // ============================================================
-    // 予定データ（events）- 削除権限を修正
+    // 予定データ（events）
     // ============================================================
     match /events/{eventId} {
       allow read: if request.auth != null && 
         (request.auth.uid == resource.data.userId || 
-          request.auth.uid == resource.data.sharedWith);
-
+         request.auth.uid == resource.data.sharedWith);
+      
       allow create: if request.auth != null && 
         request.auth.uid == request.resource.data.userId;
-
+      
       allow update: if request.auth != null && 
         request.auth.uid == resource.data.userId;
-
+      
       allow update: if request.auth != null && 
         request.auth.uid == resource.data.sharedWith &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
-
-      // ✅ 削除：本人（userId）または共有相手（sharedWith）が削除可能
+      
       allow delete: if request.auth != null && 
         (request.auth.uid == resource.data.userId || 
-          request.auth.uid == resource.data.sharedWith);
+         request.auth.uid == resource.data.sharedWith);
     }
     
     // ============================================================
