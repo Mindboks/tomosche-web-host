@@ -734,14 +734,18 @@
 
             // ✅ 月単位で一括取得（キャッシュがない場合のみ）
             const monthKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
-            // ★ 修正: キャッシュがなければ必ず取得する
+            console.log(`🔍 renderCalendar: monthKey=${monthKey}, currentEvents[monthKey]=`, currentEvents[monthKey]);
+            
+            // ★ キャッシュがなければ必ず取得する
             if (!currentEvents[monthKey]) {
+                console.log(`📦 月データを取得中... ${monthKey}`);
                 const eventsMap = await loadMonthEvents(calYear, calMonth);
+                console.log(`📦 取得結果: ${Object.keys(eventsMap).length}日分`);
                 for (const [date, events] of Object.entries(eventsMap)) {
                     currentEvents[date] = events;
                 }
                 currentEvents[monthKey] = { loaded: true };
-                console.log(`📦 月データをキャッシュ: ${monthKey}, 日数: ${Object.keys(eventsMap).length}`);
+                console.log(`✅ 月データをキャッシュ完了: ${monthKey}`);
             } else {
                 console.log(`✅ キャッシュ済み: ${monthKey}`);
             }
@@ -762,6 +766,10 @@
                 const events = currentEvents[ds] || [];
                 const hasOwn = events.some(e => e.type === 'own');
                 const hasShared = events.some(e => e.type === 'shared');
+
+                if (hasOwn || hasShared) {
+                    console.log(`📅 ${ds}: own=${hasOwn}, shared=${hasShared}`);
+                }
 
                 let cls = 'calendar-day';
                 if (isToday) cls += ' today';
@@ -790,6 +798,7 @@
             }
 
             grid.innerHTML = html;
+            console.log(`✅ カレンダー描画完了`);
         }
 
 
@@ -828,6 +837,7 @@
         // 月単位で予定を一括取得（高速化 + 確実にデータを返す）
         // ============================================================
         async function loadMonthEvents(year, month) {
+            console.log(`🔍 loadMonthEvents(${year}, ${month}) 開始`);
             try {
                 if (window.liffReadyPromise) {
                     await window.liffReadyPromise;
@@ -840,7 +850,10 @@
                 const app = getApp();
                 const auth = getAuth(app);
                 const user = auth.currentUser;
-                if (!user) return {};
+                if (!user) {
+                    console.warn('⚠️ ユーザー未ログイン');
+                    return {};
+                }
 
                 const db = getFirestore(app);
                 const userId = user.uid;
@@ -916,7 +929,7 @@
                 console.log(`📦 イベントマップ: ${Object.keys(eventsMap).length}日分`);
                 return eventsMap;
             } catch (error) {
-                console.error('Load month events error:', error);
+                console.error('❌ Load month events error:', error);
                 return {};
             }
         }
@@ -1699,7 +1712,7 @@
                 if (e.target === this) closeFriendEventModal();
             });
 
-            // 申請一覧（関数名が正しいことを確認）
+            // 申請一覧
             document.getElementById('viewRequestsBtn').addEventListener('click', function() {
                 openFriendRequestsModal();
             });
@@ -1712,18 +1725,27 @@
                 renderPage('Calendar', '', 'calendar');
             }
 
-
+            // ★ 修正: カレンダー描画を確実に実行
             setTimeout(async () => {
+                console.log('🔄 カレンダー初期描画開始');
                 const today = new Date();
                 selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
                 
-                // 先に events を取得してキャッシュ
-                currentEvents[selectedDate] = await loadEventsFromFirestore(selectedDate);
+                // ★ 最初に月データをロード
+                console.log('📦 月データを事前ロード');
+                const monthKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+                const eventsMap = await loadMonthEvents(today.getFullYear(), today.getMonth());
+                for (const [date, events] of Object.entries(eventsMap)) {
+                    currentEvents[date] = events;
+                }
+                currentEvents[monthKey] = { loaded: true };
+                console.log(`✅ 月データ事前ロード完了: ${Object.keys(eventsMap).length}日分`);
                 
-                // カレンダー描画（キャッシュを使用）
+                // ★ カレンダー描画
                 await renderCalendar();
                 await renderEvents(selectedDate);
                 await loadFriendRequests();
+                console.log('✅ カレンダー初期描画完了');
             }, 500);
         });
 
