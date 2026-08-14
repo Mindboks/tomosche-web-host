@@ -722,7 +722,7 @@
 
 
         // ============================================================
-        // カレンダー描画（高速化版 + 重複ドット表示 + 常に表示）
+        // カレンダー描画（強制ロード版）
         // ============================================================
         async function renderCalendar() {
             const grid = document.getElementById('calGrid');
@@ -732,15 +732,15 @@
             const last = new Date(calYear, calMonth + 1, 0).getDate();
             const today = new Date();
 
-            // ✅ 月単位で一括取得（キャッシュがない場合のみ）
+            // ✅ 強制的に月データを読み込む（キャッシュがあっても再取得しない）
             const monthKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
-            console.log(`🔍 renderCalendar: monthKey=${monthKey}, currentEvents[monthKey]=`, currentEvents[monthKey]);
             
-            // ★ キャッシュがなければ必ず取得する
-            if (!currentEvents[monthKey]) {
+            // ★ キャッシュがない場合のみ取得（初回のみ）
+            if (!currentEvents[monthKey] || Object.keys(currentEvents[monthKey]).length === 0) {
                 console.log(`📦 月データを取得中... ${monthKey}`);
                 const eventsMap = await loadMonthEvents(calYear, calMonth);
                 console.log(`📦 取得結果: ${Object.keys(eventsMap).length}日分`);
+                // currentEvents をクリアしてから設定
                 for (const [date, events] of Object.entries(eventsMap)) {
                     currentEvents[date] = events;
                 }
@@ -752,24 +752,22 @@
 
             let html = weekdays.map(w => `<div class="calendar-weekday">${w}</div>`).join('');
 
+            // 前月の日付
             for (let i = 0; i < first; i++) {
                 const d = new Date(calYear, calMonth, 0).getDate() - first + i + 1;
                 html += `<div class="calendar-day other-month">${d}</div>`;
             }
 
+            // 当月の日付
             for (let d = 1; d <= last; d++) {
                 const ds = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const isToday = calYear === today.getFullYear() && calMonth === today.getMonth() && d === today.getDate();
                 const isSelected = selectedDate === ds;
 
-                // ★ キャッシュからデータを取得
+                // ★ イベントデータを取得（currentEvents[ds] は配列または undefined）
                 const events = currentEvents[ds] || [];
                 const hasOwn = events.some(e => e.type === 'own');
                 const hasShared = events.some(e => e.type === 'shared');
-
-                if (hasOwn || hasShared) {
-                    console.log(`📅 ${ds}: own=${hasOwn}, shared=${hasShared}`);
-                }
 
                 let cls = 'calendar-day';
                 if (isToday) cls += ' today';
@@ -790,6 +788,7 @@
                 html += `</div>`;
             }
 
+            // 翌月の日付
             const endOffset = (first + last) % 7;
             if (endOffset > 0) {
                 for (let i = 1; i <= 7 - endOffset; i++) {
@@ -799,36 +798,6 @@
 
             grid.innerHTML = html;
             console.log(`✅ カレンダー描画完了`);
-        }
-
-
-
-
-        async function selectDate(ds) {
-            selectedDate = ds;
-            await renderCalendar();
-            await renderEvents(ds);
-        }
-
-
-        function changeMonth(delta) {
-            calMonth += delta;
-            if (calMonth < 0) { calMonth = 11; calYear--; }
-            if (calMonth > 11) { calMonth = 0; calYear++; }
-            
-            // ✅ 月が変わったら該当月のキャッシュをクリア
-            const monthKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
-            // 日付キャッシュを削除
-            for (const key of Object.keys(currentEvents)) {
-                if (key.startsWith(`${calYear}-${String(calMonth+1).padStart(2,'0')}`)) {
-                    delete currentEvents[key];
-                }
-            }
-            // 月キャッシュを削除
-            delete currentEvents[monthKey];
-            
-            renderCalendar();
-            if (selectedDate) renderEvents(selectedDate);
         }
 
 
