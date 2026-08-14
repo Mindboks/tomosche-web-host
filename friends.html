@@ -257,7 +257,7 @@
         }
 
         // ============================================================
-        // 全イベントを読み込む
+        // 全イベントを読み込む（自分 + 友達）
         // ============================================================
         async function loadAllData() {
             const container = document.getElementById('scheduleList');
@@ -283,7 +283,7 @@
 
                 const db = getFirestore(app);
 
-                // 友達一覧
+                // 1. 友達一覧
                 const friendsQuery = query(
                     collection(db, 'friendships'),
                     where('userId', '==', user.uid)
@@ -296,20 +296,21 @@
                 });
                 friendMap.set(user.uid, 'My');
 
-                // 自分の予定
+                // 2. 自分の予定（userId == user.uid）
                 const myEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid)
                 );
                 const myEventsSnapshot = await getDocs(myEventsQuery);
 
-                // ★★★ 友達の予定（sharedWith == user.uid）- これが重要！ ★★★
+                // 3. ★★★ 友達の予定（sharedWith == user.uid）- 重要！ ★★★
                 const sharedEventsQuery = query(
                     collection(db, 'events'),
                     where('sharedWith', '==', user.uid)
                 );
                 const sharedEventsSnapshot = await getDocs(sharedEventsQuery);
 
+                // 4. イベントをマップに格納
                 const eventMap = new Map();
 
                 // 自分の予定を追加
@@ -338,6 +339,7 @@
                     }
                 });
 
+                // 5. イベントリストに変換
                 const events = [];
                 for (const [id, eventData] of eventMap) {
                     let displayName = 'Friend';
@@ -356,6 +358,7 @@
                             displayName = fName;
                             friendName = fName;
                         } else {
+                            // 自分が共有したイベント（自分が依頼者）
                             isMe = true;
                             displayName = 'My';
                             friendName = 'My';
@@ -565,7 +568,7 @@
                         await deleteDoc(eventRef);
                         alert('✅ Shared event deleted.');
                     } else {
-                        // ★ キャンセル依頼を送信
+                        // キャンセル依頼を送信
                         if (confirm(`"${eventData.title}" was shared by your friend. Send cancellation request?`)) {
                             await addDoc(collection(db, 'friendEvents'), {
                                 fromUserId: user.uid,
@@ -579,8 +582,6 @@
                                 updatedAt: new Date().toISOString()
                             });
                             alert('✅ Cancellation request sent to your friend.');
-
-                            // ★ 再読み込みしてリクエストモーダルを開く
                             await loadAllData();
                             await loadFriendRequests();
                             await openFriendRequestsModal();
@@ -666,7 +667,6 @@
             const modal = document.getElementById('friendRequestsModal');
             const container = document.getElementById('friendRequestList');
 
-            // モーダルがすでに開いている場合は閉じてから開き直す
             if (modal.classList.contains('active')) {
                 modal.classList.remove('active');
                 await new Promise(resolve => setTimeout(resolve, 100));
@@ -863,7 +863,6 @@
 
                 const cleanTitle = requestData.title.replace('[CANCEL] ', '').trim();
 
-                // 自分のイベント
                 const myEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid),
@@ -877,7 +876,6 @@
                     }
                 }
 
-                // 友達のイベント
                 const friendEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', friendId),
@@ -911,7 +909,6 @@
             }
             loadAllData();
 
-            // リクエストモーダルの閉じるボタン
             document.getElementById('friendRequestsCloseBtn').addEventListener('click', closeFriendRequestsModal);
             document.getElementById('friendRequestsModal').addEventListener('click', function(e) {
                 if (e.target === this) closeFriendRequestsModal();
