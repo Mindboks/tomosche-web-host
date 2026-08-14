@@ -352,7 +352,9 @@
                     }
                 });
 
-                // 5. ★★★ イベントリストに変換（完全修正版）★★★
+
+                
+                // 5. ★★★ イベントリストに変換（最終修正版）★★★
                 const events = [];
                 for (const [id, eventData] of eventMap) {
                     // 表示名を決定
@@ -361,34 +363,28 @@
                     let friendName = '';
                     
                     // ★★★ 修正: イベントの所有者を正しく判定 ★★★
-                    // 1. 自分のイベント（userId == user.uid かつ type == 'own'）
+                    // 1. ★★★ 自分のイベント（userId == user.uid かつ type == 'own'）★★★
                     if (eventData.userId === user.uid && eventData.type === 'own') {
                         isMe = true;
                         displayName = 'My';
                         friendName = 'My';
                     } 
-                    // 2. 自分が共有したイベント（userId == user.uid かつ type == 'shared'）
+                    // 2. ★★★ 自分が共有したイベント（userId == user.uid かつ type == 'shared'）★★★
+                    // → この場合、自分は依頼者（requester）なので、共有相手が友達
                     else if (eventData.userId === user.uid && eventData.type === 'shared') {
                         isMe = true;
                         displayName = 'My';
                         friendName = 'My';
                     } 
-                    // 3. ★★★ 友達から共有されたイベント（sharedWith == user.uid かつ userId != user.uid）★★★
-                    else if (eventData.sharedWith === user.uid && eventData.userId !== user.uid) {
+                    // 3. ★★★ 友達のイベント（userId != user.uid）★★★
+                    else if (eventData.userId !== user.uid) {
                         isMe = false;
                         // userId が友達なので、友達の名前を取得
                         const fName = friendMap.get(eventData.userId) || eventData.person || 'Friend';
                         displayName = fName;
                         friendName = fName;
                     } 
-                    // 4. 友達のイベント（userId が友達）
-                    else if (friendMap.has(eventData.userId)) {
-                        isMe = false;
-                        const fName = friendMap.get(eventData.userId);
-                        displayName = fName;
-                        friendName = fName;
-                    } 
-                    // 5. その他
+                    // 4. その他（person から取得）
                     else if (eventData.person) {
                         displayName = eventData.person;
                         friendName = eventData.person;
