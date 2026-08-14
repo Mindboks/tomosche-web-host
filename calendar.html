@@ -1530,9 +1530,18 @@ async function loadEventsFromFirestore(dateStr) {
 
 
 
+        // ============================================================
+        // 申請一覧モーダルを閉じる（正しい定義）
+        // ============================================================
+        function closeFriendRequestsModal() {
+            const modal = document.getElementById('friendRequestsModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
 
         // ============================================================
-        // イベントリスナー
+        // イベントリスナー（修正済み）
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
             // MySchedule
@@ -1556,7 +1565,7 @@ async function loadEventsFromFirestore(dateStr) {
                 if (e.target === this) closeFriendEventModal();
             });
 
-            // ✅ 修正: closeFriendRequestsMode → closeFriendRequestsModal
+            // 申請一覧（関数名が正しいことを確認）
             document.getElementById('viewRequestsBtn').addEventListener('click', function() {
                 openFriendRequestsModal();
             });
@@ -1577,6 +1586,10 @@ async function loadEventsFromFirestore(dateStr) {
                 await loadFriendRequests();
             }, 500);
         });
+
+
+
+        
     </script>
 </body>
 </html>
