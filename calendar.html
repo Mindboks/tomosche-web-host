@@ -697,7 +697,7 @@ async function loadEventsFromFirestore(dateStr) {
 
 
         // ============================================================
-        // カレンダー描画（修正版）
+        // カレンダー描画（高速化版）
         // ============================================================
         async function renderCalendar() {
             const grid = document.getElementById('calGrid');
@@ -706,6 +706,18 @@ async function loadEventsFromFirestore(dateStr) {
             const first = new Date(calYear, calMonth, 1).getDay();
             const last = new Date(calYear, calMonth + 1, 0).getDate();
             const today = new Date();
+
+            // ✅ 月単位で一括取得（31回→1回に削減）
+            if (Object.keys(currentEvents).length === 0 || 
+                !currentEvents[`${calYear}-${String(calMonth+1).padStart(2,'0')}`]) {
+                const monthKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
+                const eventsMap = await loadMonthEvents(calYear, calMonth);
+                // 日付単位で currentEvents に展開
+                for (const [date, events] of Object.entries(eventsMap)) {
+                    currentEvents[date] = events;
+                }
+                currentEvents[monthKey] = true; // キャッシュ済みフラグ
+            }
 
             let html = weekdays.map(w => `<div class="calendar-weekday">${w}</div>`).join('');
 
@@ -719,20 +731,15 @@ async function loadEventsFromFirestore(dateStr) {
                 const isToday = calYear === today.getFullYear() && calMonth === today.getMonth() && d === today.getDate();
                 const isSelected = selectedDate === ds;
 
-                const events = currentEvents[ds] || await loadEventsFromFirestore(ds);
-                if (!currentEvents[ds]) currentEvents[ds] = events;
-                
-                // ✅ イベントタイプをチェック
-                const hasOwn = events && events.some(e => e.type === 'own');
-                const hasShared = events && events.some(e => e.type === 'shared');
+                const events = currentEvents[ds] || [];
+                const hasOwn = events.some(e => e.type === 'own');
+                const hasShared = events.some(e => e.type === 'shared');
 
                 let cls = 'calendar-day';
                 if (isToday) cls += ' today';
                 if (isSelected) cls += ' selected';
 
                 html += `<div class="${cls}" onclick="selectDate('${ds}')">${d}`;
-                
-                // ✅ 優先順位: own（青） > shared（オレンジ）
                 if (hasOwn) {
                     html += `<div class="dot own"></div>`;
                 } else if (hasShared) {
@@ -760,14 +767,121 @@ async function loadEventsFromFirestore(dateStr) {
             await renderEvents(ds);
         }
 
+        
         function changeMonth(delta) {
             calMonth += delta;
             if (calMonth < 0) { calMonth = 11; calYear--; }
             if (calMonth > 11) { calMonth = 0; calYear++; }
+            
+            // ✅ 月が変わったらキャッシュをクリアして再描画
+            const monthKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
+            if (currentEvents[monthKey]) {
+                delete currentEvents[monthKey];
+            }
+            // 該当月の日付キャッシュも削除
+            for (const key of Object.keys(currentEvents)) {
+                if (key.startsWith(`${calYear}-${String(calMonth+1).padStart(2,'0')}`)) {
+                    delete currentEvents[key];
+                }
+            }
+            
             renderCalendar();
             if (selectedDate) renderEvents(selectedDate);
         }
 
+
+
+        // ============================================================
+        // 月単位で予定を一括取得（高速化）
+        // ============================================================
+        async function loadMonthEvents(year, month, uid) {
+            try {
+                if (window.liffReadyPromise) {
+                    await window.liffReadyPromise;
+                }
+
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+                const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+                
+                const app = getApp();
+                const auth = getAuth(app);
+                const user = auth.currentUser;
+                if (!user) return {};
+
+                const db = getFirestore(app);
+                const userId = user.uid;
+
+                // 月の開始日と終了日
+                const startDate = `${year}-${String(month+1).padStart(2,'0')}-01`;
+                const lastDay = new Date(year, month + 1, 0).getDate();
+                const endDate = `${year}-${String(month+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+
+                // ① 自分の予定を取得（userId）
+                const myQuery = query(
+                    collection(db, 'events'),
+                    where('userId', '==', userId),
+                    where('date', '>=', startDate),
+                    where('date', '<=', endDate)
+                );
+                const mySnapshot = await getDocs(myQuery);
+
+                // ② 共有された予定を取得（sharedWith）
+                const sharedQuery = query(
+                    collection(db, 'events'),
+                    where('sharedWith', '==', userId),
+                    where('date', '>=', startDate),
+                    where('date', '<=', endDate)
+                );
+                const sharedSnapshot = await getDocs(sharedQuery);
+
+                // 日付ごとにグループ化
+                const eventsMap = {};
+
+                // 自分の予定を追加
+                mySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const date = data.date;
+                    if (!eventsMap[date]) eventsMap[date] = [];
+                    eventsMap[date].push({
+                        id: doc.id,
+                        time: data.time || '12:00',
+                        title: data.title || 'Untitled',
+                        person: data.person || 'Me',
+                        note: data.note || '',
+                        status: data.status || 'own',
+                        type: data.type || 'own',
+                        sharedWith: data.sharedWith || null,
+                        role: data.role || null,
+                        userId: data.userId || userId
+                    });
+                });
+
+                // 共有予定を追加
+                sharedSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const date = data.date;
+                    if (!eventsMap[date]) eventsMap[date] = [];
+                    eventsMap[date].push({
+                        id: doc.id,
+                        time: data.time || '12:00',
+                        title: data.title || 'Untitled',
+                        person: data.person || 'Friend',
+                        note: data.note || '',
+                        status: data.status || 'confirmed',
+                        type: 'shared',
+                        sharedWith: data.sharedWith || null,
+                        role: data.role || null,
+                        userId: data.userId || null
+                    });
+                });
+
+                return eventsMap;
+            } catch (error) {
+                console.error('Load month events error:', error);
+                return {};
+            }
+        }
         // ============================================================
         // モーダル制御（MySchedule）
         // ============================================================
@@ -1578,9 +1692,15 @@ async function loadEventsFromFirestore(dateStr) {
                 renderPage('Calendar', '', 'calendar');
             }
 
+
             setTimeout(async () => {
                 const today = new Date();
                 selectedDate = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+                
+                // 先に events を取得してキャッシュ
+                currentEvents[selectedDate] = await loadEventsFromFirestore(selectedDate);
+                
+                // カレンダー描画（キャッシュを使用）
                 await renderCalendar();
                 await renderEvents(selectedDate);
                 await loadFriendRequests();
@@ -1589,7 +1709,7 @@ async function loadEventsFromFirestore(dateStr) {
 
 
 
-        
+
     </script>
 </body>
 </html>
