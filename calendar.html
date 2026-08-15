@@ -1295,7 +1295,7 @@
         }
 
         // ============================================================
-        // 申請一覧モーダルを開く（pending + confirmed 表示）
+        // 申請一覧モーダルを開く（pending のみ表示）
         // ============================================================
         async function openFriendRequestsModal() {
             const modal = document.getElementById('friendRequestsModal');
@@ -1306,69 +1306,57 @@
 
             const requests = await loadFriendRequests();
             
-            if (requests.length === 0) {
-                container.innerHTML = `<div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">📭 No requests</div>`;
+            // ★ pending のみ表示
+            const pendingOnly = requests.filter(r => r.status === 'pending');
+            
+            if (pendingOnly.length === 0) {
+                container.innerHTML = `<div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">📭 No pending requests</div>`;
                 return;
             }
 
-            // pending と confirmed に分ける
-            const pending = requests.filter(r => r.status === 'pending');
-            const confirmed = requests.filter(r => r.status === 'confirmed');
-
             let html = '';
-
-            // Pending セクション
-            if (pending.length > 0) {
-                html += `<div style="font-weight:600;font-size:14px;color:#333;margin-bottom:8px;">📩 Pending Requests</div>`;
-                html += pending.map(req => {
-                    const displayTime = formatTimeDisplay(req.time);
-                    const isCancel = req.isCancel;
-                    return `
-                        <div class="request-item">
-                            <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
-                                <div style="flex:1;">
-                                    <div style="font-weight:600;font-size:15px;color:${isCancel ? '#e53935' : '#333'};">${isCancel ? '❌ ' : ''}${escapeHtml(req.title)}</div>
-                                    <div style="font-size:13px;color:#666;">📅 ${escapeHtml(req.date)} ${displayTime}</div>
-                                    <div style="font-size:12px;color:#888;">👤 From: ${escapeHtml(req.fromUserName)}</div>
-                                    ${req.note ? `<div style="font-size:12px;color:#999;margin-top:4px;">📝 ${escapeHtml(req.note)}</div>` : ''}
+            html += `<div style="font-weight:600;font-size:14px;color:#333;margin-bottom:8px;">📩 Pending Requests</div>`;
+            
+            html += pendingOnly.map(req => {
+                const displayTime = formatTimeDisplay(req.time);
+                const isCancel = req.isCancel;
+                const displayTitle = req.title.replace('[CANCEL] ', '').trim();
+                
+                return `
+                    <div class="request-item">
+                        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
+                            <div style="flex:1;">
+                                <div style="font-weight:600;font-size:15px;color:${isCancel ? '#e53935' : '#333'};">
+                                    ${isCancel ? '❌ ' : '📩 '}${escapeHtml(displayTitle)}
                                 </div>
-                                ${!isCancel ? `
-                                    <div style="display:flex;gap:8px;flex-shrink:0;">
-                                        <button class="btn btn-success btn-sm" onclick="handleFriendRequest('${req.id}', 'confirmed')" style="padding:6px 16px;border:none;border-radius:999px;background:#06C755;color:white;font-weight:600;cursor:pointer;">Accept</button>
-                                        <button class="btn btn-danger btn-sm" onclick="handleFriendRequest('${req.id}', 'rejected')" style="padding:6px 16px;border:none;border-radius:999px;background:#e53935;color:white;font-weight:600;cursor:pointer;">Decline</button>
-                                    </div>
+                                <div style="font-size:13px;color:#666;">📅 ${escapeHtml(req.date)} ${displayTime}</div>
+                                <div style="font-size:12px;color:#888;">👤 From: ${escapeHtml(req.fromUserName)}</div>
+                                ${req.note ? `<div style="font-size:12px;color:#999;margin-top:4px;">📝 ${escapeHtml(req.note)}</div>` : ''}
+                                ${isCancel ? `<div style="font-size:11px;color:#e53935;margin-top:4px;">⚠️ Cancellation request</div>` : ''}
+                            </div>
+                            <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+                                ${isCancel ? `
+                                    <button onclick="handleCancellation('${req.id}')" 
+                                            style="padding:6px 16px;border:none;border-radius:999px;background:#ff9800;color:white;font-weight:600;cursor:pointer;">
+                                        Accept Cancel
+                                    </button>
                                 ` : `
-                                    <div style="font-size:12px;color:#e53935;font-weight:600;">⏳ Cancellation Request</div>
+                                    <button onclick="handleFriendRequest('${req.id}', 'confirmed')" 
+                                            style="padding:6px 16px;border:none;border-radius:999px;background:#06C755;color:white;font-weight:600;cursor:pointer;">
+                                        Accept
+                                    </button>
+                                    <button onclick="handleFriendRequest('${req.id}', 'rejected')" 
+                                            style="padding:6px 16px;border:none;border-radius:999px;background:#e53935;color:white;font-weight:600;cursor:pointer;">
+                                        Decline
+                                    </button>
                                 `}
                             </div>
                         </div>
-                    `;
-                }).join('');
-            }
+                    </div>
+                `;
+            }).join('');
 
-            // Confirmed セクション（承認済み）
-            if (confirmed.length > 0) {
-                html += `<div style="font-weight:600;font-size:14px;color:#2e7d32;margin-top:16px;margin-bottom:8px;">✅ Confirmed</div>`;
-                html += confirmed.map(req => {
-                    const displayTime = formatTimeDisplay(req.time);
-                    const displayTitle = req.title.replace('[CANCEL] ', '').trim();
-                    return `
-                        <div class="request-item" style="background:#e8f5e9;border:1px solid #a5d6a7;cursor:default;">
-                            <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
-                                <div style="flex:1;">
-                                    <div style="font-weight:600;font-size:15px;color:#2e7d32;">✅ ${escapeHtml(displayTitle)}</div>
-                                    <div style="font-size:13px;color:#666;">📅 ${escapeHtml(req.date)} ${displayTime}</div>
-                                    <div style="font-size:12px;color:#888;">👤 From: ${escapeHtml(req.fromUserName)}</div>
-                                    ${req.note ? `<div style="font-size:12px;color:#999;margin-top:4px;">📝 ${escapeHtml(req.note)}</div>` : ''}
-                                </div>
-                                <div style="font-size:12px;color:#2e7d32;font-weight:600;">✅ Approved</div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-
-            container.innerHTML = html || `<div style="text-align:center;color:#bbb;padding:20px 0;font-size:13px;">📭 No requests</div>`;
+            container.innerHTML = html;
         }
 
         // ============================================================
@@ -1413,33 +1401,31 @@
                     const eventsRef = collection(db, 'events');
                     const myDisplayName = window.currentUser?.displayName || 'Me';
 
-                    // ★ 修正: 自分（承諾者）のカレンダーに追加
-                    // userId = 自分, sharedWith = 友達
+                    // 自分（承諾者）のカレンダーに追加
                     await addDoc(eventsRef, {
-                        userId: user.uid,                              // ★ 自分
+                        userId: user.uid,
                         date: requestData.date,
                         time: requestData.time,
                         title: `[With ${requestData.fromUserName}] ${requestData.title}`,
                         person: requestData.fromUserName,
                         type: 'shared',
                         status: 'confirmed',
-                        sharedWith: requestData.fromUserId,            // ★ 友達
+                        sharedWith: requestData.fromUserId,
                         role: 'acceptor',
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString()
                     });
 
-                    // ★ 修正: 友達（依頼者）のカレンダーに追加
-                    // userId = 友達, sharedWith = 自分
+                    // 友達（依頼者）のカレンダーに追加
                     await addDoc(eventsRef, {
-                        userId: requestData.fromUserId,                // ★ 友達
+                        userId: requestData.fromUserId,
                         date: requestData.date,
                         time: requestData.time,
                         title: `[With ${myDisplayName}] ${requestData.title}`,
                         person: myDisplayName,
                         type: 'shared',
                         status: 'confirmed',
-                        sharedWith: user.uid,                          // ★ 自分
+                        sharedWith: user.uid,
                         role: 'requester',
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString()
@@ -1450,9 +1436,10 @@
                     alert('❌ Event declined.');
                 }
 
+                // 再読み込み
                 await loadFriendRequests();
-                openFriendRequestsModal();
-
+                closeFriendRequestsModal();
+                
                 if (selectedDate) {
                     await renderCalendar();
                     await renderEvents(selectedDate);
@@ -1465,12 +1452,11 @@
         }
 
         // ============================================================
-        // キャンセルリクエストを承認（最終デバッグ版）
+        // キャンセルリクエストを承認
         // ============================================================
-        async function handleCancellation(requestId, friendId) {
+        async function handleCancellation(requestId) {
             console.log('🚀 handleCancellation 開始');
             console.log('🔍 requestId:', requestId);
-            console.log('🔍 friendId:', friendId);
             
             if (!confirm('Accept this cancellation request? Both calendars will be updated.')) return;
 
@@ -1491,8 +1477,6 @@
                     return;
                 }
 
-                console.log('👤 現在のユーザーUID:', user.uid);
-
                 const db = getFirestore(app);
 
                 // 1. リクエストを取得
@@ -1503,7 +1487,6 @@
                     return;
                 }
                 const requestData = requestSnap.data();
-                console.log('📄 キャンセルリクエストデータ (全フィールド):', JSON.stringify(requestData, null, 2));
 
                 // 2. キャンセルリクエストを承認済みに更新
                 await updateDoc(requestRef, {
@@ -1514,86 +1497,43 @@
 
                 // 3. 削除するイベントの情報を取得
                 const originalTitle = requestData.title || '';
-                console.log('📝 元のタイトル:', originalTitle);
-                
-                // [CANCEL] を除去
                 let cleanTitle = originalTitle.replace('[CANCEL] ', '').trim();
-                console.log('📝 [CANCEL]除去後:', cleanTitle);
-                
-                // [With xxx] を除去
                 cleanTitle = cleanTitle.replace(/^\[With\s+.+?\]\s*/, '').trim();
-                console.log('📝 [With xxx]除去後:', cleanTitle);
                 
                 const eventDate = requestData.date || '';
                 const eventTime = requestData.time || '';
-                console.log(`🗑️ 最終削除対象: タイトル="${cleanTitle}", 日付=${eventDate}, 時間=${eventTime}`);
 
-                // 4. まず date + time で検索
-                console.log(`🔍 検索1: date=${eventDate}, time=${eventTime}`);
-                const query1 = query(
+                // 4. イベントを検索して削除
+                const q = query(
                     collection(db, 'events'),
                     where('date', '==', eventDate),
                     where('time', '==', eventTime)
                 );
-                const snapshot1 = await getDocs(query1);
-                console.log(`📊 検索1結果: ${snapshot1.size}件`);
-                snapshot1.forEach(doc => {
-                    console.log(`   📄 ${doc.id}: ${JSON.stringify(doc.data())}`);
-                });
-
-                // 5. 次に date のみで検索（見つからない場合）
-                if (snapshot1.empty) {
-                    console.log(`🔍 検索2: date=${eventDate} (全件)`);
-                    const query2 = query(
-                        collection(db, 'events'),
-                        where('date', '==', eventDate)
-                    );
-                    const snapshot2 = await getDocs(query2);
-                    console.log(`📊 検索2結果: ${snapshot2.size}件`);
-                    snapshot2.forEach(doc => {
-                        console.log(`   📄 ${doc.id}: ${JSON.stringify(doc.data())}`);
-                    });
-                    
-                    // 削除処理
-                    let deletedCount = 0;
-                    for (const docSnap of snapshot2.docs) {
-                        const data = docSnap.data();
-                        const title = data.title || '';
-                        console.log(`   🔍 比較: title="${title}" に "${cleanTitle}" が含まれる? ${title.includes(cleanTitle)}`);
-                        if (title.includes(cleanTitle)) {
-                            await deleteDoc(docSnap.ref);
-                            deletedCount++;
-                            console.log(`   ✅ 削除完了: ${docSnap.id}`);
-                        }
+                const snapshot = await getDocs(q);
+                
+                let deletedCount = 0;
+                for (const docSnap of snapshot.docs) {
+                    const data = docSnap.data();
+                    const title = data.title || '';
+                    // タイトルに cleanTitle が含まれているか、または元のタイトルと一致する場合
+                    if (title.includes(cleanTitle) || title === requestData.title) {
+                        await deleteDoc(docSnap.ref);
+                        deletedCount++;
+                        console.log(`✅ 削除完了: ${docSnap.id}`);
                     }
-                    
-                    if (deletedCount === 0) {
-                        console.warn('⚠️ 削除対象のイベントが見つかりませんでした');
-                        alert('⚠️ No matching events found to cancel.\n\n' +
-                            `検索条件: 日付=${eventDate}, タイトル="${cleanTitle}"\n` +
-                            `ヒット件数: ${snapshot2.size}件`);
-                        return;
-                    }
-                    alert(`✅ Cancellation accepted. ${deletedCount} event(s) removed.`);
-                } else {
-                    // 検索1で見つかった場合
-                    let deletedCount = 0;
-                    for (const docSnap of snapshot1.docs) {
-                        const data = docSnap.data();
-                        const title = data.title || '';
-                        console.log(`   🔍 比較: title="${title}" に "${cleanTitle}" が含まれる? ${title.includes(cleanTitle)}`);
-                        if (title.includes(cleanTitle)) {
-                            await deleteDoc(docSnap.ref);
-                            deletedCount++;
-                            console.log(`   ✅ 削除完了: ${docSnap.id}`);
-                        }
-                    }
-                    alert(`✅ Cancellation accepted. ${deletedCount} event(s) removed.`);
                 }
+
+                if (deletedCount === 0) {
+                    alert('⚠️ No matching events found to cancel.');
+                    return;
+                }
+
+                alert(`✅ Cancellation accepted. ${deletedCount} event(s) removed.`);
 
                 // 再読み込み
                 await loadFriendRequests();
-                await openFriendRequestsModal();
+                closeFriendRequestsModal();
+                
                 if (selectedDate) {
                     await renderCalendar();
                     await renderEvents(selectedDate);
@@ -1604,6 +1544,10 @@
                 alert('Failed to process cancellation. Please try again.\n\n' + error.message);
             }
         }
+
+
+
+
         // ============================================================
         // 申請一覧モーダルを閉じる
         // ============================================================
