@@ -243,6 +243,12 @@
         }
 
         // ============================================================
+        // グローバル変数
+        // ============================================================
+        let currentRequests = [];
+        let selectedRequestId = null;
+
+        // ============================================================
         // 友達一覧を読み込む（名前表示修正版）
         // ============================================================
         async function loadFriends() {
@@ -298,9 +304,7 @@
                         
                         if (friendSnap.exists()) {
                             const friendData = friendSnap.data();
-                            // ★ 表示名を取得（displayName または LINE の名前）
                             let displayName = friendData.displayName || 'Friend';
-                            // LINEのプロフィール名があればそれを使う
                             if (friendData.lineDisplayName) {
                                 displayName = friendData.lineDisplayName;
                             }
@@ -337,16 +341,13 @@
                     return;
                 }
 
-                // ★ 友達を名前順にソート
                 friends.sort((a, b) => a.name.localeCompare(b.name));
 
                 container.innerHTML = friends.map(fr => {
-                    // ★ プロフィール画像があれば表示、なければ頭文字
                     const avatarContent = fr.pictureUrl 
                         ? `<img src="${fr.pictureUrl}" alt="${fr.name}" />` 
                         : `<span style="font-size:18px;font-weight:700;">${escapeHtml(fr.initial)}</span>`;
                     
-                    // ★ 名前が長い場合は省略
                     const displayName = fr.name.length > 8 ? fr.name.substring(0, 8) + '...' : fr.name;
                     
                     return `
@@ -357,7 +358,6 @@
                     `;
                 }).join('');
                 
-                // ★ 「追加」ボタン
                 container.innerHTML += `
                     <a href="add.html" class="avatar-item">
                         <div class="avatar-circle avatar-add"><i class="bi bi-plus"></i></div>
@@ -372,11 +372,9 @@
         }
 
         // ============================================================
-        // 友達からのイベント申請一覧を取得（pending のみ）
+        // リクエスト一覧を読み込む（pending のみ）
         // ============================================================
-        let pendingRequests = [];
-
-        async function loadFriendRequests() {
+        async function loadRequests() {
             try {
                 if (window.liffReadyPromise) {
                     await window.liffReadyPromise;
@@ -385,14 +383,13 @@
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
                 const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-                
+
                 const app = getApp();
                 const auth = getAuth(app);
                 const user = auth.currentUser;
-                if (!user) return [];
+                if (!user) return;
 
                 const db = getFirestore(app);
-                const requests = [];
 
                 // ★ pending のみ取得
                 const pendingQuery = query(
@@ -401,11 +398,13 @@
                     where('status', '==', 'pending')
                 );
                 const pendingSnapshot = await getDocs(pendingQuery);
-                pendingSnapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const isCancel = data.title && data.title.startsWith('[CANCEL]');
+                
+                const requests = [];
+                
+                pendingSnapshot.forEach(doc => {
+                    const data = doc.data();
                     requests.push({
-                        id: docSnap.id,
+                        id: doc.id,
                         fromUserId: data.fromUserId,
                         fromUserName: data.fromUserName || 'Friend',
                         date: data.date,
@@ -414,7 +413,7 @@
                         note: data.note || '',
                         status: data.status,
                         createdAt: data.createdAt,
-                        isCancel: isCancel
+                        isCancel: data.title && data.title.startsWith('[CANCEL]')
                     });
                 });
 
@@ -422,16 +421,17 @@
                     return new Date(b.createdAt) - new Date(a.createdAt);
                 });
 
-                pendingRequests = requests;
-                const pendingOnly = requests.filter(r => r.status === 'pending' && !r.isCancel);
-                updateRequestBadge(pendingOnly.length);
-                return requests;
+                currentRequests = requests;
+                renderRequests(requests);
+
             } catch (error) {
-                console.error('Load friend requests error:', error);
-                return [];
+                console.error('Load requests error:', error);
             }
         }
 
+        // ============================================================
+        // リクエスト一覧を表示（pending のみ）
+        // ============================================================
         function renderRequests(requests) {
             const container = document.getElementById('requestListHome');
             const badge = document.getElementById('requestBadgeHome');
@@ -470,31 +470,6 @@
             container.innerHTML = html;
         }
 
-
-            // Confirmed セクション（承認済み）
-            if (confirmed.length > 0) {
-                html += `<div style="font-weight:600;font-size:13px;color:#2e7d32;margin-top:12px;margin-bottom:6px;">✅ Confirmed</div>`;
-                html += confirmed.map(req => {
-                    const displayTitle = req.title.replace('[CANCEL] ', '').trim();
-                    return `
-                        <div class="request-item-card" style="background:#e8f5e9;border-color:#a5d6a7;cursor:default;" onclick="alert('✅ Already confirmed: ${escapeHtml(displayTitle)}')">
-                            <div class="req-info">
-                                <span class="req-badge" style="background:#e8f5e9;color:#2e7d32;">✅ Done</span>
-                                <span class="req-title" style="color:#2e7d32;">${escapeHtml(displayTitle)}</span>
-                            </div>
-                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                                <span class="req-from">👤 ${escapeHtml(req.fromUserName)}</span>
-                                <span class="req-date">📅 ${req.date}</span>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-
-            container.innerHTML = html || `<div class="request-empty">📭 No requests</div>`;
-        }
-
-
         // ============================================================
         // リクエストモーダル
         // ============================================================
@@ -532,7 +507,7 @@
         }
 
         // ============================================================
-        // リクエスト処理（承認/拒否）- 修正版
+        // リクエスト処理（承認/拒否）
         // ============================================================
         async function processRequest(status) {
             if (!selectedRequestId) return;
@@ -621,10 +596,8 @@
                         updatedAt: new Date().toISOString()
                     });
                     
-                    // 拒否のコメントがあれば保存（オプション）
                     if (comment) {
                         console.log('📝 拒否コメント:', comment);
-                        // 必要に応じて feedback コレクションなどに保存
                     }
                     
                     statusEl.textContent = '❌ Request declined.';
