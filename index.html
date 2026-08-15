@@ -372,12 +372,11 @@
         }
 
         // ============================================================
-        // リクエスト一覧を読み込む（pending + confirmed も表示）
+        // 友達からのイベント申請一覧を取得（pending のみ）
         // ============================================================
-        let currentRequests = [];
-        let selectedRequestId = null;
+        let pendingRequests = [];
 
-        async function loadRequests() {
+        async function loadFriendRequests() {
             try {
                 if (window.liffReadyPromise) {
                     await window.liffReadyPromise;
@@ -386,37 +385,27 @@
                 const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
                 const { getFirestore, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
                 const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-
+                
                 const app = getApp();
                 const auth = getAuth(app);
                 const user = auth.currentUser;
-                if (!user) return;
+                if (!user) return [];
 
                 const db = getFirestore(app);
+                const requests = [];
 
-                // ★ 修正: pending と confirmed の両方を取得
+                // ★ pending のみ取得
                 const pendingQuery = query(
                     collection(db, 'friendEvents'),
                     where('toUserId', '==', user.uid),
                     where('status', '==', 'pending')
                 );
                 const pendingSnapshot = await getDocs(pendingQuery);
-                
-                // ★ confirmed も取得（承認済みの履歴として表示）
-                const confirmedQuery = query(
-                    collection(db, 'friendEvents'),
-                    where('toUserId', '==', user.uid),
-                    where('status', '==', 'confirmed')
-                );
-                const confirmedSnapshot = await getDocs(confirmedQuery);
-                
-                const requests = [];
-                
-                // pending リクエストを追加
-                pendingSnapshot.forEach(doc => {
-                    const data = doc.data();
+                pendingSnapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const isCancel = data.title && data.title.startsWith('[CANCEL]');
                     requests.push({
-                        id: doc.id,
+                        id: docSnap.id,
                         fromUserId: data.fromUserId,
                         fromUserName: data.fromUserName || 'Friend',
                         date: data.date,
@@ -425,51 +414,33 @@
                         note: data.note || '',
                         status: data.status,
                         createdAt: data.createdAt,
-                        isCancel: data.title && data.title.startsWith('[CANCEL]')
-                    });
-                });
-                
-                // confirmed リクエストを追加（承認済み）
-                confirmedSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    requests.push({
-                        id: doc.id,
-                        fromUserId: data.fromUserId,
-                        fromUserName: data.fromUserName || 'Friend',
-                        date: data.date,
-                        time: data.time,
-                        title: data.title,
-                        note: data.note || '',
-                        status: data.status,
-                        createdAt: data.createdAt,
-                        isCancel: data.title && data.title.startsWith('[CANCEL]'),
-                        isConfirmed: true
+                        isCancel: isCancel
                     });
                 });
 
-                // 日付順にソート（新しい順）
                 requests.sort((a, b) => {
                     return new Date(b.createdAt) - new Date(a.createdAt);
                 });
 
-                currentRequests = requests;
-                renderRequests(requests);
-
+                pendingRequests = requests;
+                const pendingOnly = requests.filter(r => r.status === 'pending' && !r.isCancel);
+                updateRequestBadge(pendingOnly.length);
+                return requests;
             } catch (error) {
-                console.error('Load requests error:', error);
+                console.error('Load friend requests error:', error);
+                return [];
             }
         }
-
 
         function renderRequests(requests) {
             const container = document.getElementById('requestListHome');
             const badge = document.getElementById('requestBadgeHome');
 
-            // pending のみカウント（バッジ表示用）
-            const pendingOnly = requests.filter(r => r.status === 'pending' && !r.isCancel);
+            // ★ pending のみ表示（承認済みは Upcoming へ移動）
+            const pendingOnly = requests.filter(r => r.status === 'pending');
 
-            if (!requests || requests.length === 0) {
-                container.innerHTML = `<div class="request-empty">📭 No requests</div>`;
+            if (pendingOnly.length === 0) {
+                container.innerHTML = `<div class="request-empty">📭 No pending requests</div>`;
                 badge.style.display = 'none';
                 return;
             }
@@ -477,32 +448,28 @@
             badge.style.display = 'inline';
             badge.textContent = pendingOnly.length;
 
-            // ★ pending と confirmed を分けて表示
-            const pending = requests.filter(r => r.status === 'pending');
-            const confirmed = requests.filter(r => r.status === 'confirmed');
-
             let html = '';
-
-            // Pending セクション
-            if (pending.length > 0) {
-                html += `<div style="font-weight:600;font-size:13px;color:#333;margin-bottom:6px;">📩 Pending</div>`;
-                html += pending.map(req => {
-                    const displayTitle = req.title.replace('[CANCEL] ', '').trim();
-                    const isCancel = req.isCancel;
-                    return `
-                        <div class="request-item-card" onclick="openRequestModal('${req.id}')">
-                            <div class="req-info">
-                                <span class="req-badge">${isCancel ? '❌ Cancel' : '📩 New'}</span>
-                                <span class="req-title">${escapeHtml(displayTitle)}</span>
-                            </div>
-                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                                <span class="req-from">👤 ${escapeHtml(req.fromUserName)}</span>
-                                <span class="req-date">📅 ${req.date}</span>
-                            </div>
+            html += `<div style="font-weight:600;font-size:13px;color:#333;margin-bottom:6px;">📩 Pending</div>`;
+            html += pendingOnly.map(req => {
+                const displayTitle = req.title.replace('[CANCEL] ', '').trim();
+                const isCancel = req.isCancel;
+                return `
+                    <div class="request-item-card" onclick="openRequestModal('${req.id}')">
+                        <div class="req-info">
+                            <span class="req-badge">${isCancel ? '❌ Cancel' : '📩 New'}</span>
+                            <span class="req-title">${escapeHtml(displayTitle)}</span>
                         </div>
-                    `;
-                }).join('');
-            }
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            <span class="req-from">👤 ${escapeHtml(req.fromUserName)}</span>
+                            <span class="req-date">📅 ${req.date}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
 
             // Confirmed セクション（承認済み）
             if (confirmed.length > 0) {
@@ -678,7 +645,7 @@
         }
 
         // ============================================================
-        // Upcoming 予定を読み込む（今日以降の自分の予定）
+        // Upcoming 予定を読み込む（自分の予定 + 承認済み共有イベント）
         // ============================================================
         async function loadUpcomingEvents() {
             const container = document.getElementById('todayList');
@@ -702,25 +669,59 @@
                 const db = getFirestore(app);
                 const today = new Date().toISOString().split('T')[0];
 
+                // ★ 自分の予定（userId == user.uid）
                 const myEventsQuery = query(
                     collection(db, 'events'),
                     where('userId', '==', user.uid),
                     where('date', '>=', today)
                 );
-                const snapshot = await getDocs(myEventsQuery);
+                const mySnapshot = await getDocs(myEventsQuery);
+
+                // ★ 承認済みの共有イベント（sharedWith == user.uid かつ status == 'confirmed'）
+                const sharedEventsQuery = query(
+                    collection(db, 'events'),
+                    where('sharedWith', '==', user.uid),
+                    where('date', '>=', today)
+                );
+                const sharedSnapshot = await getDocs(sharedEventsQuery);
 
                 const events = [];
-                snapshot.forEach(doc => {
+                const eventIds = new Set();
+
+                // 自分の予定を追加
+                mySnapshot.forEach(doc => {
                     const data = doc.data();
-                    if (data.type === 'own' || data.type === 'shared') {
+                    const id = doc.id;
+                    if (!eventIds.has(id)) {
+                        eventIds.add(id);
+                        if (data.type === 'own' || data.type === 'shared') {
+                            let displayTitle = data.title || 'Untitled';
+                            displayTitle = displayTitle.replace(/^\[With\s+.+?\]\s*/, '').trim();
+                            events.push({
+                                id: id,
+                                title: displayTitle,
+                                date: data.date,
+                                time: data.time || '--:--',
+                                person: data.person || 'Me'
+                            });
+                        }
+                    }
+                });
+
+                // ★ 承認済みの共有イベントを追加（重複防止）
+                sharedSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const id = doc.id;
+                    if (!eventIds.has(id)) {
+                        eventIds.add(id);
                         let displayTitle = data.title || 'Untitled';
                         displayTitle = displayTitle.replace(/^\[With\s+.+?\]\s*/, '').trim();
                         events.push({
-                            id: doc.id,
+                            id: id,
                             title: displayTitle,
                             date: data.date,
                             time: data.time || '--:--',
-                            person: data.person || 'Me'
+                            person: data.person || 'Friend'
                         });
                     }
                 });
