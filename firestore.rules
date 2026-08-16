@@ -6,8 +6,8 @@ service cloud.firestore {
     // ユーザー情報（users）
     // ============================================================
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
       allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
     // ============================================================
@@ -37,42 +37,50 @@ service cloud.firestore {
     }
     
     // ============================================================
-    // 予定データ（events）- 修正版
+    // 予定データ（events）- シンプル版
     // ============================================================
     match /events/{eventId} {
+      // 読み取り：自分の予定または共有されている予定
       allow read: if request.auth != null && 
         (request.auth.uid == resource.data.userId || 
          request.auth.uid == resource.data.sharedWith);
       
-      // ✅ 作成：本人のみ
+      // 作成：自分の予定のみ
       allow create: if request.auth != null && 
         request.auth.uid == request.resource.data.userId;
       
-      allow update: if request.auth != null && 
-        request.auth.uid == resource.data.userId;
+      // 更新：自分の予定、または共有相手（ステータスのみ）
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.userId ||
+        (request.auth.uid == resource.data.sharedWith && 
+         request.resource.data.status == 'confirmed')
+      );
       
-      allow update: if request.auth != null && 
-        request.auth.uid == resource.data.sharedWith &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
-      
+      // 削除：自分の予定、または共有相手
       allow delete: if request.auth != null && 
         (request.auth.uid == resource.data.userId || 
          request.auth.uid == resource.data.sharedWith);
     }
     
     // ============================================================
-    // 友達とのイベント（friendEvents）
+    // ★ 友達とのイベント（friendEvents）- 修正版
     // ============================================================
     match /friendEvents/{eventId} {
+      // 読み取り：自分が関係するリクエストのみ
       allow read: if request.auth != null && 
         (request.auth.uid == resource.data.fromUserId || 
          request.auth.uid == resource.data.toUserId);
+      
+      // 作成：自分が送信者
       allow create: if request.auth != null && 
         request.auth.uid == request.resource.data.fromUserId;
+      
+      // ★ 更新：自分が関係するリクエストで、status を指定した場合のみ
       allow update: if request.auth != null && 
         (request.auth.uid == resource.data.fromUserId || 
          request.auth.uid == resource.data.toUserId) &&
-        request.resource.data.status in ['confirmed', 'rejected', 'cancelled', 'approved'];
+        request.resource.data.status != null &&
+        request.resource.data.status in ['confirmed', 'rejected', 'approved'];
     }
     
     // ============================================================
@@ -96,7 +104,6 @@ service cloud.firestore {
         request.auth.uid == resource.data.userId;
       allow create: if request.auth != null &&
         request.auth.uid == request.resource.data.userId &&
-        request.resource.data.keys().hasOnly(['userId', 'userName', 'message', 'createdAt']) &&
         request.resource.data.message is string &&
         request.resource.data.message.size() > 0 &&
         request.resource.data.message.size() <= 2000;

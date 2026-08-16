@@ -485,174 +485,208 @@
             }
         }
 
-        // ============================================================
-        // イベント削除（徹底修正版）
-        // ============================================================
-        async function deleteEvent(eventId, dateStr) {
-            console.log('🗑️ deleteEvent 開始');
-            console.log('🔍 eventId:', eventId);
-            console.log('🔍 dateStr:', dateStr);
-            
-            try {
-                if (window.liffReadyPromise) {
-                    await window.liffReadyPromise;
-                }
+// ============================================================
+// イベント削除（キャンセル依頼対応）- 修正版
+// ============================================================
+async function deleteEvent(eventId, dateStr) {
+    console.log('🗑️ deleteEvent 開始');
+    console.log('🔍 eventId:', eventId);
 
-                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const { getFirestore, doc, deleteDoc, getDoc, collection, addDoc, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
-                const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-                
-                const app = getApp();
-                const auth = getAuth(app);
-                const user = auth.currentUser;
-                if (!user) {
-                    alert('Please log in to delete events.');
-                    return;
-                }
+    try {
+        if (window.liffReadyPromise) {
+            await window.liffReadyPromise;
+        }
 
-                console.log('👤 現在のユーザーUID:', user.uid);
+        const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+        const { getFirestore, doc, deleteDoc, getDoc, collection, addDoc, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+        const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
 
-                const db = getFirestore(app);
-                const eventRef = doc(db, 'events', eventId);
-                const eventSnap = await getDoc(eventRef);
-                
-                if (!eventSnap.exists) {
-                    alert('Event not found.');
-                    return;
-                }
-                
-                const eventData = eventSnap.data();
-                console.log('📄 イベントデータ:', JSON.stringify(eventData, null, 2));
-                console.log('🔍 eventData.userId:', eventData.userId);
-                console.log('🔍 現在のユーザーUID:', user.uid);
-                console.log('🔍 一致?', eventData.userId === user.uid);
+        const app = getApp();
+        const auth = getAuth(app);
+        const user = auth.currentUser;
+        if (!user) {
+            alert('Please log in to delete events.');
+            return;
+        }
 
-                // ★ 修正: Sharedイベントの削除権限チェック
-                // role が acceptor または sharedWith が自分と一致する場合に削除可能
-                const isShared = eventData.type === 'shared';
-                const canDeleteDirectly = !isShared || 
-                                        eventData.role === 'acceptor' || 
-                                        eventData.sharedWith === user.uid;
-                
-                console.log('🔍 isShared:', isShared);
-                console.log('🔍 canDeleteDirectly:', canDeleteDirectly);
+        const db = getFirestore(app);
+        const eventRef = doc(db, 'events', eventId);
+        const eventSnap = await getDoc(eventRef);
 
-                if (isShared && !canDeleteDirectly) {
-                    // キャンセルリクエストを送信
-                    if (confirm(`"${eventData.title}" was shared by your friend. Send cancellation request?`)) {
-                        console.log('📤 キャンセルリクエスト送信中...');
-                        await addDoc(collection(db, 'friendEvents'), {
-                            fromUserId: user.uid,
-                            toUserId: eventData.userId || eventData.sharedWith,
-                            date: eventData.date,
-                            time: eventData.time,
-                            title: `[CANCEL] ${eventData.title}`,
-                            note: `${window.currentUser?.displayName || 'Someone'} wants to cancel this shared event.`,
-                            status: 'pending',
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString()
-                        });
-                        alert('✅ Cancellation request sent to your friend.');
-                        console.log('✅ キャンセルリクエスト送信完了');
-                    }
-                    return;
-                }
+        if (!eventSnap.exists) {
+            alert('Event not found.');
+            return;
+        }
 
-                // ★ 直接削除
-                if (!confirm(`Delete "${eventData.title}"?`)) return;
-                console.log('🗑️ 削除実行中...');
+        const eventData = eventSnap.data();
+
+        // ★ 共有イベント（shared）の場合
+        if (eventData.type === 'shared') {
+            // ★ 自分が承諾者（acceptor）または共有相手（sharedWith）の場合 → 直接削除可能
+            const canDeleteDirectly = eventData.role === 'acceptor' || 
+                                     (eventData.sharedWith && eventData.sharedWith === user.uid) ||
+                                     eventData.userId === user.uid;
+
+            if (canDeleteDirectly) {
+                // 自分の予定を削除（自分のカレンダーからだけ削除）
+                if (!confirm(`Delete "${eventData.title}" from your calendar?`)) return;
                 await deleteDoc(eventRef);
-                console.log('✅ 削除完了');
-                alert('✅ Event deleted.');
-                
-                // 再読み込み
-                currentEvents[dateStr] = await loadEventsFromFirestore(dateStr);
-                await renderCalendar();
-                await renderEvents(dateStr);
+                alert('✅ Event removed from your calendar.');
+            } else {
+                // ★ 友達の予定を削除する場合 → キャンセル依頼を送信
+                if (confirm(`"${eventData.title}" was shared by your friend.\n\nSend cancellation request to your friend?`)) {
+                    // 既存のキャンセルリクエストがないかチェック
+                    const existingQuery = query(
+                        collection(db, 'friendEvents'),
+                        where('toUserId', '==', eventData.userId || eventData.sharedWith),
+                        where('fromUserId', '==', user.uid),
+                        where('title', '==', `[CANCEL] ${eventData.title}`),
+                        where('status', '==', 'pending')
+                    );
+                    const existingSnapshot = await getDocs(existingQuery);
+                    
+                    if (!existingSnapshot.empty) {
+                        alert('⚠️ Cancellation request already sent.\nPlease wait for your friend to approve.');
+                        return;
+                    }
 
-            } catch (error) {
-                console.error('❌ Delete error:', error);
-                alert('Failed to delete event. Please try again.\n\n' + error.message);
+                    // キャンセル依頼を送信
+                    await addDoc(collection(db, 'friendEvents'), {
+                        fromUserId: user.uid,
+                        toUserId: eventData.userId || eventData.sharedWith,
+                        date: eventData.date,
+                        time: eventData.time,
+                        title: `[CANCEL] ${eventData.title}`,
+                        note: `${window.currentUser?.displayName || 'Someone'} wants to cancel this shared event.`,
+                        status: 'pending',
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                    
+                    alert('✅ Cancellation request sent to your friend.\n\n' +
+                          'They will need to approve it before the event is removed.');
+                    
+                    // リクエスト一覧を更新
+                    await loadFriendRequests();
+                }
+                return;
+            }
+        } else {
+            // ★ 自分の予定（own）の場合 → 直接削除
+            if (!confirm(`Delete "${eventData.title}"?`)) return;
+            await deleteDoc(eventRef);
+            alert('✅ Event deleted.');
+        }
+
+        // 再読み込み
+        if (dateStr) {
+            currentEvents[dateStr] = await loadEventsFromFirestore(dateStr);
+        }
+        await renderCalendar();
+        if (selectedDate) {
+            await renderEvents(selectedDate);
+        }
+
+    } catch (error) {
+        console.error('❌ Delete error:', error);
+        alert('Failed to delete event. Please try again.\n\n' + error.message);
+    }
+}
+
+
+
+
+
+// ============================================================
+// レンダリング関数
+// ============================================================
+async function renderEvents(dateStr) {
+    const container = document.getElementById('eventList');
+    if (!dateStr) {
+        container.innerHTML = `<div class="empty-events">Select a date</div>`;
+        return;
+    }
+
+    const events = await loadEventsFromFirestore(dateStr);
+    currentEvents[dateStr] = events;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDateObj = new Date(dateStr + 'T00:00:00');
+    
+    if (selectedDateObj < today) {
+        container.innerHTML = `<div class="empty-events">📅 Past events are hidden</div>`;
+        return;
+    }
+
+    if (!events || events.length === 0) {
+        container.innerHTML = `<div class="empty-events">📭 No events on this day</div>`;
+        return;
+    }
+
+    events.sort((a, b) => a.time.localeCompare(b.time));
+
+    container.innerHTML = events.map(e => {
+        const safe = escapeEvent(e);
+        const isShared = safe.type === 'shared';
+        const statusClass = isShared ? 'confirmed' : 'own';
+        const statusLabel = isShared ? '👤 Shared' : '👤 My Schedule';
+        
+        let displayIcon = '👤';
+        let displayPerson = safe.person;
+        
+        if (isShared) {
+            const name = safe.person || 'Friend';
+            displayIcon = name.charAt(0).toUpperCase();
+        } else {
+            const currentUser = window.currentUser;
+            if (currentUser && currentUser.displayName) {
+                displayIcon = currentUser.displayName.charAt(0).toUpperCase();
+                displayPerson = currentUser.displayName;
             }
         }
-        // ============================================================
-        // レンダリング関数
-        // ============================================================
-        async function renderEvents(dateStr) {
-            const container = document.getElementById('eventList');
-            if (!dateStr) {
-                container.innerHTML = `<div class="empty-events">Select a date</div>`;
-                return;
+        
+        let displayTitle = safe.title;
+        if (isShared) {
+            const match = displayTitle.match(/^\[With\s+(.+?)\]\s*(.*)$/);
+            if (match) {
+                displayTitle = `${match[2] || match[1]} (${match[1]})`;
+                displayPerson = match[1];
+                displayIcon = match[1].charAt(0).toUpperCase();
             }
-
-            const events = await loadEventsFromFirestore(dateStr);
-            currentEvents[dateStr] = events;
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const selectedDateObj = new Date(dateStr + 'T00:00:00');
-            
-            if (selectedDateObj < today) {
-                container.innerHTML = `<div class="empty-events">📅 Past events are hidden</div>`;
-                return;
-            }
-
-            if (!events || events.length === 0) {
-                container.innerHTML = `<div class="empty-events">📭 No events on this day</div>`;
-                return;
-            }
-
-            events.sort((a, b) => a.time.localeCompare(b.time));
-
-            container.innerHTML = events.map(e => {
-                const safe = escapeEvent(e);
-                const isShared = safe.type === 'shared';
-                const statusClass = isShared ? 'confirmed' : 'own';
-                const statusLabel = isShared ? '👤 Shared' : '👤 My Schedule';
-                
-                let displayIcon = '👤';
-                let displayPerson = safe.person;
-                
-                if (isShared) {
-                    const name = safe.person || 'Friend';
-                    displayIcon = name.charAt(0).toUpperCase();
-                } else {
-                    const currentUser = window.currentUser;
-                    if (currentUser && currentUser.displayName) {
-                        displayIcon = currentUser.displayName.charAt(0).toUpperCase();
-                        displayPerson = currentUser.displayName;
-                    }
-                }
-                
-                let displayTitle = safe.title;
-                if (isShared) {
-                    const match = displayTitle.match(/^\[With\s+(.+?)\]\s*(.*)$/);
-                    if (match) {
-                        displayTitle = `${match[2] || match[1]} (${match[1]})`;
-                        displayPerson = match[1];
-                        displayIcon = match[1].charAt(0).toUpperCase();
-                    }
-                }
-                
-                const displayTime = formatTimeDisplay(safe.time);
-                
-                // 削除ボタンは常に表示（deleteEvent内で権限チェック）
-                const showDelete = true;
-                
-                return `
-                    <div class="event-item">
-                        <span class="event-time ${statusClass}">${displayTime}</span>
-                        <span class="event-title">${displayTitle}</span>
-                        <span class="event-person">
-                            <span class="avatar-icon">${displayIcon}</span>
-                            ${displayPerson}
-                        </span>
-                        <span class="event-status ${statusClass}">${statusLabel}</span>
-                        ${showDelete ? `<button class="event-delete-btn" onclick="deleteEvent('${e.id}', '${dateStr}')" title="${isShared ? 'Cancel' : 'Delete'}"><i class="bi bi-trash3"></i></button>` : ''}
-                    </div>
-                `;
-            }).join('');
         }
+        
+        const displayTime = formatTimeDisplay(safe.time);
+        const showDelete = true;
+
+        // ★★★ ここから修正 ★★★
+        // 共有イベントの場合は「Cancel」ボタンとして表示
+        const deleteBtnText = isShared ? 'Cancel' : 'Delete';
+        const deleteBtnIcon = isShared ? 'bi-x-circle' : 'bi-trash3';
+        const deleteBtnColor = isShared ? '#ff9800' : '#ccc';
+        // ★★★ 修正ここまで ★★★
+
+        return `
+            <div class="event-item">
+                <span class="event-time ${statusClass}">${displayTime}</span>
+                <span class="event-title">${displayTitle}</span>
+                <span class="event-person">
+                    <span class="avatar-icon">${displayIcon}</span>
+                    ${displayPerson}
+                </span>
+                <span class="event-status ${statusClass}">${statusLabel}</span>
+                ${showDelete ? `
+                    <button class="event-delete-btn" 
+                            onclick="deleteEvent('${e.id}', '${dateStr}')" 
+                            title="${deleteBtnText} this event"
+                            style="color:${deleteBtnColor};">
+                        <i class="bi ${deleteBtnIcon}"></i>
+                    </button>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
 
         // ============================================================
         // カレンダー描画
@@ -1359,97 +1393,130 @@
             container.innerHTML = html;
         }
 
-        // ============================================================
-        // 友達からのイベント申請を処理（承諾/拒否）- 修正版
-        // ============================================================
-        async function handleFriendRequest(requestId, status) {
-            if (status === 'rejected') {
-                if (!confirm('Decline this event request?')) return;
-            } else {
-                if (!confirm('Accept this event request?')) return;
-            }
+// ============================================================
+// 友達からのイベント申請を処理（承諾/拒否）- エラーハンドリング改善版
+// ============================================================
+async function handleFriendRequest(requestId, status) {
+    if (status === 'rejected') {
+        if (!confirm('Decline this event request?')) return;
+    } else {
+        if (!confirm('Accept this event request?')) return;
+    }
 
-            try {
-                if (window.liffReadyPromise) {
-                    await window.liffReadyPromise;
-                }
-
-                const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
-                const { getFirestore, doc, updateDoc, getDoc, collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
-                const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
-                
-                const app = getApp();
-                const auth = getAuth(app);
-                const user = auth.currentUser;
-                if (!user) {
-                    alert('Please log in.');
-                    return;
-                }
-
-                const db = getFirestore(app);
-
-                const requestRef = doc(db, 'friendEvents', requestId);
-                const requestSnap = await getDoc(requestRef);
-                const requestData = requestSnap.data();
-
-                await updateDoc(requestRef, {
-                    status: status,
-                    updatedAt: new Date().toISOString()
-                });
-
-                if (status === 'confirmed') {
-                    const eventsRef = collection(db, 'events');
-                    const myDisplayName = window.currentUser?.displayName || 'Me';
-
-                    // 自分（承諾者）のカレンダーに追加
-                    await addDoc(eventsRef, {
-                        userId: user.uid,
-                        date: requestData.date,
-                        time: requestData.time,
-                        title: `[With ${requestData.fromUserName}] ${requestData.title}`,
-                        person: requestData.fromUserName,
-                        type: 'shared',
-                        status: 'confirmed',
-                        sharedWith: requestData.fromUserId,
-                        role: 'acceptor',
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    });
-
-                    // 友達（依頼者）のカレンダーに追加
-                    await addDoc(eventsRef, {
-                        userId: requestData.fromUserId,
-                        date: requestData.date,
-                        time: requestData.time,
-                        title: `[With ${myDisplayName}] ${requestData.title}`,
-                        person: myDisplayName,
-                        type: 'shared',
-                        status: 'confirmed',
-                        sharedWith: user.uid,
-                        role: 'requester',
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    });
-
-                    alert('✅ Event confirmed! Added to both calendars.');
-                } else {
-                    alert('❌ Event declined.');
-                }
-
-                // 再読み込み
-                await loadFriendRequests();
-                closeFriendRequestsModal();
-                
-                if (selectedDate) {
-                    await renderCalendar();
-                    await renderEvents(selectedDate);
-                }
-
-            } catch (error) {
-                console.error('Handle friend request error:', error);
-                alert('Failed to process request. Please try again.');
-            }
+    try {
+        if (window.liffReadyPromise) {
+            await window.liffReadyPromise;
         }
+
+        const { getAuth } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js');
+        const { getFirestore, doc, updateDoc, getDoc, collection, addDoc } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+        const { getApp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js');
+
+        const app = getApp();
+        const auth = getAuth(app);
+        const user = auth.currentUser;
+        if (!user) {
+            alert('Please log in.');
+            return;
+        }
+
+        const db = getFirestore(app);
+
+        // リクエストを取得
+        const requestRef = doc(db, 'friendEvents', requestId);
+        const requestSnap = await getDoc(requestRef);
+        
+        if (!requestSnap.exists) {
+            alert('Request not found.');
+            return;
+        }
+        
+        const requestData = requestSnap.data();
+
+        // ステータスを更新
+        await updateDoc(requestRef, {
+            status: status,
+            updatedAt: new Date().toISOString()
+        });
+
+        if (status === 'confirmed') {
+            const eventsRef = collection(db, 'events');
+            const myDisplayName = window.currentUser?.displayName || 'Me';
+
+            // 自分のカレンダーに追加
+            await addDoc(eventsRef, {
+                userId: user.uid,
+                date: requestData.date,
+                time: requestData.time,
+                title: `[With ${requestData.fromUserName}] ${requestData.title}`,
+                person: requestData.fromUserName,
+                type: 'shared',
+                status: 'confirmed',
+                sharedWith: requestData.fromUserId,
+                role: 'acceptor',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            });
+
+            // 友達のカレンダーに追加
+            await addDoc(eventsRef, {
+                userId: requestData.fromUserId,
+                date: requestData.date,
+                time: requestData.time,
+                title: `[With ${myDisplayName}] ${requestData.title}`,
+                person: myDisplayName,
+                type: 'shared',
+                status: 'confirmed',
+                sharedWith: user.uid,
+                role: 'requester',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            });
+
+            alert('✅ Event confirmed! Added to both calendars.');
+        } else {
+            alert('❌ Event declined.');
+        }
+
+        // 再読み込み
+        await loadFriendRequests();
+        await openFriendRequestsModal();
+        
+        if (selectedDate) {
+            await renderCalendar();
+            await renderEvents(selectedDate);
+        }
+
+    } catch (error) {
+        console.error('Handle friend request error:', error);
+        
+        // ★ エラーが発生しても、Firestoreには登録されている可能性がある
+        // エラー内容をチェックして、適切なメッセージを表示
+        let errorMessage = '⚠️ An error occurred, but your request may have been processed.\n\n';
+        
+        if (error.code === 'permission-denied') {
+            errorMessage += 'Permission issue. Please check your connection and try again.\n';
+            errorMessage += 'If the event was added, it will appear after refresh.';
+        } else if (error.message && error.message.includes('status')) {
+            errorMessage += 'Status update may have failed, but data was saved.\n';
+            errorMessage += 'Please refresh the page to check.';
+        } else {
+            errorMessage += error.message || 'Unknown error.';
+        }
+        
+        // ★ エラーが発生しても、ページをリロードして最新状態を表示
+        console.log('🔄 Reloading data after error...');
+        await loadFriendRequests();
+        if (selectedDate) {
+            await renderCalendar();
+            await renderEvents(selectedDate);
+        }
+        
+        alert(errorMessage);
+    }
+}
+
+
 
         // ============================================================
         // キャンセルリクエストを承認
