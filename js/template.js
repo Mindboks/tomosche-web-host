@@ -136,16 +136,16 @@ function closeFeedbackModal() {
 }
 
 // ============================================================
-// ✅ Add to Home Screen 機能
+// ✅ Add to Home Screen 機能（改善版）
 // ============================================================
 function addToHomeScreen() {
-    // iOS の場合
+    // iOS のスタンドアロンモード（既にホーム画面から起動）
     if (window.navigator && window.navigator.standalone) {
-        alert('📱 Already running as standalone app.');
+        alert('📱 Tomosche is already running as a standalone app.');
         return;
     }
-    
-    // Android の場合（Chrome）
+
+    // Android の PWA インストールプロンプト（Chrome）
     if (window.deferredPrompt) {
         window.deferredPrompt.prompt();
         window.deferredPrompt.userChoice.then((choiceResult) => {
@@ -156,15 +156,195 @@ function addToHomeScreen() {
             }
             window.deferredPrompt = null;
         });
-        closeMorePopup();
         return;
     }
-    
-    // フォールバック：手動設定の案内
-    alert('📱 To add to Home Screen:\n\n' +
-          '📲 iOS: Tap Share → "Add to Home Screen"\n' +
-          '📲 Android: Tap Menu → "Add to Home Screen"');
+
+    // ✅ 改善: 分かりやすい手順モーダルを表示
+    showShortcutGuide();
 }
+
+// ============================================================
+// ✅ ショートカット作成ガイドモーダル
+// ============================================================
+function showShortcutGuide() {
+    // 既存のモーダルを削除（重複防止）
+    const existing = document.getElementById('shortcutGuideModal');
+    if (existing) {
+        existing.remove();
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'shortcutGuideModal';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 10000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    `;
+
+    overlay.innerHTML = `
+        <div style="background:white;border-radius:24px;max-width:400px;width:100%;padding:32px 24px;box-shadow:0 20px 60px rgba(0,0,0,0.3);position:relative;max-height:90vh;overflow-y:auto;">
+            <button onclick="closeShortcutGuide()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:24px;color:#999;cursor:pointer;">&times;</button>
+            
+            <div style="text-align:center;margin-bottom:20px;">
+                <i class="bi bi-star" style="font-size:48px;color:#06C755;display:block;margin-bottom:8px;"></i>
+                <h3 style="font-weight:700;margin-bottom:4px;font-size:20px;">✨ Add Tomosche to Home Screen</h3>
+                <p style="color:#888;font-size:14px;margin:0;">Use Tomosche like a native app!</p>
+            </div>
+
+            <div style="background:#f8f9fa;border-radius:16px;padding:20px;margin-bottom:20px;">
+                <div style="display:flex;align-items:flex-start;gap:14px;padding:8px 0;border-bottom:1px solid #e9ecef;">
+                    <span style="background:#06C755;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px;">1</span>
+                    <div>
+                        <div style="font-weight:600;font-size:15px;color:#333;">Open Share Menu</div>
+                        <div style="font-size:13px;color:#888;">
+                            <span id="platformShareHint">Tap the share icon </span>
+                            <span id="platformShareIcon" style="font-size:18px;">📤</span>
+                            <span id="platformShareLabel"> in your browser</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:14px;padding:8px 0;border-bottom:1px solid #e9ecef;">
+                    <span style="background:#06C755;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px;">2</span>
+                    <div>
+                        <div style="font-weight:600;font-size:15px;color:#333;">Select "Add to Home Screen"</div>
+                        <div style="font-size:13px;color:#888;">Scroll down and find the option</div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:14px;padding:8px 0;">
+                    <span style="background:#06C755;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:2px;">3</span>
+                    <div>
+                        <div style="font-weight:600;font-size:15px;color:#333;">Tap "Add"</div>
+                        <div style="font-size:13px;color:#888;">Done! Tomosche is on your home screen 🎉</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:12px;">
+                <button onclick="closeShortcutGuide()" style="flex:1;padding:12px;border-radius:999px;border:none;background:#f0f4f8;color:#666;font-weight:600;font-size:14px;cursor:pointer;">Close</button>
+                <button onclick="copyAppUrl()" style="flex:1;padding:12px;border-radius:999px;border:none;background:#06C755;color:white;font-weight:600;font-size:14px;cursor:pointer;">
+                    📋 Copy URL
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // プラットフォームに合わせて表示を調整
+    updatePlatformHints();
+}
+
+function closeShortcutGuide() {
+    const modal = document.getElementById('shortcutGuideModal');
+    if (modal) modal.remove();
+}
+
+function updatePlatformHints() {
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
+
+    const labelEl = document.getElementById('platformShareLabel');
+    const iconEl = document.getElementById('platformShareIcon');
+    const hintEl = document.getElementById('platformShareHint');
+
+    if (isIOS && isSafari) {
+        if (labelEl) labelEl.textContent = ' (the box with arrow up)';
+        if (iconEl) iconEl.textContent = '📤';
+        if (hintEl) hintEl.textContent = 'Tap the share icon ';
+    } else if (isAndroid) {
+        if (labelEl) labelEl.textContent = ' (three dots menu)';
+        if (iconEl) iconEl.textContent = '⋮';
+        if (hintEl) hintEl.textContent = 'Tap the menu icon ';
+    } else {
+        if (labelEl) labelEl.textContent = ' in your browser';
+        if (iconEl) iconEl.textContent = '📤';
+        if (hintEl) hintEl.textContent = 'Find the share or menu option ';
+    }
+}
+
+// ============================================================
+// ✅ URL コピー機能
+// ============================================================
+function copyAppUrl() {
+    const url = window.location.origin + window.location.pathname;
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+            showCopySuccess();
+        }).catch(() => {
+            fallbackCopyUrl(url);
+        });
+    } else {
+        fallbackCopyUrl(url);
+    }
+}
+
+function fallbackCopyUrl(url) {
+    const input = document.createElement('input');
+    input.value = url;
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+    try {
+        document.execCommand('copy');
+        showCopySuccess();
+    } catch (e) {
+        alert('📋 Please copy this URL manually:\n\n' + url);
+    }
+    document.body.removeChild(input);
+}
+
+function showCopySuccess() {
+    // 一時的な成功メッセージ
+    const existing = document.querySelector('.copy-success-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'copy-success-toast';
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #06C755;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 14px;
+        z-index: 10001;
+        box-shadow: 0 4px 20px rgba(6,199,85,0.4);
+        animation: fadeInUp 0.3s ease;
+    `;
+    toast.textContent = '✅ URL copied! Share it with friends.';
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
+}
+
+// CSSアニメーションを追加
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+`;
+document.head.appendChild(styleSheet);
 
 // ============================================================
 // ✅ フィードバック送信（Cloud Functions 経由）
